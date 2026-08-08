@@ -1,0 +1,11 @@
+// CONSTRUPRECO Prisma schema — models go here as features are added.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
