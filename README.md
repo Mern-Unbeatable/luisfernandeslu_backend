@@ -1,43 +1,121 @@
-# CONSTRUPRECO-backend
+# CONSTRUPRECO API
 
-Express + Prisma API for CONSTRUPRECO. ES modules + class-based `App` / `Server`.
+A modular Node.js backend API built with Express 5, Prisma 7, and PostgreSQL. The project follows a feature-based modular architecture with ES modules and OOP patterns.
 
-## Structure
+## Tech Stack
+
+- **Runtime:** Node.js 22+
+- **Framework:** Express 5
+- **ORM:** Prisma 7
+- **Database:** PostgreSQL
+- **Transpiler:** tsx (for Prisma 7 TypeScript client)
+- **Package Manager:** pnpm
+
+## Project Structure
 
 ```
-CONSTRUPRECO-backend/
+backend/
 ├── src/
-│   ├── routes/          # Feature routers (add as needed)
-│   ├── controllers/     # Class-based controllers
-│   ├── services/        # Class-based services
-│   ├── app.js           # App class
-│   └── server.js        # Server class (entry)
+│   ├── app.js                     # Express app setup & middleware
+│   ├── server.js                  # Server entry point
+│   ├── modules/                   # Feature modules
+│   │   └── user/
+│   │       ├── routes/            # Route definitions
+│   │       ├── controllers/       # Request handlers
+│   │       └── services/          # Business logic
+│   └── generated/                 # Prisma generated client (TS)
+├── lib/
+│   └── prisma.js                  # PrismaClient singleton with pg adapter
 ├── prisma/
-│   └── schema/
-│       └── schema.prisma
-├── .env.example
+│   ├── schema.prisma              # Database schema
+│   └── migrations/                # Migration files
+├── .env                           # Environment variables
+├── .env.example                   # Example env file
 └── package.json
 ```
 
-## Setup
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- pnpm
+- PostgreSQL
+
+### Installation
 
 ```bash
-npm install
-cp .env.example .env
-npm run dev
+pnpm install
 ```
 
-- API: `http://localhost:3000`
-- Health: `http://localhost:3000/health`
+### Environment Setup
 
-## Scripts
+Copy `.env.example` to `.env` and update:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Nodemon |
-| `npm start` | Production |
-| `npm run prisma:generate` | Generate Prisma client |
-| `npm run prisma:migrate` | Run migrations |
-| `npm run prisma:studio` | Prisma Studio |
+```env
+DATABASE_URL="postgres://user:password@localhost:5432/construpreco"
+PORT=3000
+NODE_ENV=development
+```
 
-Schema is empty for now — add models in `prisma/schema/schema.prisma` as features land.
+### Database Setup
+
+```bash
+# Generate Prisma Client
+pnpm prisma:generate
+
+# Run migrations
+pnpm prisma:migrate
+
+# Optional: Open Prisma Studio
+pnpm prisma:studio
+```
+
+### Running the Server
+
+```bash
+# Development (watch mode)
+pnpm dev
+
+# Production
+pnpm start
+```
+
+Server runs on `http://localhost:3000` by default.
+
+## Architecture
+
+- **Modules:** Each feature lives under `src/modules/<feature>/` with its own `routes/`, `controllers/`, and `services/`
+- **ES Modules:** Native `import`/`export` (`"type": "module"` in package.json)
+- **OOP:** Routes and controllers use ES classes
+- **Prisma 7:** Uses driver adapter pattern (`@prisma/adapter-pg` + `pg`)
+
+## Core Modules
+
+- **User Management:** Authentication, roles (CUSTOMER, COMPANY, SUPPLIER, FACTORY, TRANSPORTER, AFFILIATE, ADMIN), profiles, addresses
+- **Product Catalog:** Categories, products, media, pricing tiers, inventory
+- **Orders & Projects:** Orders, installments, invoices, quotes, chat
+- **Logistics:** Vehicles, shipments, auctions, transporter bids, tracking
+- **Affiliate & Marketing:** Affiliate links, commissions, promo codes, ad campaigns
+- **Financial:** Wallets, transactions, withdrawal requests, fiscal documents
+- **Support & CMS:** Support tickets, blog posts, system settings, audit logs
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/` | API info |
+| GET | `/api/users` | Users list (example) |
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Required |
+| `PORT` | Server port | `3000` |
+| `NODE_ENV` | Environment mode | `development` |
+
+## License
+
+ISC

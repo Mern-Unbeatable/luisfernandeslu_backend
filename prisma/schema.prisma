@@ -1,0 +1,977 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// ==========================================
+// 1. ENUMS
+// ==========================================
+
+enum UserRole {
+  CUSTOMER
+  COMPANY
+  SUPPLIER
+  FACTORY
+  TRANSPORTER
+  AFFILIATE
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  BLOCKED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum MarketplaceTier {
+  RETAIL
+  WHOLESALE
+}
+
+enum ProductApprovalStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  NEW
+  PENDING
+  PROCESSING
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderSource {
+  DIRECT_CART
+  QUOTE_CONVERSION
+}
+
+enum InstallmentStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum AuctionStatus {
+  PENDING_BIDS
+  ASSIGNED
+  EXPIRED
+  CANCELLED
+}
+
+enum BidStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+}
+
+enum VehicleType {
+  HEAVY_TRUCK
+  FLATBED
+  TIPPER
+  CRANE_TRUCK
+  VAN
+}
+
+enum DiscountType {
+  FIXED_AMOUNT
+  PERCENTAGE
+}
+
+enum ReturnStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING_ADMIN
+  PENDING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum CommissionStatus {
+  PENDING
+  CLEARED
+  REJECTED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
+enum ChannelType {
+  EMAIL
+  SMS
+  PUSH
+}
+
+// ==========================================
+// 2. IAM & USER MANAGEMENT
+// ==========================================
+
+model User {
+  id                    String            @id @default(uuid())
+  email                 String            @unique
+  passwordHash          String
+  fullName              String
+  phoneNumber           String?
+  role                  UserRole
+  status                AccountStatus     @default(PENDING_VERIFICATION)
+  referralCode          String?           @unique
+  referredById          String?
+  vatRate               Float?            @default(0.0) // Admin configurable for Company users
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  // Self-Relation for Affiliates / Referrals
+  referrer              User?             @relation("UserReferrals", fields: [referredById], references: [id])
+  referees              User[]            @relation("UserReferrals")
+
+  // Relations
+  accounts              Account[]
+  profile               BusinessProfile?
+  addresses             UserAddressBridge[]
+  projects              Project[]
+  
+  // E-Commerce & Transactions
+  products              Product[]         @relation("SellerProducts")
+  customerOrders        Order[]           @relation("CustomerOrders")
+  sellerOrders          Order[]           @relation("SellerOrders")
+  quoteRequests         QuoteRequest[]    @relation("BuyerQuotes")
+  sellerQuotes          QuoteRequest[]    @relation("SellerQuotes")
+  
+  // Logistics & Vehicles
+  vehicles              Vehicle[]
+  bids                  TransporterBid[]
+  
+  // Affiliate
+  affiliateLinks        AffiliateLink[]
+  commissions           CommissionTransaction[]
+  
+  // Financial
+  wallet                Wallet?
+  withdrawalRequests    WithdrawalRequest[]
+  
+  // Reviews & Disputes
+  reviewsGiven          Review[]          @relation("ReviewAuthor")
+  reviewsReceived       Review[]          @relation("TransporterReviews")
+  disputesInitiated     Dispute[]         @relation("AccuserDisputes")
+  disputesDefended      Dispute[]         @relation("AccusedDisputes")
+  disputeMessages       DisputeMessage[]
+  supportTickets        SupportTicket[]
+  ticketMessages        TicketMessage[]
+  chatMessages          ChatMessage[]     @relation("SentMessages")
+  
+  // Admin Backoffice
+  adminRoleBridge       UserAdminRoleBridge[]
+  auditLogs             AuditLog[]
+  blogPosts             BlogPost[]
+
+  @@index([role, status])
+}
+
+model Account {
+  id                  String   @id @default(uuid())
+  userId              String
+  providerName        String
+  providerAccountId   String
+  createdAt           DateTime @default(now())
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerName, providerAccountId])
+}
+
+model BusinessProfile {
+  id                         String             @id @default(uuid())
+  userId                     String             @unique
+  companyName                String?
+  nifNumber                  String?
+  ibanNumber                 String?
+  rcbeNumber                 String?
+  logoUrl                    String?
+  coverImageUrl              String?
+  verificationStatus         VerificationStatus @default(UNVERIFIED)
+  rejectionReason            String?
+  companyCertificateUrl      String?
+  commercialRegistrationUrl  String?
+  nifDocumentUrl             String?
+  idDocumentUrl              String?
+  addressProofUrl            String?
+  insuranceDocumentUrl       String?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+
+  user                       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id             String              @id @default(uuid())
+  title          String?             // e.g. "Main Warehouse", "Site A"
+  streetAddress  String
+  city           String
+  state          String
+  zipCode        String
+  country        String
+  latitude       Float?
+  longitude      Float?
+  createdAt      DateTime            @default(now())
+
+  users          UserAddressBridge[]
+  shippingOrders Order[]             @relation("ShippingAddress")
+  billingOrders  Order[]             @relation("BillingAddress")
+}
+
+// Bridge Table for User <-> Address (M:N)
+model UserAddressBridge {
+  userId      String
+  addressId   String
+  isDefault   Boolean  @default(false)
+  addressType String   // "BILLING", "SHIPPING", "WAREHOUSE"
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address     Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  @@id([userId, addressId, addressType])
+}
+
+// ==========================================
+// 3. ADMIN RBAC (BRIDGE PATTERN)
+// ==========================================
+
+model AdminRole {
+  id          String                 @id @default(uuid())
+  name        String                 @unique // e.g. "SUPER_ADMIN", "MODERATOR", "FINANCE"
+  description String?
+  createdAt   DateTime               @default(now())
+
+  users       UserAdminRoleBridge[]
+  permissions AdminRolePermissionBridge[]
+}
+
+model Permission {
+  id          String                 @id @default(uuid())
+  code        String                 @unique // e.g. "MANAGE_USERS", "APPROVE_PRODUCTS"
+  description String?
+
+  roles       AdminRolePermissionBridge[]
+}
+
+// Bridge Table for User <-> AdminRole
+model UserAdminRoleBridge {
+  userId      String
+  adminRoleId String
+  assignedAt  DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminRole   AdminRole @relation(fields: [adminRoleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, adminRoleId])
+}
+
+// Bridge Table for AdminRole <-> Permission
+model AdminRolePermissionBridge {
+  adminRoleId  String
+  permissionId String
+
+  adminRole    AdminRole  @relation(fields: [adminRoleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([adminRoleId, permissionId])
+}
+
+// ==========================================
+// 4. CATEGORY & PRODUCT CATALOG
+// ==========================================
+
+model Category {
+  id               String                 @id @default(uuid())
+  name             String
+  slug             String                 @unique
+  thumbnailUrl     String?
+  parentCategoryId String?
+  createdAt        DateTime               @default(now())
+
+  parentCategory   Category?              @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  subCategories    Category[]             @relation("CategoryHierarchy")
+  products         Product[]
+  promoCodes       PromoCodeCategoryBridge[]
+}
+
+model Product {
+  id                String                @id @default(uuid())
+  sellerId          String
+  categoryId        String
+  sku               String                @unique
+  title             String
+  slug              String                @unique
+  shortDescription  String?
+  longDescription   String?
+  basePrice         Float
+  b2bPrice          Float?
+  minOrderQuantity  Int                   @default(1)
+  minB2bQuantity    Int?
+  unitOfMeasure     String                // e.g. "per bag", "per ton"
+  weightKg          Float
+  marketplaceTier   MarketplaceTier       @default(RETAIL)
+  approvalStatus    ProductApprovalStatus @default(PENDING_REVIEW)
+  isSponsored       Boolean               @default(false)
+  isFeatured        Boolean               @default(false)
+  averageRating     Float                 @default(0.0)
+  reviewCount       Int                   @default(0)
+  warehouseLocation String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  seller            User                  @relation("SellerProducts", fields: [sellerId], references: [id])
+  category          Category              @relation(fields: [categoryId], references: [id])
+  
+  media             ProductMedia[]
+  pricingTiers      PricingTier[]
+  features          ProductFeature[]
+  inventory         Inventory?
+  orderLineItems    OrderLineItem[]
+  quoteItems        QuoteItem[]
+  promotions        ProductPromotion[]
+  promoCodes        PromoCodeProductBridge[]
+  reviews           Review[]
+
+  @@index([sellerId, approvalStatus])
+  @@index([categoryId, marketplaceTier])
+}
+
+model ProductMedia {
+  id        String   @id @default(uuid())
+  productId String
+  mediaUrl  String
+  isBanner  Boolean  @default(false)
+  sortOrder Int      @default(0)
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model PricingTier {
+  id          String   @id @default(uuid())
+  productId   String
+  minQuantity Int
+  maxQuantity Int?
+  tierPrice   Float
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductFeature {
+  id          String   @id @default(uuid())
+  productId   String
+  featureText String
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Inventory {
+  id                 String                 @id @default(uuid())
+  productId          String                 @unique
+  currentStock       Int                    @default(0)
+  lowStockThreshold  Int                    @default(10)
+  updatedAt          DateTime               @updatedAt
+
+  product            Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  transactions       InventoryTransaction[]
+}
+
+model InventoryTransaction {
+  id           String    @id @default(uuid())
+  inventoryId  String
+  quantityChange Int     // Positive for restock, negative for order
+  sourceType   String    // "MANUFACTURED", "PURCHASED_FROM_FACTORY", "ORDER_FULFILLMENT"
+  referenceId  String?   // Order ID or PO ID
+  createdAt    DateTime  @default(now())
+
+  inventory    Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 5. PROMOTIONS & PROMO CODES (BRIDGE PATTERN)
+// ==========================================
+
+model PromoCode {
+  id             String                    @id @default(uuid())
+  affiliateId    String?
+  code           String                    @unique
+  discountType   DiscountType
+  discountValue  Float
+  minOrderAmount Float                     @default(0.0)
+  usageLimit     Int?
+  usedCount      Int                       @default(0)
+  expiryDate     DateTime
+  isActive       Boolean                   @default(true)
+  createdAt      DateTime                  @default(now())
+
+  applicableProducts   PromoCodeProductBridge[]
+  applicableCategories PromoCodeCategoryBridge[]
+  orders               Order[]
+}
+
+model PromoCodeProductBridge {
+  promoCodeId String
+  productId   String
+
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([promoCodeId, productId])
+}
+
+model PromoCodeCategoryBridge {
+  promoCodeId String
+  categoryId  String
+
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([promoCodeId, categoryId])
+}
+
+model ProductPromotion {
+  id         String   @id @default(uuid())
+  productId  String
+  amountPaid Float
+  durationDays Int
+  startDate  DateTime
+  endDate    DateTime
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 6. QUOTING & CHAT ENGINE
+// ==========================================
+
+model QuoteRequest {
+  id              String       @id @default(uuid())
+  buyerId         String
+  sellerId        String
+  projectId       String?
+  status          String       // "PENDING", "ACCEPTED", "REJECTED"
+  proposedBudget  Float?
+  message         String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  buyer           User         @relation("BuyerQuotes", fields: [buyerId], references: [id])
+  seller          User         @relation("SellerQuotes", fields: [sellerId], references: [id])
+  project         Project?     @relation(fields: [projectId], references: [id])
+  
+  quoteItems      QuoteItem[]
+  chatMessages    ChatMessage[]
+  convertedOrders Order[]
+}
+
+model QuoteItem {
+  id             String       @id @default(uuid())
+  quoteRequestId String
+  productId      String
+  quantity       Int
+  offeredUnitPrice Float
+
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id])
+}
+
+model ChatMessage {
+  id             String        @id @default(uuid())
+  senderId       String
+  quoteRequestId String?
+  messageText    String
+  attachmentUrl  String?
+  createdAt      DateTime      @default(now())
+
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
+  quoteRequest   QuoteRequest? @relation(fields: [quoteRequestId], references: [id])
+}
+
+// ==========================================
+// 7. ORDERS, PROJECTS & INSTALLMENTS
+// ==========================================
+
+model Project {
+  id             String        @id @default(uuid())
+  userId         String
+  projectName    String
+  location       String
+  deliveredValue Float         @default(0.0)
+  duePayment     Float         @default(0.0)
+  createdAt      DateTime      @default(now())
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  quoteRequests  QuoteRequest[]
+}
+
+model Order {
+  id                   String               @id @default(uuid())
+  orderNumber          String               @unique
+  customerId           String
+  sellerId             String
+  projectId            String?
+  quoteRequestId       String?
+  promoCodeId          String?
+  affiliateId          String?
+  shippingAddressId    String
+  billingAddressId     String
+  orderStatus          OrderStatus          @default(NEW)
+  orderSource          OrderSource          @default(DIRECT_CART)
+  subTotal             Float
+  vatAmount            Float
+  shippingFee          Float
+  discountAmount       Float                @default(0.0)
+  grandTotal           Float
+  unloadingType        String?              // e.g. "Crane (12m)", "Forklift"
+  siteConditions       String?
+  cancellationReason   String?
+  otpVerificationCode  String?              // 4-digit OTP for Transporter delivery
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  customer             User                 @relation("CustomerOrders", fields: [customerId], references: [id])
+  seller               User                 @relation("SellerOrders", fields: [sellerId], references: [id])
+  project              Project?             @relation(fields: [projectId], references: [id])
+  quoteRequest         QuoteRequest?        @relation(fields: [quoteRequestId], references: [id])
+  promoCode            PromoCode?           @relation(fields: [promoCodeId], references: [id])
+  shippingAddress      Address              @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddress       Address              @relation("BillingAddress", fields: [billingAddressId], references: [id])
+
+  orderLineItems       OrderLineItem[]
+  statusHistory        OrderStatusHistory[]
+  paymentPlan          PaymentPlan?
+  invoice              Invoice?
+  shipment             Shipment?
+  returnRequests       ReturnRequest[]
+  disputes             Dispute[]
+  commission           CommissionTransaction?
+
+  @@index([customerId, orderStatus])
+  @@index([sellerId, orderStatus])
+}
+
+model OrderLineItem {
+  id               String                       @id @default(uuid())
+  orderId          String
+  productId        String
+  quantity         Int
+  unitPriceLocked  Float
+  totalPriceLocked Float
+  warehouseLocation String?
+
+  order            Order                        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product                      @relation(fields: [productId], references: [id])
+  
+  fulfillmentBridge InstallmentFulfillmentBridge[]
+  returnRequests   ReturnRequest[]
+}
+
+model OrderStatusHistory {
+  id          String      @id @default(uuid())
+  orderId     String
+  status      OrderStatus
+  note        String?
+  createdAt   DateTime    @default(now())
+
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model PaymentPlan {
+  id               String                @id @default(uuid())
+  orderId          String                @unique
+  totalAmount      Float
+  downPayment      Float
+  remainingBalance Float
+  termMonths       Int
+  createdAt        DateTime              @default(now())
+
+  order            Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  installments     InstallmentSchedule[]
+}
+
+model InstallmentSchedule {
+  id                String                       @id @default(uuid())
+  paymentPlanId     String
+  installmentNumber Int
+  amount            Float
+  dueDate           DateTime
+  status            InstallmentStatus            @default(PENDING)
+  paidAt            DateTime?
+
+  paymentPlan       PaymentPlan                  @relation(fields: [paymentPlanId], references: [id], onDelete: Cascade)
+  fulfillmentBridge InstallmentFulfillmentBridge[]
+}
+
+// Bridge Table: OrderLineItem <-> InstallmentSchedule
+model InstallmentFulfillmentBridge {
+  orderLineItemId       String
+  installmentScheduleId String
+  allocatedQuantity     Int
+
+  orderLineItem         OrderLineItem       @relation(fields: [orderLineItemId], references: [id], onDelete: Cascade)
+  installmentSchedule   InstallmentSchedule @relation(fields: [installmentScheduleId], references: [id], onDelete: Cascade)
+
+  @@id([orderLineItemId, installmentScheduleId])
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  invoiceNumber String   @unique
+  issueDate     DateTime @default(now())
+  pdfUrl        String?
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 8. LOGISTICS, VEHICLES & AUCTIONS
+// ==========================================
+
+model Vehicle {
+  id                 String      @id @default(uuid())
+  transporterId      String
+  vehicleType        VehicleType
+  licensePlate       String      @unique
+  weightCapacityKg   Float
+  volumeCapacityCubm Float
+
+  transporter        User        @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+  shipments          Shipment[]
+}
+
+model Shipment {
+  id                 String            @id @default(uuid())
+  orderId            String            @unique
+  vehicleId          String?
+  pickupAddressText  String
+  deliveryAddressText String
+  distanceKm         Float?
+  createdAt          DateTime          @default(now())
+
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  vehicle            Vehicle?          @relation(fields: [vehicleId], references: [id])
+  
+  auction            ShipmentAuction?
+  trackingEvents     TrackingEvent[]
+}
+
+model ShipmentAuction {
+  id                  String           @id @default(uuid())
+  shipmentId          String           @unique
+  requiredVehicleType VehicleType
+  auctionStatus       AuctionStatus    @default(PENDING_BIDS)
+  expiresAt           DateTime
+  createdAt           DateTime         @default(now())
+
+  shipment            Shipment         @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  bids                TransporterBid[]
+}
+
+// Bridge Table for ShipmentAuction <-> Transporter
+model TransporterBid {
+  id                    String          @id @default(uuid())
+  auctionId             String
+  transporterId         String
+  bidAmount             Float
+  estimatedDeliveryTime String
+  status                BidStatus       @default(SUBMITTED)
+  createdAt             DateTime        @default(now())
+
+  auction               ShipmentAuction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  transporter           User            @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+
+  @@unique([auctionId, transporterId])
+}
+
+model TrackingEvent {
+  id            String   @id @default(uuid())
+  shipmentId    String
+  statusText    String   // e.g., "Picked Up", "In Transit", "Delivered"
+  latitude      Float?
+  longitude     Float?
+  proofImageUrl String?
+  timestamp     DateTime @default(now())
+
+  shipment      Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 9. RETURNS, DISPUTES & REVIEWS
+// ==========================================
+
+model ReturnRequest {
+  id              String           @id @default(uuid())
+  orderId         String
+  orderLineItemId String
+  reason          String
+  description     String?
+  quantity        Int
+  refundAmount    Float
+  refundAccount   String?
+  status          ReturnStatus     @default(PENDING)
+  createdAt       DateTime         @default(now())
+
+  order           Order            @relation(fields: [orderId], references: [id])
+  orderLineItem   OrderLineItem    @relation(fields: [orderLineItemId], references: [id])
+  evidences       ReturnEvidence[]
+}
+
+model ReturnEvidence {
+  id              String        @id @default(uuid())
+  returnRequestId String
+  fileUrl         String
+
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+}
+
+model Dispute {
+  id              String            @id @default(uuid())
+  orderId         String
+  accuserUserId   String
+  accusedUserId   String
+  status          DisputeStatus     @default(OPEN)
+  issueReason     String
+  createdAt       DateTime          @default(now())
+
+  order           Order             @relation(fields: [orderId], references: [id])
+  accuser         User              @relation("AccuserDisputes", fields: [accuserUserId], references: [id])
+  accused         User              @relation("AccusedDisputes", fields: [accusedUserId], references: [id])
+  
+  messages        DisputeMessage[]
+  evidences       DisputeEvidence[]
+}
+
+model DisputeMessage {
+  id          String   @id @default(uuid())
+  disputeId   String
+  senderId    String
+  senderRole  UserRole
+  messageText String
+  createdAt   DateTime @default(now())
+
+  dispute     Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  sender      User     @relation(fields: [senderId], references: [id])
+}
+
+model DisputeEvidence {
+  id          String   @id @default(uuid())
+  disputeId   String
+  fileUrl     String
+
+  dispute     Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id                      String   @id @default(uuid())
+  authorId                String
+  productId               String?
+  transporterUserId       String?
+  rating                  Int      // 1-5
+  comment                 String?
+  createdAt               DateTime @default(now())
+
+  author                  User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  product                 Product? @relation(fields: [productId], references: [id])
+  reviewedTransporter     User?    @relation("TransporterReviews", fields: [transporterUserId], references: [id])
+}
+
+// ==========================================
+// 10. AFFILIATE & MARKETING
+// ==========================================
+
+model AffiliateLink {
+  id               String   @id @default(uuid())
+  affiliateId      String
+  campaignName     String?
+  targetUrl        String
+  trackingCode     String   @unique
+  totalClicks      Int      @default(0)
+  totalConversions Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  affiliate        User     @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+}
+
+model CommissionTransaction {
+  id               String           @id @default(uuid())
+  affiliateId      String
+  orderId          String           @unique
+  saleAmount       Float
+  commissionAmount Float
+  status           CommissionStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+
+  affiliate        User             @relation(fields: [affiliateId], references: [id])
+  order            Order            @relation(fields: [orderId], references: [id])
+}
+
+model AdCampaign {
+  id         String   @id @default(uuid())
+  title      String
+  imageUrl   String
+  targetUrl  String
+  adLocation String   // e.g. "HOMEPAGE_BANNER", "SIDEBAR"
+  startDate  DateTime
+  endDate    DateTime
+  isActive   Boolean  @default(true)
+}
+
+// ==========================================
+// 11. FINANCIAL LEDGER & WALLETS
+// ==========================================
+
+model Wallet {
+  id               String              @id @default(uuid())
+  userId           String              @unique
+  availableBalance Float               @default(0.0)
+  pendingBalance   Float               @default(0.0)
+  updatedAt        DateTime            @updatedAt
+
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     WalletTransaction[]
+}
+
+model WalletTransaction {
+  id          String   @id @default(uuid())
+  walletId    String
+  grossAmount Float
+  platformFee Float
+  netAmount   Float
+  description String?
+  createdAt   DateTime @default(now())
+
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+model WithdrawalRequest {
+  id            String       @id @default(uuid())
+  userId        String
+  amount        Float
+  accountNumber String
+  status        PayoutStatus @default(PENDING)
+  requestedAt   DateTime     @default(now())
+  processedAt   DateTime?
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FiscalDocument {
+  id           String   @id @default(uuid())
+  docNumber    String   @unique
+  documentType String   // "INVOICE", "TAX_SUMMARY", "RECEIPT"
+  fileUrl      String
+  createdAt    DateTime @default(now())
+}
+
+// ==========================================
+// 12. SUPPORT, CMS & SYSTEM SETTINGS
+// ==========================================
+
+model SupportTicket {
+  id          String          @id @default(uuid())
+  userId      String
+  subject     String
+  status      TicketStatus    @default(OPEN)
+  createdAt   DateTime        @default(now())
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    TicketMessage[]
+}
+
+model TicketMessage {
+  id          String        @id @default(uuid())
+  ticketId    String
+  senderId    String
+  messageText String
+  createdAt   DateTime      @default(now())
+
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender      User          @relation(fields: [senderId], references: [id])
+}
+
+model BlogPost {
+  id           String   @id @default(uuid())
+  authorId     String
+  title        String
+  slug         String   @unique
+  content      String
+  thumbnailUrl String?
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  author       User     @relation(fields: [authorId], references: [id])
+}
+
+model SystemSetting {
+  id                     String   @id @default(uuid())
+  key                    String   @unique
+  value                  String
+  updatedAt              DateTime @updatedAt
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  adminUserId  String
+  targetEntity String
+  targetId     String
+  actionTaken  String
+  timestamp    DateTime @default(now())
+
+  adminUser    User     @relation(fields: [adminUserId], references: [id])
+}
+
+model NotificationLog {
+  id           String      @id @default(uuid())
+  recipientId  String
+  channel      ChannelType
+  templateName String
+  status       String      // "SENT", "FAILED"
+  sentAt       DateTime    @default(now())
+}
