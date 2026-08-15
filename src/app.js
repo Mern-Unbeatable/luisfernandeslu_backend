@@ -9,6 +9,9 @@ import {
   subCategoryRoutes,
 } from './modules/catalog/routes/catalog.routes.js'
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
+import productRoutes from './modules/products/routes/product.routes.js'
+import promotionRoutes from './modules/promotions/routes/promotion.routes.js'
+import adminRoutes from './modules/admin/routes/admin.routes.js'
 import { UPLOAD_ROOT } from './modules/auth/upload.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
@@ -61,6 +64,9 @@ app.use('/api/auth', authRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/subcategories', subCategoryRoutes)
 app.use('/api/inventory', inventoryRoutes)
+app.use('/api/products', productRoutes)
+app.use('/api/promotions', promotionRoutes)
+app.use('/api/admin', adminRoutes)
 
 app.get('/', (req, res) => {
   return sendSuccess(

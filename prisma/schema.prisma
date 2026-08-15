@@ -53,6 +53,21 @@ enum ProductApprovalStatus {
   REJECTED
 }
 
+enum PromotionPaymentStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PromotionApprovalStatus {
+  AWAITING_PAYMENT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
 enum OrderStatus {
   NEW
   PENDING
@@ -376,6 +391,7 @@ model Product {
   slug              String                @unique
   shortDescription  String?
   longDescription   String?
+  specifications    String?
   factoryName       String?
   basePrice         Float
   b2bPrice          Float?
@@ -385,6 +401,7 @@ model Product {
   weightKg          Float                 @default(0)
   marketplaceTier   MarketplaceTier       @default(RETAIL)
   approvalStatus    ProductApprovalStatus @default(PENDING_REVIEW)
+  rejectionReason   String?
   isSponsored       Boolean               @default(false)
   isFeatured        Boolean               @default(false)
   averageRating     Float                 @default(0.0)
@@ -442,6 +459,8 @@ model Inventory {
   id                 String                 @id @default(uuid())
   productId          String                 @unique
   currentStock       Float                  @default(0)
+  /// Qty committed to marketplace while PENDING_REVIEW or APPROVED
+  listedQuantity     Float                  @default(0)
   lowStockThreshold  Float                  @default(10)
   updatedAt          DateTime               @updatedAt
 
@@ -503,16 +522,43 @@ model PromoCodeCategoryBridge {
 }
 
 model ProductPromotion {
-  id         String   @id @default(uuid())
-  productId  String
-  amountPaid Float
-  durationDays Int
-  startDate  DateTime
-  endDate    DateTime
-  isApproved Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id               String                   @id @default(uuid())
+  productId        String
+  planId           String?
+  amountPaid       Float
+  durationDays     Int
+  paymentStatus    PromotionPaymentStatus   @default(PENDING_PAYMENT)
+  paymentRef       String?
+  approvalStatus   PromotionApprovalStatus  @default(AWAITING_PAYMENT)
+  startDate        DateTime?
+  endDate          DateTime?
+  rejectionReason  String?
+  paidAt           DateTime?
+  reviewedAt       DateTime?
+  createdAt        DateTime                 @default(now())
 
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product          Product                  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan             PromotionPlan?           @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([productId, approvalStatus])
+  @@index([approvalStatus, paymentStatus])
+}
+
+model PromotionPlan {
+  id            String             @id @default(uuid())
+  label         String
+  durationDays  Int
+  price         Float
+  currency      String             @default("USD")
+  isActive      Boolean            @default(true)
+  sortOrder     Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  promotions    ProductPromotion[]
+
+  @@unique([durationDays])
+  @@index([isActive, sortOrder])
 }
 
 // ==========================================

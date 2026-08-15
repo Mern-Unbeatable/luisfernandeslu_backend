@@ -45,6 +45,18 @@
     {
       "key": "userRole",
       "value": ""
+    },
+    {
+      "key": "productSku",
+      "value": "CEM-I-001"
+    },
+    {
+      "key": "productTitle",
+      "value": "Portland Cement Quick Set"
+    },
+    {
+      "key": "productId",
+      "value": ""
     }
   ],
   "item": [
@@ -1374,7 +1386,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"warehouseLocation\": \"Main Warehouse\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"subCategoryId\": \"{{subCategoryId}}\",\n  \"productTypeId\": \"{{productTypeId}}\",\n  \"name\": \"Cimento Portland CEM I 42.5\",\n  \"sku\": \"CEM-I-001\",\n  \"quantity\": 50,\n  \"price\": 120.5,\n  \"factoryName\": \"Cimpor\",\n  \"unitOfMeasure\": \"tons\",\n  \"lowStockThreshold\": 10\n}"
+                      "raw": "{\n  \"warehouseLocation\": \"Main Warehouse\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"subCategoryId\": \"{{subCategoryId}}\",\n  \"productTypeId\": \"{{productTypeId}}\",\n  \"name\": \"Cimento Portland CEM I 42.5\",\n  \"sku\": \"CEM-I-001\",\n  \"quantity\": 50,\n  \"price\": 120.5,\n  \"factoryName\": \"Cimpor\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/inventory",
@@ -1395,11 +1407,9 @@
                         "type": "text/javascript",
                         "exec": [
                           "const json = pm.response.json();",
-                          "const product = json.product || (json.data && json.data.product);",
-                          "if (product && product.id) {",
-                          "  pm.collectionVariables.set(\"inventoryProductId\", product.id);",
-                          "  console.log(\"inventoryProductId saved:\", product.id);",
-                          "}"
+                          "if (json.product?.id) pm.collectionVariables.set(\"inventoryProductId\", json.product.id);",
+                          "if (json.id) pm.collectionVariables.set(\"inventoryProductId\", json.id);",
+                          "console.log(\"inventoryProductId saved:\", json.id || json.product?.id);"
                         ]
                       }
                     }
@@ -1465,6 +1475,706 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Products",
+              "item": [
+                {
+                  "name": "Lookup by SKU (autofill)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.product;",
+                          "if (!p) return;",
+                          "if (p.sku) pm.collectionVariables.set(\"productSku\", p.sku);",
+                          "if (p.title) pm.collectionVariables.set(\"productTitle\", p.title);",
+                          "if (p.category?.id) pm.collectionVariables.set(\"categoryId\", p.category.id);",
+                          "if (p.subCategory?.id) pm.collectionVariables.set(\"subCategoryId\", p.subCategory.id);",
+                          "if (p.productType?.id) pm.collectionVariables.set(\"productTypeId\", p.productType.id);",
+                          "if (p.id) pm.collectionVariables.set(\"productId\", p.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/lookup?sku={{productSku}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products",
+                        "lookup"
+                      ],
+                      "query": [
+                        {
+                          "key": "sku",
+                          "value": "{{productSku}}"
+                        }
+                      ]
+                    },
+                    "description": "Enter full SKU from inventory → autofills warehouse, category, subcategory, product type, title."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "AI Generate Description",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"title\": \"{{productTitle}}\",\n  \"field\": \"description\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/ai-generate",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products",
+                        "ai-generate"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "AI Generate Feature",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"title\": \"{{productTitle}}\",\n  \"field\": \"feature\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/ai-generate",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products",
+                        "ai-generate"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "AI Generate Additional Info",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"title\": \"{{productTitle}}\",\n  \"field\": \"additionalInfo\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/ai-generate",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products",
+                        "ai-generate"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "AI Generate Specifications",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"title\": \"{{productTitle}}\",\n  \"field\": \"specifications\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/ai-generate",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products",
+                        "ai-generate"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Add Product (multipart)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.product?.id) pm.collectionVariables.set(\"productId\", json.product.id);",
+                          "if (json.id) pm.collectionVariables.set(\"productId\", json.id);",
+                          "if (json.product?.title) pm.collectionVariables.set(\"productTitle\", json.product.title);",
+                          "if (json.title) pm.collectionVariables.set(\"productTitle\", json.title);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "sku",
+                          "value": "{{productSku}}",
+                          "type": "text"
+                        },
+                        {
+                          "key": "title",
+                          "value": "Portland Cement Quick Set",
+                          "type": "text"
+                        },
+                        {
+                          "key": "warehouseLocation",
+                          "value": "Main Warehouse",
+                          "type": "text"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "type": "text"
+                        },
+                        {
+                          "key": "subCategoryId",
+                          "value": "{{subCategoryId}}",
+                          "type": "text"
+                        },
+                        {
+                          "key": "productTypeId",
+                          "value": "{{productTypeId}}",
+                          "type": "text"
+                        },
+                        {
+                          "key": "quantity",
+                          "value": "375",
+                          "type": "text"
+                        },
+                        {
+                          "key": "basePrice",
+                          "value": "2530",
+                          "type": "text"
+                        },
+                        {
+                          "key": "b2bDiscount",
+                          "value": "20",
+                          "type": "text"
+                        },
+                        {
+                          "key": "minB2bQuantity",
+                          "value": "72",
+                          "type": "text"
+                        },
+                        {
+                          "key": "weightKg",
+                          "value": "550",
+                          "type": "text"
+                        },
+                        {
+                          "key": "description",
+                          "value": "High quality Portland cement for construction.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "feature",
+                          "value": "High Strength & Durability\nSmooth Workability",
+                          "type": "text"
+                        },
+                        {
+                          "key": "additionalInfo",
+                          "value": "Store in dry conditions.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "specifications",
+                          "value": "Type: CEM I\nWeight: 550kg",
+                          "type": "text"
+                        },
+                        {
+                          "key": "bulkEnabled",
+                          "value": "true",
+                          "type": "text"
+                        },
+                        {
+                          "key": "bulkOptions",
+                          "value": "[{\"minQuantity\":1,\"maxQuantity\":20,\"price\":18.22},{\"minQuantity\":30,\"maxQuantity\":40,\"price\":32.22}]",
+                          "type": "text"
+                        },
+                        {
+                          "key": "bannerImage",
+                          "type": "file",
+                          "src": [],
+                          "description": "Max 1 banner image"
+                        },
+                        {
+                          "key": "images",
+                          "type": "file",
+                          "src": [],
+                          "description": "Other product images"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products"
+                      ]
+                    },
+                    "description": "Add Product — only when this SKU is not already PENDING/APPROVED. If already listed, use Edit Product (PATCH /api/products/:id)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Edit Product (multipart)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.id) pm.collectionVariables.set(\"productId\", json.id);",
+                          "if (json.title) pm.collectionVariables.set(\"productTitle\", json.title);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "title",
+                          "value": "Portland Cement Quick Set",
+                          "type": "text"
+                        },
+                        {
+                          "key": "warehouseLocation",
+                          "value": "Main Warehouse",
+                          "type": "text"
+                        },
+                        {
+                          "key": "quantity",
+                          "value": "15",
+                          "type": "text",
+                          "description": "Total listed bags (≤ warehouse stock)"
+                        },
+                        {
+                          "key": "basePrice",
+                          "value": "2530",
+                          "type": "text"
+                        },
+                        {
+                          "key": "b2bDiscount",
+                          "value": "20",
+                          "type": "text"
+                        },
+                        {
+                          "key": "minB2bQuantity",
+                          "value": "72",
+                          "type": "text"
+                        },
+                        {
+                          "key": "weightKg",
+                          "value": "550",
+                          "type": "text"
+                        },
+                        {
+                          "key": "description",
+                          "value": "High quality Portland cement for construction.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "feature",
+                          "value": "High Strength & Durability\nSmooth Workability",
+                          "type": "text"
+                        },
+                        {
+                          "key": "additionalInfo",
+                          "value": "Store in dry conditions.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "specifications",
+                          "value": "Type: CEM I\nWeight: 550kg",
+                          "type": "text"
+                        },
+                        {
+                          "key": "bulkEnabled",
+                          "value": "true",
+                          "type": "text"
+                        },
+                        {
+                          "key": "bulkOptions",
+                          "value": "[{\"minQuantity\":1,\"maxQuantity\":20,\"price\":18.22},{\"minQuantity\":30,\"maxQuantity\":40,\"price\":32.22}]",
+                          "type": "text"
+                        },
+                        {
+                          "key": "bannerImage",
+                          "type": "file",
+                          "src": [],
+                          "description": "Optional — replaces banner if sent"
+                        },
+                        {
+                          "key": "images",
+                          "type": "file",
+                          "src": [],
+                          "description": "Optional — replaces gallery if sent"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/{{productId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "products",
+                        "{{productId}}"
+                      ]
+                    },
+                    "description": "Edit listed product. Locked (not accepted): sku, categoryId, subCategoryId, productTypeId. Editable: title, prices, quantity, text fields, images, bulk. Goes back to PENDING_REVIEW."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Cancel Listing",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/{{productId}}/cancel-listing",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "{{productId}}", "cancel-listing"]
+                    },
+                    "description": "Cancel PENDING listing → DRAFT and release listedQuantity. Then you can Add Product again for this SKU."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Products (dashboard)",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products?tab=all&page=1&limit=12",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products"],
+                      "query": [
+                        { "key": "tab", "value": "all", "description": "all|pending|rejected|regular|bulk|featured" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "12" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Resubmit Rejected Product",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "title", "value": "Portland Cement Quick Set", "type": "text" },
+                        { "key": "warehouseLocation", "value": "Main Warehouse", "type": "text" },
+                        { "key": "quantity", "value": "10", "type": "text" },
+                        { "key": "basePrice", "value": "2530", "type": "text" },
+                        { "key": "b2bDiscount", "value": "20", "type": "text" },
+                        { "key": "description", "value": "Updated after reject.", "type": "text" },
+                        { "key": "feature", "value": "High Strength", "type": "text" },
+                        { "key": "additionalInfo", "value": "Store dry.", "type": "text" },
+                        { "key": "specifications", "value": "Type: CEM I", "type": "text" },
+                        { "key": "bulkEnabled", "value": "false", "type": "text" },
+                        { "key": "bannerImage", "type": "file", "src": [], "description": "Optional" },
+                        { "key": "images", "type": "file", "src": [], "description": "Optional" }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/{{productId}}/resubmit",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "{{productId}}", "resubmit"]
+                    },
+                    "description": "Resubmit REJECTED product. Same editable fields as Edit. Locked: sku, category, sub, type. → PENDING_REVIEW"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Promotion Plans",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/promotions/plans",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "promotions", "plans"]
+                    },
+                    "description": "Sponsored Product modal prices ($40/7d, $60/15d, $100/30d)"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Promote Product (select plan)",
+                  "event": [{
+                    "listen": "test",
+                    "script": {
+                      "type": "text/javascript",
+                      "exec": [
+                        "const json = pm.response.json();",
+                        "if (json.promotion?.id) pm.collectionVariables.set(\"promotionId\", json.promotion.id);"
+                      ]
+                    }
+                  }],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"planId\": \"{{promotionPlanId}}\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/{{productId}}/promote",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "{{productId}}", "promote"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Pay Promotion",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"paymentRef\": \"DEMO-PAY-001\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/{{productId}}/promotions/{{promotionId}}/pay",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "{{productId}}", "promotions", "{{promotionId}}", "pay"]
+                    },
+                    "description": "Confirm payment → promotion goes to admin PENDING_REVIEW"
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "List Pending Products",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/products?status=PENDING_REVIEW",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "products"],
+                  "query": [{ "key": "status", "value": "PENDING_REVIEW" }]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Approve Product",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/products/{{productId}}/approve",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "products", "{{productId}}", "approve"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reject Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Images are unclear. Please upload better photos.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/products/{{productId}}/reject",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "products", "{{productId}}", "reject"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List / Upsert Promotion Plans",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/promotion-plans",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "promotion-plans"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Pending Promotions",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/promotions?status=PENDING_REVIEW",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "promotions"],
+                  "query": [{ "key": "status", "value": "PENDING_REVIEW" }]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Approve Promotion",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}/approve",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "promotions", "{{promotionId}}", "approve"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reject Promotion",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Not eligible for sponsorship\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}/reject",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "promotions", "{{promotionId}}", "reject"]
+                }
+              },
+              "response": []
             }
           ]
         }

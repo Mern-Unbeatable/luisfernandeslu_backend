@@ -1,5 +1,7 @@
 import prisma from '../../../../lib/prisma.js'
 import { AppError } from '../../../utils/AppError.js'
+import { getListingQuota } from '../../products/services/listing-quota.js'
+import { getStockBreakdown } from '../../products/services/stock-listing.js'
 
 function slugify(input) {
   return String(input)
@@ -64,7 +66,11 @@ async function resolveCategoryPath(productTypeId) {
 }
 
 function mapInventoryProduct(product) {
-  const stock = product.inventory?.currentStock ?? 0
+  const stockInfo = getStockBreakdown(
+    product.inventory,
+    product.approvalStatus,
+  )
+  const stock = stockInfo.warehouseStock
   const threshold = product.inventory?.lowStockThreshold ?? 10
   let stockStatus = 'IN_STOCK'
   if (stock <= 0) stockStatus = 'OUT_OF_STOCK'
@@ -79,6 +85,9 @@ function mapInventoryProduct(product) {
     sku: product.sku,
     price: product.basePrice,
     quantity: stock,
+    warehouseStock: stockInfo.warehouseStock,
+    listedQuantity: stockInfo.listedQuantity,
+    remainingListable: stockInfo.remainingListable,
     unitOfMeasure: product.unitOfMeasure,
     factoryName: product.factoryName,
     warehouseLocation: product.warehouseLocation,
@@ -163,14 +172,15 @@ export class InventoryService {
           slug,
           factoryName: body.factoryName.trim(),
           basePrice: body.price,
-          unitOfMeasure: body.unitOfMeasure || 'tons',
+          unitOfMeasure: 'kg',
           weightKg: 0,
           warehouseLocation: body.warehouseLocation.trim(),
-          approvalStatus: 'PENDING_REVIEW',
+          approvalStatus: 'APPROVED',
           inventory: {
             create: {
               currentStock: body.quantity,
-              lowStockThreshold: body.lowStockThreshold ?? 10,
+              listedQuantity: 0,
+              lowStockThreshold: 10,
               transactions: {
                 create: {
                   quantityChange: body.quantity,
@@ -180,8 +190,11 @@ export class InventoryService {
             },
           },
         },
-        include: {
-          inventory: true,
+        select: {
+          id: true,
+          sku: true,
+          title: true,
+          approvalStatus: true,
         },
       })
     } catch (err) {
@@ -196,12 +209,13 @@ export class InventoryService {
       throw err
     }
 
-    product._categoryPath = path
-
     return {
       status: 201,
       body: {
-        product: mapInventoryProduct(product),
+        id: product.id,
+        sku: product.sku,
+        title: product.title,
+        approvalStatus: product.approvalStatus,
         message: 'Inventory product created',
       },
     }
@@ -301,6 +315,8 @@ export class InventoryService {
       else if (stock <= threshold) lowStockItems += 1
     }
 
+    const listingQuota = await getListingQuota(auth.id)
+
     return {
       status: 200,
       body: {
@@ -309,6 +325,7 @@ export class InventoryService {
           totalStockValue: Number(totalStockValue.toFixed(2)),
           lowStockItems,
           outOfStock,
+          listingQuota,
         },
         message: 'Inventory stats fetched',
       },
@@ -320,56 +337,37 @@ export class InventoryService {
 
     const product = await prisma.product.findFirst({
       where: { id: inventoryProductId, sellerId: auth.id },
-      include: { inventory: true },
+      select: {
+        id: true,
+        sku: true,
+        inventory: { select: { id: true, currentStock: true } },
+      },
     })
 
     if (!product?.inventory) {
       throw httpError('Inventory product not found', 404, 'NotFound')
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const inv = await tx.inventory.update({
-        where: { id: product.inventory.id },
-        data: {
-          currentStock: { increment: body.quantity },
-        },
-      })
-
-      await tx.inventoryTransaction.create({
-        data: {
-          inventoryId: inv.id,
-          quantityChange: body.quantity,
-          sourceType: 'RESTOCK',
-        },
-      })
-
-      return tx.product.findUnique({
-        where: { id: product.id },
-        include: {
-          inventory: true,
-          category: {
-            include: {
-              parentCategory: {
-                include: { parentCategory: true },
-              },
-            },
+    const inv = await prisma.inventory.update({
+      where: { id: product.inventory.id },
+      data: {
+        currentStock: { increment: body.quantity },
+        transactions: {
+          create: {
+            quantityChange: body.quantity,
+            sourceType: 'RESTOCK',
           },
         },
-      })
+      },
+      select: { currentStock: true },
     })
-
-    const productType = updated.category
-    const subCategory = productType?.parentCategory
-    const category = subCategory?.parentCategory
-    updated._categoryPath =
-      category && subCategory && productType
-        ? { category, subCategory, productType }
-        : null
 
     return {
       status: 200,
       body: {
-        product: mapInventoryProduct(updated),
+        id: product.id,
+        sku: product.sku,
+        quantity: inv.currentStock,
         message: 'Stock updated',
       },
     }
@@ -380,7 +378,7 @@ export class InventoryService {
 
     const product = await prisma.product.findFirst({
       where: { id: inventoryProductId, sellerId: auth.id },
-      select: { id: true },
+      select: { id: true, sku: true },
     })
 
     if (!product) {
@@ -392,6 +390,8 @@ export class InventoryService {
     return {
       status: 200,
       body: {
+        id: product.id,
+        sku: product.sku,
         message: 'Inventory product deleted',
       },
     }

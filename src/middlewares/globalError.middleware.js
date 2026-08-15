@@ -19,6 +19,7 @@ export function globalErrorHandler(err, req, res, next) {
   if (err instanceof AppError) {
     return sendError(res, err.statusCode, err.message, {
       error: err.code || 'Error',
+      ...(err.details != null ? { details: err.details } : {}),
     })
   }
 
