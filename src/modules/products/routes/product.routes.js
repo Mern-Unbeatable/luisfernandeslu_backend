@@ -16,7 +16,7 @@ import {
   promoteBodySchema,
   productPromotionParamsSchema,
 } from '../../promotions/validations/promotion.validation.js'
-import { PRODUCT_FILE_FIELDS, productUpload } from '../upload.js'
+import { PRODUCT_FILE_FIELDS, productUpload, productCsvUpload } from '../upload.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
   requireAccessToken,
@@ -55,6 +55,27 @@ class ProductRoutes {
       productUpload.fields(PRODUCT_FILE_FIELDS),
       validate(createProductBodySchema, 'body'),
       (req, res, next) => productController.create(req, res, next),
+    )
+
+    // CSV bulk upload
+    this.router.get('/csv-template', (req, res, next) =>
+      productController.downloadCsvTemplate(req, res, next),
+    )
+
+    this.router.get('/csv-category-guide', (req, res, next) =>
+      productController.downloadCategoryGuidePdf(req, res, next),
+    )
+
+    this.router.post(
+      '/csv-upload',
+      productCsvUpload.single('file'),
+      (req, res, next) => productController.importCsv(req, res, next),
+    )
+
+    this.router.get(
+      '/:id',
+      validate(productIdParamSchema, 'params'),
+      (req, res, next) => productController.getById(req, res, next),
     )
 
     this.router.patch(

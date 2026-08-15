@@ -2,13 +2,21 @@ import prisma from '../../../../lib/prisma.js'
 import { AppError } from '../../../utils/AppError.js'
 import { generateProductCopy } from '../../../lib/ai.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
-import { productFilePublicUrl } from '../upload.js'
+import { productFilePublicUrl, downloadRemoteProductImage } from '../upload.js'
 import { assertCanSubmitListing, getListingQuota } from './listing-quota.js'
 import {
   getStockBreakdown,
   assertListedWithinWarehouse,
   isMarketplaceListed,
 } from './stock-listing.js'
+import {
+  parseCsv,
+  buildProductCsvTemplate,
+  decodeCsvBuffer,
+  PRODUCT_CSV_HEADERS,
+} from './product-csv.js'
+import { buildCategoryGuidePdf } from './catalog-guide-pdf.js'
+import { createProductBodySchema } from '../validations/product.validation.js'
 
 function httpError(message, status = 400, code = 'Error') {
   return new AppError(message, status, code)
@@ -184,22 +192,63 @@ function mapProduct(product, baseUrl, categoryPath = null) {
         )
       : 0
 
+  const warehouseStock = stockInfo.warehouseStock
+  const threshold = product.inventory?.lowStockThreshold ?? 10
+  let availability = 'IN_STOCK'
+  let availabilityLabel = 'In Stock'
+  if (warehouseStock <= 0) {
+    availability = 'OUT_OF_STOCK'
+    availabilityLabel = 'Out of Stock'
+  } else if (warehouseStock <= threshold) {
+    availability = 'LOW_STOCK'
+    availabilityLabel = 'Low Stock'
+  }
+
+  const bannerImage =
+    (product.media || [])
+      .filter((m) => m.isBanner)
+      .map((m) => ({
+        id: m.id,
+        url: absolutizeUrl(m.mediaUrl, baseUrl),
+      }))[0] || null
+
+  const images = (product.media || [])
+    .filter((m) => !m.isBanner)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((m) => ({
+      id: m.id,
+      url: absolutizeUrl(m.mediaUrl, baseUrl),
+    }))
+
+  // Main gallery: banner first, then other images (detail page)
+  const gallery = [
+    ...(bannerImage ? [bannerImage] : []),
+    ...images,
+  ]
+
   return {
     id: product.id,
     sku: product.sku,
     title: product.title,
     warehouseLocation: product.warehouseLocation,
     factoryName: product.factoryName,
-    quantity: stockInfo.warehouseStock,
-    warehouseStock: stockInfo.warehouseStock,
+    quantity: warehouseStock,
+    warehouseStock,
     listedQuantity: stockInfo.listedQuantity,
     remainingListable: stockInfo.remainingListable,
+    availability,
+    availabilityLabel,
+    averageRating: Number(product.averageRating ?? 0),
+    reviewCount: Number(product.reviewCount ?? 0),
     basePrice: product.basePrice,
     b2bPrice: product.b2bPrice,
     b2bDiscount,
     minB2bQuantity: product.minB2bQuantity,
     weightKg: product.weightKg,
-    unitOfMeasure: product.unitOfMeasure,
+    unitOfMeasure: product.unitOfMeasure || 'bag',
+    priceLabel: `$${Number(product.basePrice).toFixed(2)} Per ${product.unitOfMeasure || 'bag'}${
+      product.weightKg ? ` ( ${product.weightKg}kg )` : ''
+    }`,
     description: product.longDescription,
     additionalInfo: product.shortDescription,
     specifications: product.specifications,
@@ -210,21 +259,14 @@ function mapProduct(product, baseUrl, categoryPath = null) {
       minQuantity: t.minQuantity,
       maxQuantity: t.maxQuantity,
       price: t.tierPrice,
+      label:
+        t.maxQuantity != null
+          ? `${t.minQuantity} - ${t.maxQuantity}`
+          : `${t.minQuantity}+`,
     })),
-    bannerImage:
-      (product.media || [])
-        .filter((m) => m.isBanner)
-        .map((m) => ({
-          id: m.id,
-          url: absolutizeUrl(m.mediaUrl, baseUrl),
-        }))[0] || null,
-    images: (product.media || [])
-      .filter((m) => !m.isBanner)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((m) => ({
-        id: m.id,
-        url: absolutizeUrl(m.mediaUrl, baseUrl),
-      })),
+    bannerImage,
+    images,
+    gallery,
     category: mapCategoryNode(path?.category),
     subCategory: mapCategoryNode(path?.subCategory),
     productType: mapCategoryNode(path?.productType || product.category),
@@ -235,6 +277,15 @@ function mapProduct(product, baseUrl, categoryPath = null) {
     isFeatured: Boolean(product.isFeatured),
     cardStatus: resolveCardStatus(product),
     promotionExpiry: resolvePromotionExpiry(product),
+    reviews: (product.reviews || []).map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      author: r.author
+        ? { id: r.author.id, name: r.author.name }
+        : null,
+    })),
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   }
@@ -282,6 +333,142 @@ const productInclude = {
   },
 }
 
+function mapCsvRowToBody(row, pathIds) {
+  const feature = String(row.feature || '')
+    .split(/[;\n|]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join('\n')
+
+  let bulkOptions = row.bulkOptions || ''
+  if (bulkOptions && typeof bulkOptions === 'string') {
+    try {
+      bulkOptions = JSON.parse(bulkOptions)
+    } catch {
+      // leave string — zod will fail with clear error
+    }
+  }
+
+  return {
+    sku: row.sku,
+    title: row.title,
+    warehouseLocation: row.warehouseLocation,
+    categoryId: pathIds.categoryId,
+    subCategoryId: pathIds.subCategoryId,
+    productTypeId: pathIds.productTypeId,
+    quantity: row.quantity,
+    basePrice: row.basePrice,
+    b2bDiscount: row.b2bDiscount === '' ? 0 : row.b2bDiscount,
+    minB2bQuantity:
+      row.minB2bQuantity === '' || row.minB2bQuantity == null
+        ? null
+        : row.minB2bQuantity,
+    weightKg: row.weightKg === '' ? 0 : row.weightKg,
+    factoryName: row.factoryName || undefined,
+    description: row.description || '',
+    feature,
+    additionalInfo: row.additionalInfo || '',
+    specifications: row.specifications || '',
+    bulkEnabled: row.bulkEnabled || false,
+    bulkOptions: bulkOptions || [],
+  }
+}
+
+/**
+ * Resolve catalog path from human-readable names (case-insensitive).
+ * category → root, subCategory → child, productType → leaf.
+ */
+async function resolveCategoryPathByNames({ category, subCategory, productType }) {
+  const categoryName = String(category || '').trim().normalize('NFC')
+  const subName = String(subCategory || '').trim().normalize('NFC')
+  const typeName = String(productType || '').trim().normalize('NFC')
+
+  if (!categoryName || !subName || !typeName) {
+    throw httpError(
+      'category, subCategory and productType names are required',
+      400,
+      'CategoryNamesRequired',
+    )
+  }
+
+  const root = await prisma.category.findFirst({
+    where: {
+      parentCategoryId: null,
+      name: { equals: categoryName, mode: 'insensitive' },
+    },
+    select: { id: true, name: true },
+  })
+  if (!root) {
+    throw httpError(
+      `Category not found: "${categoryName}"`,
+      400,
+      'CategoryNotFound',
+    )
+  }
+
+  const sub = await prisma.category.findFirst({
+    where: {
+      parentCategoryId: root.id,
+      name: { equals: subName, mode: 'insensitive' },
+    },
+    select: { id: true, name: true },
+  })
+  if (!sub) {
+    throw httpError(
+      `Subcategory not found under "${root.name}": "${subName}"`,
+      400,
+      'SubCategoryNotFound',
+    )
+  }
+
+  const leaf = await prisma.category.findFirst({
+    where: {
+      parentCategoryId: sub.id,
+      name: { equals: typeName, mode: 'insensitive' },
+    },
+    select: { id: true, name: true },
+  })
+  if (!leaf) {
+    throw httpError(
+      `Product type not found under "${sub.name}": "${typeName}"`,
+      400,
+      'ProductTypeNotFound',
+    )
+  }
+
+  return {
+    categoryId: root.id,
+    subCategoryId: sub.id,
+    productTypeId: leaf.id,
+  }
+}
+
+async function buildCsvFilesFromUrls(sellerId, row) {
+  const files = { bannerImage: [], images: [] }
+  const bannerUrl = String(row.bannerImageUrl || '').trim()
+  if (bannerUrl) {
+    files.bannerImage.push(
+      await downloadRemoteProductImage(sellerId, bannerUrl, 'banner'),
+    )
+  }
+
+  const gallery = String(row.imageUrls || '')
+    .split(/[;\n|]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 10)
+
+  let i = 0
+  for (const url of gallery) {
+    i += 1
+    files.images.push(
+      await downloadRemoteProductImage(sellerId, url, `gallery-${i}`),
+    )
+  }
+
+  return files
+}
+
 export class ProductService {
   assertSupplier(auth) {
     if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -319,6 +506,39 @@ export class ProductService {
         message: alreadyListed
           ? 'This SKU is already listed. Use Edit Product to change it.'
           : 'SKU matched — fields can be autofilled',
+      },
+    }
+  }
+
+  /**
+   * Product detail page — full info by id (title, rating, stock, bulk, gallery, tabs).
+   */
+  async getById(auth, productId, baseUrl) {
+    this.assertSupplier(auth)
+
+    const product = await prisma.product.findFirst({
+      where: { id: productId, sellerId: auth.id },
+      include: {
+        ...productInclude,
+        reviews: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          include: {
+            author: { select: { id: true, name: true } },
+          },
+        },
+      },
+    })
+
+    if (!product) {
+      throw httpError('Product not found', 404, 'NotFound')
+    }
+
+    return {
+      status: 200,
+      body: {
+        product: mapProduct(product, baseUrl),
+        message: 'Product details fetched',
       },
     }
   }
@@ -749,7 +969,7 @@ export class ProductService {
     }
   }
 
-  /** Supplier product management list (tabs + pagination). */
+  /** Supplier product management list (tabs + pagination + category filter). */
   async list(auth, query, baseUrl) {
     this.assertSupplier(auth)
 
@@ -759,54 +979,89 @@ export class ProductService {
     const tab = String(query.tab || 'all').toLowerCase()
     const search = query.search?.trim() || ''
 
-    const where = {
-      sellerId: auth.id,
-      inventory: { isNot: null },
-      // Product Management: exclude pure inventory (APPROVED + not listed yet)
-      OR: [
-        { approvalStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'DRAFT'] } },
-        {
-          approvalStatus: 'APPROVED',
-          inventory: { listedQuantity: { gt: 0 } },
+    let categoryId = query.categoryId || null
+    let categoryName = query.category?.trim() || null
+
+    if (!categoryId && categoryName) {
+      const cat = await prisma.category.findFirst({
+        where: {
+          name: { equals: categoryName, mode: 'insensitive' },
         },
-      ],
+        select: { id: true, name: true },
+      })
+      if (!cat) {
+        throw httpError(
+          `Category not found: "${categoryName}"`,
+          404,
+          'CategoryNotFound',
+        )
+      }
+      categoryId = cat.id
+      categoryName = cat.name
+    } else if (categoryId) {
+      const cat = await prisma.category.findUnique({
+        where: { id: categoryId },
+        select: { id: true, name: true },
+      })
+      if (!cat) {
+        throw httpError('Category not found', 404, 'CategoryNotFound')
+      }
+      categoryName = cat.name
     }
-    const and = []
 
+    const and = [
+      { sellerId: auth.id },
+      { inventory: { isNot: null } },
+    ]
+
+    // Tab filters
     if (tab === 'pending') {
-      delete where.OR
-      where.approvalStatus = 'PENDING_REVIEW'
+      and.push({ approvalStatus: 'PENDING_REVIEW' })
     } else if (tab === 'rejected') {
-      delete where.OR
-      where.approvalStatus = 'REJECTED'
+      and.push({ approvalStatus: 'REJECTED' })
     } else if (tab === 'regular') {
-      delete where.OR
-      where.approvalStatus = 'APPROVED'
-      where.marketplaceTier = 'RETAIL'
-      where.isFeatured = false
-      where.isSponsored = false
-      where.inventory = { listedQuantity: { gt: 0 } }
+      and.push({
+        approvalStatus: 'APPROVED',
+        marketplaceTier: 'RETAIL',
+        isFeatured: false,
+        isSponsored: false,
+        inventory: { listedQuantity: { gt: 0 } },
+      })
     } else if (tab === 'bulk') {
-      delete where.OR
-      where.approvalStatus = 'APPROVED'
-      where.marketplaceTier = 'WHOLESALE'
-      where.isFeatured = false
-      where.isSponsored = false
-      where.inventory = { listedQuantity: { gt: 0 } }
+      and.push({
+        approvalStatus: 'APPROVED',
+        marketplaceTier: 'WHOLESALE',
+        isFeatured: false,
+        isSponsored: false,
+        inventory: { listedQuantity: { gt: 0 } },
+      })
     } else if (tab === 'featured') {
-      delete where.OR
-      where.approvalStatus = 'APPROVED'
-      and.push({ OR: [{ isFeatured: true }, { isSponsored: true }] })
-    }
-
-    if (query.categoryId) {
+      and.push({
+        approvalStatus: 'APPROVED',
+        OR: [{ isFeatured: true }, { isSponsored: true }],
+      })
+    } else {
+      // all — listed pipeline only (exclude pure inventory stock)
       and.push({
         OR: [
-          { categoryId: query.categoryId },
-          { category: { parentCategoryId: query.categoryId } },
+          { approvalStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'DRAFT'] } },
+          {
+            approvalStatus: 'APPROVED',
+            inventory: { listedQuantity: { gt: 0 } },
+          },
+        ],
+      })
+    }
+
+    // Category filter (root / subcategory / product-type id all work)
+    if (categoryId) {
+      and.push({
+        OR: [
+          { categoryId },
+          { category: { parentCategoryId: categoryId } },
           {
             category: {
-              parentCategory: { parentCategoryId: query.categoryId },
+              parentCategory: { parentCategoryId: categoryId },
             },
           },
         ],
@@ -822,7 +1077,7 @@ export class ProductService {
       })
     }
 
-    if (and.length) where.AND = and
+    const where = { AND: and }
 
     const [total, rows, counts] = await Promise.all([
       prisma.product.count({ where }),
@@ -833,7 +1088,7 @@ export class ProductService {
         skip,
         take: limit,
       }),
-      this.getTabCounts(auth.id),
+      this.getTabCounts(auth.id, categoryId),
     ])
 
     return {
@@ -847,17 +1102,43 @@ export class ProductService {
           totalPages: Math.max(1, Math.ceil(total / limit)),
         },
         counts,
+        filters: {
+          tab,
+          categoryId: categoryId || null,
+          category: categoryName || null,
+          search: search || null,
+        },
         message: 'Products fetched',
       },
     }
   }
 
-  async getTabCounts(sellerId) {
-    const listedApproved = {
-      sellerId,
+  async getTabCounts(sellerId, categoryId = null) {
+    const categoryFilter = categoryId
+      ? {
+          OR: [
+            { categoryId },
+            { category: { parentCategoryId: categoryId } },
+            {
+              category: {
+                parentCategory: { parentCategoryId: categoryId },
+              },
+            },
+          ],
+        }
+      : null
+
+    const withCategory = (extra) => {
+      const parts = [{ sellerId }, ...(categoryFilter ? [categoryFilter] : [])]
+      if (extra) parts.push(extra)
+      return { AND: parts }
+    }
+
+    const listedApprovedExtra = {
       approvalStatus: 'APPROVED',
       inventory: { listedQuantity: { gt: 0 } },
     }
+
     const [
       all,
       pending,
@@ -867,8 +1148,7 @@ export class ProductService {
       featured,
     ] = await Promise.all([
       prisma.product.count({
-        where: {
-          sellerId,
+        where: withCategory({
           inventory: { isNot: null },
           OR: [
             { approvalStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'DRAFT'] } },
@@ -877,36 +1157,35 @@ export class ProductService {
               inventory: { listedQuantity: { gt: 0 } },
             },
           ],
-        },
+        }),
       }),
       prisma.product.count({
-        where: { sellerId, approvalStatus: 'PENDING_REVIEW' },
+        where: withCategory({ approvalStatus: 'PENDING_REVIEW' }),
       }),
       prisma.product.count({
-        where: { sellerId, approvalStatus: 'REJECTED' },
+        where: withCategory({ approvalStatus: 'REJECTED' }),
       }),
       prisma.product.count({
-        where: {
-          ...listedApproved,
+        where: withCategory({
+          ...listedApprovedExtra,
           marketplaceTier: 'RETAIL',
           isFeatured: false,
           isSponsored: false,
-        },
+        }),
       }),
       prisma.product.count({
-        where: {
-          ...listedApproved,
+        where: withCategory({
+          ...listedApprovedExtra,
           marketplaceTier: 'WHOLESALE',
           isFeatured: false,
           isSponsored: false,
-        },
+        }),
       }),
       prisma.product.count({
-        where: {
-          sellerId,
+        where: withCategory({
           approvalStatus: 'APPROVED',
           OR: [{ isFeatured: true }, { isSponsored: true }],
-        },
+        }),
       }),
     ])
 
@@ -1104,6 +1383,143 @@ export class ProductService {
           totalPages: Math.max(1, Math.ceil(total / limit)),
         },
         message: 'Admin products fetched',
+      },
+    }
+  }
+
+  /** Demo CSV template (headers + sample rows). */
+  getCsvTemplate() {
+    return {
+      filename: 'product-upload-template.csv',
+      contentType: 'text/csv; charset=utf-8',
+      body: '\uFEFF' + buildProductCsvTemplate(),
+      headers: PRODUCT_CSV_HEADERS,
+    }
+  }
+
+  /** PDF guide with exact category / subcategory / product type names for CSV. */
+  async getCategoryGuidePdf() {
+    const body = await buildCategoryGuidePdf()
+    return {
+      filename: 'construpreco-csv-category-guide.pdf',
+      contentType: 'application/pdf',
+      body,
+    }
+  }
+
+  /**
+   * Bulk Add Product from CSV.
+   * Each row follows the same rules as POST /api/products (quota, stock, SKU).
+   */
+  async importCsv(auth, fileBuffer) {
+    this.assertSupplier(auth)
+
+    if (!fileBuffer?.length) {
+      throw httpError('CSV file is required', 400, 'CsvRequired')
+    }
+
+    const text = decodeCsvBuffer(fileBuffer)
+    const { headers, records } = parseCsv(text)
+
+    if (!headers.length) {
+      throw httpError('CSV is empty or invalid', 400, 'InvalidCsv')
+    }
+
+    const missing = PRODUCT_CSV_HEADERS.filter(
+      (h) =>
+        [
+          'sku',
+          'title',
+          'warehouseLocation',
+          'category',
+          'subCategory',
+          'productType',
+          'quantity',
+          'basePrice',
+        ].includes(h) && !headers.includes(h),
+    )
+    if (missing.length) {
+      throw httpError(
+        `CSV is missing required columns: ${missing.join(', ')}`,
+        400,
+        'MissingColumns',
+        { missing, expectedHeaders: PRODUCT_CSV_HEADERS },
+      )
+    }
+
+    if (!records.length) {
+      throw httpError('CSV has headers but no data rows', 400, 'EmptyCsv')
+    }
+
+    if (records.length > 100) {
+      throw httpError('CSV may contain at most 100 rows per upload', 400, 'TooManyRows')
+    }
+
+    const created = []
+    const failed = []
+
+    for (const row of records) {
+      const sku = row.sku || null
+      try {
+        const pathIds = await resolveCategoryPathByNames({
+          category: row.category,
+          subCategory: row.subCategory,
+          productType: row.productType,
+        })
+        const raw = mapCsvRowToBody(row, pathIds)
+        const parsed = createProductBodySchema.safeParse(raw)
+        if (!parsed.success) {
+          const issues = parsed.error.issues?.map((i) => i.message) || [
+            'Invalid row',
+          ]
+          failed.push({
+            row: row.__row,
+            sku,
+            message: issues.join('; '),
+            code: 'ValidationError',
+          })
+          continue
+        }
+
+        const files = await buildCsvFilesFromUrls(auth.id, row)
+        const result = await this.create(auth, parsed.data, files)
+        created.push({
+          row: row.__row,
+          id: result.body.id,
+          sku: result.body.sku,
+          title: result.body.title,
+          approvalStatus: result.body.approvalStatus,
+          category: row.category,
+          subCategory: row.subCategory,
+          productType: row.productType,
+          hasBanner: Boolean(files.bannerImage?.length),
+          imageCount: files.images?.length || 0,
+        })
+      } catch (err) {
+        failed.push({
+          row: row.__row,
+          sku,
+          message: err.message || 'Failed to import row',
+          code: err.code || 'Error',
+        })
+      }
+    }
+
+    return {
+      status: 200,
+      body: {
+        summary: {
+          total: records.length,
+          created: created.length,
+          failed: failed.length,
+        },
+        created,
+        failed,
+        expectedHeaders: PRODUCT_CSV_HEADERS,
+        message:
+          failed.length === 0
+            ? `Imported ${created.length} product(s) successfully`
+            : `Imported ${created.length} product(s), ${failed.length} failed`,
       },
     }
   }

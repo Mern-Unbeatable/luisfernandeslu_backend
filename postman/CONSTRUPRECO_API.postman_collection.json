@@ -1952,15 +1952,86 @@
                     "method": "GET",
                     "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
                     "url": {
-                      "raw": "{{baseUrl}}/api/products?tab=all&page=1&limit=12",
+                      "raw": "{{baseUrl}}/api/products?tab=all&page=1&limit=12&categoryId={{categoryId}}",
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "products"],
                       "query": [
                         { "key": "tab", "value": "all", "description": "all|pending|rejected|regular|bulk|featured" },
                         { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "12" }
+                        { "key": "limit", "value": "12" },
+                        { "key": "categoryId", "value": "{{categoryId}}", "description": "Optional — root/sub/type UUID" },
+                        { "key": "category", "value": "", "disabled": true, "description": "Optional — category name instead of id" },
+                        { "key": "search", "value": "", "disabled": true }
                       ]
-                    }
+                    },
+                    "description": "Product list with tab + optional category filter (categoryId or category name)"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details by ID",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/{{productId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "{{productId}}"]
+                    },
+                    "description": "Product detail page: title, rating, sku, category, warehouse, stock, price, bulkOptions, gallery, description/features/specs/reviews"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Product CSV Template",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/csv-template",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "csv-template"]
+                    },
+                    "description": "Downloads demo CSV (UTF-8 with BOM). Columns category/subCategory/productType use text names from the Category Guide PDF."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download CSV Category Guide (PDF)",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/csv-category-guide",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "csv-category-guide"]
+                    },
+                    "description": "PDF list of exact category → subcategory → product type names to copy into the CSV."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Upload Products CSV",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": [],
+                          "description": "CSV file (max 100 rows). category/subCategory/productType = catalog names"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/csv-upload",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", "csv-upload"]
+                    },
+                    "description": "Bulk Add Product from CSV. Images via URL columns: bannerImageUrl (1) + imageUrls (semicolon-separated). Server downloads them."
                   },
                   "response": []
                 },
