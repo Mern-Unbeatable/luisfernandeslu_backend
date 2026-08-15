@@ -117,6 +117,12 @@ enum DiscountType {
   PERCENTAGE
 }
 
+enum PromoAudience {
+  ALL
+  CUSTOMER
+  COMPANY
+}
+
 enum ReturnStatus {
   PENDING
   UNDER_REVIEW
@@ -214,6 +220,7 @@ model User {
   adminRoleBridge    UserAdminRoleBridge[]
   auditLogs          AuditLog[]
   blogPosts          BlogPost[]
+  promoCodes         PromoCode[]             @relation("SellerPromoCodes")
 
   @@index([role, status])
   @@map("user")
@@ -484,21 +491,29 @@ model InventoryTransaction {
 // ==========================================
 
 model PromoCode {
-  id             String                    @id @default(uuid())
-  affiliateId    String?
-  code           String                    @unique
-  discountType   DiscountType
-  discountValue  Float
-  minOrderAmount Float                     @default(0.0)
-  usageLimit     Int?
-  usedCount      Int                       @default(0)
-  expiryDate     DateTime
-  isActive       Boolean                   @default(true)
-  createdAt      DateTime                  @default(now())
+  id               String                    @id @default(uuid())
+  sellerId         String?
+  affiliateId      String?
+  code             String                    @unique
+  discountType     DiscountType
+  discountValue    Float
+  minOrderAmount   Float                     @default(0.0)
+  usageLimit       Int?
+  usedCount        Int                       @default(0)
+  expiryDate       DateTime
+  isActive         Boolean                   @default(true)
+  /// Who can redeem: ALL users, CUSTOMER only, or COMPANY only
+  applicableUsers  PromoAudience             @default(ALL)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
 
-  applicableProducts   PromoCodeProductBridge[]
-  applicableCategories PromoCodeCategoryBridge[]
-  orders               Order[]
+  seller                 User?                     @relation("SellerPromoCodes", fields: [sellerId], references: [id], onDelete: Cascade)
+  applicableProducts     PromoCodeProductBridge[]
+  applicableCategories   PromoCodeCategoryBridge[]
+  orders                 Order[]
+
+  @@index([sellerId, isActive])
+  @@index([expiryDate])
 }
 
 model PromoCodeProductBridge {

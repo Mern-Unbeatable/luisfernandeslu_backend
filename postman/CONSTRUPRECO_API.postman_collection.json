@@ -2138,6 +2138,128 @@
           ]
         },
         {
+          "name": "Promo Codes",
+          "item": [
+            {
+              "name": "Create Promo Code",
+              "event": [{
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "const json = pm.response.json();",
+                    "if (json.promoCode?.id) pm.collectionVariables.set(\"promoCodeId\", json.promoCode.id);"
+                  ]
+                }
+              }],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"SAVE10\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 10,\n  \"minOrderAmount\": 50,\n  \"expiryDate\": \"2026-12-31T23:59:59.000Z\",\n  \"usageLimit\": 100,\n  \"unlimited\": false,\n  \"applicableUsers\": \"ALL\",\n  \"categoryIds\": [\"{{categoryId}}\"],\n  \"subCategoryIds\": [\"{{subCategoryId}}\"],\n  \"productTypeIds\": [\"{{productTypeId}}\"],\n  \"productIds\": [\"{{productId}}\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/promo-codes",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "promo-codes"]
+                },
+                "description": "Scope (pick any combo): productIds | categoryIds (root) | subCategoryIds | productTypeIds. applicableUsers: ALL|CUSTOMER|COMPANY"
+              },
+              "response": []
+            },
+            {
+              "name": "List Promo Codes",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/promo-codes?status=all&scope=all&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "promo-codes"],
+                  "query": [
+                    { "key": "status", "value": "all", "description": "all|active|disabled|expired" },
+                    { "key": "scope", "value": "all", "description": "all = every promo; product = only product-linked; catalog = category/sub/type only" },
+                    { "key": "productId", "value": "", "disabled": true, "description": "Optional — promos for one product" },
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Promo Code by ID",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/promo-codes/{{promoCodeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "promo-codes", "{{promoCodeId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Promo Code",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"discountValue\": 15,\n  \"applicableUsers\": \"COMPANY\",\n  \"unlimited\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/promo-codes/{{promoCodeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "promo-codes", "{{promoCodeId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Set Promo Code Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isActive\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/promo-codes/{{promoCodeId}}/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "promo-codes", "{{promoCodeId}}", "status"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Promo Code",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/promo-codes/{{promoCodeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "promo-codes", "{{promoCodeId}}"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "Admin",
           "item": [
             {

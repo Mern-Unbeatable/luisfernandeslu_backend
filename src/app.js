@@ -11,6 +11,7 @@ import {
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import productRoutes from './modules/products/routes/product.routes.js'
 import promotionRoutes from './modules/promotions/routes/promotion.routes.js'
+import promoCodeRoutes from './modules/promo-codes/routes/promo-code.routes.js'
 import adminRoutes from './modules/admin/routes/admin.routes.js'
 import { UPLOAD_ROOT } from './modules/auth/upload.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
@@ -66,6 +67,7 @@ app.use('/api/subcategories', subCategoryRoutes)
 app.use('/api/inventory', inventoryRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/promotions', promotionRoutes)
+app.use('/api/promo-codes', promoCodeRoutes)
 app.use('/api/admin', adminRoutes)
 
 app.get('/', (req, res) => {
