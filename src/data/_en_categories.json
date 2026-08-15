@@ -1,0 +1,2140 @@
+[
+  {
+    "id": "cement-mortar-concrete",
+    "name": "Cement, Mortar & Concrete",
+    "subcategories": [
+      {
+        "id": "cements",
+        "name": "Cements",
+        "productTypes": [
+          {
+            "id": "ordinary-portland-cement-cem-i",
+            "name": "Ordinary Portland Cement (CEM I)"
+          },
+          {
+            "id": "portland-composite-cement-cem-ii",
+            "name": "Portland Composite Cement (CEM II)"
+          },
+          {
+            "id": "high-early-strength-cement-cem-i-52-5r",
+            "name": "High Early Strength Cement (CEM I 52.5R)"
+          },
+          {
+            "id": "pozzolanic-cement-cem-iv",
+            "name": "Pozzolanic Cement (CEM IV)"
+          },
+          {
+            "id": "blast-furnace-cement-cem-iii",
+            "name": "Blast Furnace Cement (CEM III)"
+          },
+          {
+            "id": "white-decorative-cement",
+            "name": "White / Decorative Cement"
+          },
+          {
+            "id": "rapid-setting-fast-drying-cement",
+            "name": "Rapid-Setting / Fast-Drying Cement"
+          },
+          {
+            "id": "special-cement-for-underground-construction",
+            "name": "Special Cement for Underground Construction"
+          }
+        ]
+      },
+      {
+        "id": "mortars",
+        "name": "Mortars",
+        "productTypes": [
+          {
+            "id": "plastering-stucco-mortars",
+            "name": "Plastering / Stucco Mortars"
+          },
+          {
+            "id": "masonry-mortars",
+            "name": "Masonry Mortars"
+          },
+          {
+            "id": "tile-adhesive-mortars",
+            "name": "Tile Adhesive Mortars"
+          },
+          {
+            "id": "grouting-joint-mortars",
+            "name": "Grouting / Joint Mortars"
+          },
+          {
+            "id": "repair-mortars",
+            "name": "Repair Mortars"
+          },
+          {
+            "id": "self-levelling-mortars",
+            "name": "Self-Levelling Mortars"
+          },
+          {
+            "id": "refractory-mortars",
+            "name": "Refractory Mortars"
+          },
+          {
+            "id": "waterproofing-mortars",
+            "name": "Waterproofing Mortars"
+          }
+        ]
+      },
+      {
+        "id": "concrete",
+        "name": "Concrete",
+        "productTypes": [
+          {
+            "id": "ready-mix-pre-mixed-concrete",
+            "name": "Ready-Mix / Pre-Mixed Concrete"
+          },
+          {
+            "id": "reinforced-structural-concrete",
+            "name": "Reinforced / Structural Concrete"
+          },
+          {
+            "id": "lightweight-concrete",
+            "name": "Lightweight Concrete"
+          },
+          {
+            "id": "self-compacting-concrete",
+            "name": "Self-Compacting Concrete"
+          },
+          {
+            "id": "shotcrete-sprayed-concrete",
+            "name": "Shotcrete (Sprayed Concrete)"
+          },
+          {
+            "id": "refractory-concrete",
+            "name": "Refractory Concrete"
+          },
+          {
+            "id": "fiber-reinforced-concrete",
+            "name": "Fiber-Reinforced Concrete"
+          },
+          {
+            "id": "decorative-colored-concrete",
+            "name": "Decorative / Colored Concrete"
+          },
+          {
+            "id": "high-strength-concrete",
+            "name": "High-Strength Concrete"
+          },
+          {
+            "id": "fast-drying-concrete",
+            "name": "Fast-Drying Concrete"
+          }
+        ]
+      },
+      {
+        "id": "additives-admixtures",
+        "name": "Additives & Admixtures",
+        "productTypes": [
+          {
+            "id": "plasticizers-superplasticizers",
+            "name": "Plasticizers / Superplasticizers"
+          },
+          {
+            "id": "set-retarders-accelerators",
+            "name": "Set Retarders / Accelerators"
+          },
+          {
+            "id": "water-repellents-liquid-waterproofing-admixtures",
+            "name": "Water Repellents / Liquid Waterproofing Admixtures"
+          },
+          {
+            "id": "anti-freeze-admixtures",
+            "name": "Anti-Freeze Admixtures"
+          },
+          {
+            "id": "synthetic-and-metallic-fibers",
+            "name": "Synthetic and Metallic Fibers"
+          },
+          {
+            "id": "mineral-pigments",
+            "name": "Mineral Pigments"
+          }
+        ]
+      },
+      {
+        "id": "special-products",
+        "name": "Special Products",
+        "productTypes": [
+          {
+            "id": "screeds",
+            "name": "Screeds"
+          },
+          {
+            "id": "concrete-repair-products",
+            "name": "Concrete Repair Products"
+          },
+          {
+            "id": "micro-concrete",
+            "name": "Micro Concrete"
+          },
+          {
+            "id": "cement-injections-grouts",
+            "name": "Cement Injections / Grouts"
+          },
+          {
+            "id": "grouts",
+            "name": "Grouts"
+          },
+          {
+            "id": "sealants-and-expansion-joints",
+            "name": "Sealants and Expansion Joints"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "sand-gravel-aggregates",
+    "name": "Sand, Gravel & Aggregates",
+    "subcategories": [
+      {
+        "id": "sand",
+        "name": "Sand",
+        "productTypes": [
+          {
+            "id": "fine-sand",
+            "name": "Fine Sand"
+          },
+          {
+            "id": "medium-sand",
+            "name": "Medium Sand"
+          },
+          {
+            "id": "coarse-sand",
+            "name": "Coarse Sand"
+          },
+          {
+            "id": "washed-sand",
+            "name": "Washed Sand"
+          },
+          {
+            "id": "crushed-sand-artificial-sand",
+            "name": "Crushed Sand (Artificial Sand)"
+          }
+        ]
+      },
+      {
+        "id": "gravel",
+        "name": "Gravel",
+        "productTypes": [
+          {
+            "id": "stone-dust-gravel-0",
+            "name": "Stone Dust (Gravel 0)"
+          },
+          {
+            "id": "gravel-1-4-12-mm",
+            "name": "Gravel 1 (4–12 mm)"
+          },
+          {
+            "id": "gravel-2-12-25-mm",
+            "name": "Gravel 2 (12–25 mm)"
+          },
+          {
+            "id": "gravel-3-25-38-mm",
+            "name": "Gravel 3 (25–38 mm)"
+          },
+          {
+            "id": "gravel-4-38-50-mm",
+            "name": "Gravel 4 (38–50 mm)"
+          },
+          {
+            "id": "concrete-gravel",
+            "name": "Concrete Gravel"
+          },
+          {
+            "id": "drainage-gravel",
+            "name": "Drainage Gravel"
+          }
+        ]
+      },
+      {
+        "id": "aggregates",
+        "name": "Aggregates",
+        "productTypes": [
+          {
+            "id": "all-in-aggregate-tout-venant",
+            "name": "All-in Aggregate (Tout-Venant)"
+          },
+          {
+            "id": "sandy-gravel-saibro",
+            "name": "Sandy Gravel (Saibro)"
+          },
+          {
+            "id": "pebbles-gravel",
+            "name": "Pebbles / Gravel"
+          },
+          {
+            "id": "compacted-sub-base",
+            "name": "Compacted Sub-Base"
+          },
+          {
+            "id": "riprap-stone-large-rock-fill",
+            "name": "Riprap Stone (Large Rock Fill)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "blocks-bricks",
+    "name": "Blocks & Bricks",
+    "subcategories": [
+      {
+        "id": "blocks",
+        "name": "Blocks",
+        "productTypes": [
+          {
+            "id": "concrete-block",
+            "name": "Concrete Block"
+          },
+          {
+            "id": "formwork-block",
+            "name": "Formwork Block"
+          },
+          {
+            "id": "thermal-block",
+            "name": "Thermal Block"
+          },
+          {
+            "id": "acoustic-block",
+            "name": "Acoustic Block"
+          },
+          {
+            "id": "split-face-exposed-block",
+            "name": "Split Face / Exposed Block"
+          }
+        ]
+      },
+      {
+        "id": "bricks",
+        "name": "Bricks",
+        "productTypes": [
+          {
+            "id": "solid-brick",
+            "name": "Solid Brick"
+          },
+          {
+            "id": "hollow-brick-8-11-15-20",
+            "name": "Hollow Brick (8, 11, 15, 20)"
+          },
+          {
+            "id": "thermal-brick",
+            "name": "Thermal Brick"
+          },
+          {
+            "id": "facing-brick",
+            "name": "Facing Brick"
+          },
+          {
+            "id": "refractory-brick",
+            "name": "Refractory Brick"
+          }
+        ]
+      },
+      {
+        "id": "floor-blocks",
+        "name": "Floor Blocks & Hollow Clay Blocks",
+        "productTypes": [
+          {
+            "id": "cement-floor-block",
+            "name": "Cement Floor Block"
+          },
+          {
+            "id": "clay-floor-block",
+            "name": "Clay Floor Block"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dry-construction-systems",
+    "name": "Dry Construction Systems",
+    "subcategories": [
+      {
+        "id": "metal-profiles",
+        "name": "Metal Profiles",
+        "productTypes": [
+          {
+            "id": "stud-profile-m",
+            "name": "Stud Profile (M)"
+          },
+          {
+            "id": "track-profile-u",
+            "name": "Track Profile (U)"
+          },
+          {
+            "id": "f530-profile",
+            "name": "F530 Profile"
+          },
+          {
+            "id": "omega-profile",
+            "name": "Omega Profile"
+          },
+          {
+            "id": "corner-beads",
+            "name": "Corner Beads"
+          },
+          {
+            "id": "fixing-accessories",
+            "name": "Fixing Accessories"
+          }
+        ]
+      },
+      {
+        "id": "boards",
+        "name": "Boards",
+        "productTypes": [
+          {
+            "id": "gypsum-plasterboard",
+            "name": "Gypsum Plasterboard"
+          },
+          {
+            "id": "moisture-resistant-board",
+            "name": "Moisture-Resistant Board"
+          },
+          {
+            "id": "fire-resistant-board",
+            "name": "Fire-Resistant Board"
+          },
+          {
+            "id": "high-density-board",
+            "name": "High-Density Board"
+          },
+          {
+            "id": "cement-board",
+            "name": "Cement Board"
+          },
+          {
+            "id": "mineral-fiber-board",
+            "name": "Mineral Fiber Board"
+          }
+        ]
+      },
+      {
+        "id": "insulation-dry",
+        "name": "Insulation",
+        "productTypes": [
+          {
+            "id": "rock-wool",
+            "name": "Rock Wool"
+          },
+          {
+            "id": "glass-wool",
+            "name": "Glass Wool"
+          },
+          {
+            "id": "eps-xps",
+            "name": "EPS / XPS"
+          },
+          {
+            "id": "acoustic-insulation",
+            "name": "Acoustic Insulation"
+          }
+        ]
+      },
+      {
+        "id": "compounds-accessories",
+        "name": "Compounds & Accessories",
+        "productTypes": [
+          {
+            "id": "joint-compound",
+            "name": "Joint Compound"
+          },
+          {
+            "id": "joint-tape",
+            "name": "Joint Tape"
+          },
+          {
+            "id": "screws",
+            "name": "Screws"
+          },
+          {
+            "id": "metal-anchors",
+            "name": "Metal Anchors"
+          },
+          {
+            "id": "primers",
+            "name": "Primers"
+          }
+        ]
+      },
+      {
+        "id": "complete-systems",
+        "name": "Complete Systems",
+        "productTypes": [
+          {
+            "id": "interior-partitions",
+            "name": "Interior Partitions"
+          },
+          {
+            "id": "suspended-ceilings",
+            "name": "Suspended Ceilings"
+          },
+          {
+            "id": "wall-cladding-systems",
+            "name": "Wall Cladding Systems"
+          },
+          {
+            "id": "niches-and-moldings",
+            "name": "Niches and Moldings"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "roofing-coverings",
+    "name": "Roofing & Coverings",
+    "subcategories": [
+      {
+        "id": "roof-tiles",
+        "name": "Roof Tiles",
+        "productTypes": [
+          {
+            "id": "ceramic-roof-tile",
+            "name": "Ceramic Roof Tile"
+          },
+          {
+            "id": "concrete-roof-tile",
+            "name": "Concrete Roof Tile"
+          },
+          {
+            "id": "metal-sandwich-roof-panel",
+            "name": "Metal / Sandwich Roof Panel"
+          },
+          {
+            "id": "plastic-pvc-roof-tile",
+            "name": "Plastic / PVC Roof Tile"
+          },
+          {
+            "id": "translucent-roof-tile",
+            "name": "Translucent Roof Tile"
+          },
+          {
+            "id": "ridge-tiles",
+            "name": "Ridge Tiles"
+          }
+        ]
+      },
+      {
+        "id": "sheets-panels",
+        "name": "Sheets & Panels",
+        "productTypes": [
+          {
+            "id": "profiled-metal-sheet",
+            "name": "Profiled Metal Sheet"
+          },
+          {
+            "id": "sandwich-panel",
+            "name": "Sandwich Panel"
+          },
+          {
+            "id": "galvanized-sheet",
+            "name": "Galvanized Sheet"
+          },
+          {
+            "id": "fiber-cement-sheet",
+            "name": "Fiber Cement Sheet"
+          },
+          {
+            "id": "translucent-sheet",
+            "name": "Translucent Sheet"
+          },
+          {
+            "id": "flashings-and-trims",
+            "name": "Flashings and Trims"
+          }
+        ]
+      },
+      {
+        "id": "roof-underlays",
+        "name": "Roof Underlays & Insulation",
+        "productTypes": [
+          {
+            "id": "breathable-membrane",
+            "name": "Breathable Membrane"
+          },
+          {
+            "id": "bituminous-membrane",
+            "name": "Bituminous Membrane"
+          },
+          {
+            "id": "eps-xps-pu",
+            "name": "EPS / XPS / PU"
+          },
+          {
+            "id": "vapor-barrier",
+            "name": "Vapor Barrier"
+          }
+        ]
+      },
+      {
+        "id": "roof-accessories",
+        "name": "Accessories",
+        "productTypes": [
+          {
+            "id": "screws",
+            "name": "Screws"
+          },
+          {
+            "id": "foams-and-sealants",
+            "name": "Foams and Sealants"
+          },
+          {
+            "id": "sealing-tapes",
+            "name": "Sealing Tapes"
+          },
+          {
+            "id": "ventilated-ridge-systems",
+            "name": "Ventilated Ridge Systems"
+          },
+          {
+            "id": "roof-drains",
+            "name": "Roof Drains"
+          }
+        ]
+      },
+      {
+        "id": "special-roof-systems",
+        "name": "Special Systems",
+        "productTypes": [
+          {
+            "id": "industrial-roofing-systems",
+            "name": "Industrial Roofing Systems"
+          },
+          {
+            "id": "skylights",
+            "name": "Skylights"
+          },
+          {
+            "id": "metal-facades",
+            "name": "Metal Facades"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "insulation-waterproofing",
+    "name": "Insulation & Waterproofing",
+    "subcategories": [
+      {
+        "id": "thermal-insulation",
+        "name": "Thermal Insulation",
+        "productTypes": [
+          {
+            "id": "eps",
+            "name": "EPS"
+          },
+          {
+            "id": "xps",
+            "name": "XPS"
+          },
+          {
+            "id": "polyurethane",
+            "name": "Polyurethane"
+          },
+          {
+            "id": "rock-wool",
+            "name": "Rock Wool"
+          },
+          {
+            "id": "glass-wool",
+            "name": "Glass Wool"
+          },
+          {
+            "id": "cork",
+            "name": "Cork"
+          },
+          {
+            "id": "sandwich-panel",
+            "name": "Sandwich Panel"
+          }
+        ]
+      },
+      {
+        "id": "acoustic-insulation",
+        "name": "Acoustic Insulation",
+        "productTypes": [
+          {
+            "id": "acoustic-mats",
+            "name": "Acoustic Mats"
+          },
+          {
+            "id": "sound-absorbing-foams",
+            "name": "Sound-Absorbing Foams"
+          },
+          {
+            "id": "rubber-panels",
+            "name": "Rubber Panels"
+          }
+        ]
+      },
+      {
+        "id": "waterproofing",
+        "name": "Waterproofing",
+        "productTypes": [
+          {
+            "id": "bituminous-membrane",
+            "name": "Bituminous Membrane"
+          },
+          {
+            "id": "liquid-membrane",
+            "name": "Liquid Membrane"
+          },
+          {
+            "id": "epdm-pvc-membrane",
+            "name": "EPDM / PVC Membrane"
+          },
+          {
+            "id": "waterproof-cement",
+            "name": "Waterproof Cement"
+          },
+          {
+            "id": "resins",
+            "name": "Resins"
+          }
+        ]
+      },
+      {
+        "id": "drainage-protection",
+        "name": "Drainage & Protection",
+        "productTypes": [
+          {
+            "id": "geotextile",
+            "name": "Geotextile"
+          },
+          {
+            "id": "drainage-board",
+            "name": "Drainage Board"
+          },
+          {
+            "id": "drainage-pipe",
+            "name": "Drainage Pipe"
+          },
+          {
+            "id": "root-barrier-mesh",
+            "name": "Root Barrier Mesh"
+          }
+        ]
+      },
+      {
+        "id": "insulation-accessories",
+        "name": "Accessories",
+        "productTypes": [
+          {
+            "id": "primers",
+            "name": "Primers"
+          },
+          {
+            "id": "reinforcement-bands",
+            "name": "Reinforcement Bands"
+          },
+          {
+            "id": "joint-tapes",
+            "name": "Joint Tapes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "coverings-finishes",
+    "name": "Coverings & Finishes",
+    "subcategories": [
+      {
+        "id": "ceramic-coverings",
+        "name": "Ceramic Coverings",
+        "productTypes": [
+          {
+            "id": "wall-tiles",
+            "name": "Wall Tiles"
+          },
+          {
+            "id": "mosaic-tiles",
+            "name": "Mosaic Tiles"
+          },
+          {
+            "id": "porcelain-tiles",
+            "name": "Porcelain Tiles"
+          },
+          {
+            "id": "natural-stone",
+            "name": "Natural Stone"
+          },
+          {
+            "id": "wood-stone-effect-tiles",
+            "name": "Wood / Stone Effect Tiles"
+          }
+        ]
+      },
+      {
+        "id": "flooring",
+        "name": "Flooring",
+        "productTypes": [
+          {
+            "id": "ceramic-flooring",
+            "name": "Ceramic Flooring"
+          },
+          {
+            "id": "vinyl-flooring",
+            "name": "Vinyl Flooring"
+          },
+          {
+            "id": "laminate-flooring",
+            "name": "Laminate Flooring"
+          },
+          {
+            "id": "microcement-flooring",
+            "name": "Microcement Flooring"
+          },
+          {
+            "id": "natural-stone-flooring",
+            "name": "Natural Stone Flooring"
+          },
+          {
+            "id": "non-slip-outdoor-flooring",
+            "name": "Non-Slip Outdoor Flooring"
+          }
+        ]
+      },
+      {
+        "id": "mortars-adhesives",
+        "name": "Mortars & Adhesives",
+        "productTypes": [
+          {
+            "id": "tile-adhesive",
+            "name": "Tile Adhesive"
+          },
+          {
+            "id": "flexible-adhesive",
+            "name": "Flexible Adhesive"
+          },
+          {
+            "id": "joint-mortar",
+            "name": "Joint Mortar"
+          },
+          {
+            "id": "silicones",
+            "name": "Silicones"
+          }
+        ]
+      },
+      {
+        "id": "plasters-compounds",
+        "name": "Plasters & Compounds",
+        "productTypes": [
+          {
+            "id": "traditional-plaster",
+            "name": "Traditional Plaster"
+          },
+          {
+            "id": "spray-plaster",
+            "name": "Spray Plaster"
+          },
+          {
+            "id": "acrylic-compound",
+            "name": "Acrylic Compound"
+          },
+          {
+            "id": "gypsum-adhesive",
+            "name": "Gypsum Adhesive"
+          }
+        ]
+      },
+      {
+        "id": "profiles-accessories",
+        "name": "Profiles & Accessories",
+        "productTypes": [
+          {
+            "id": "finishing-profiles",
+            "name": "Finishing Profiles"
+          },
+          {
+            "id": "corners",
+            "name": "Corners"
+          },
+          {
+            "id": "skirting-boards",
+            "name": "Skirting Boards"
+          },
+          {
+            "id": "thresholds",
+            "name": "Thresholds"
+          }
+        ]
+      },
+      {
+        "id": "decorative-coverings",
+        "name": "Decorative Coverings",
+        "productTypes": [
+          {
+            "id": "3d-panels",
+            "name": "3D Panels"
+          },
+          {
+            "id": "pvc-mdf-panels",
+            "name": "PVC / MDF Panels"
+          },
+          {
+            "id": "self-adhesive-coverings",
+            "name": "Self-Adhesive Coverings"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "timber-wood-products",
+    "name": "Timber & Wood Products",
+    "subcategories": [
+      {
+        "id": "sawn-timber",
+        "name": "Sawn Timber",
+        "productTypes": [
+          {
+            "id": "pine",
+            "name": "Pine"
+          },
+          {
+            "id": "oak",
+            "name": "Oak"
+          },
+          {
+            "id": "chestnut",
+            "name": "Chestnut"
+          },
+          {
+            "id": "exotic-woods",
+            "name": "Exotic Woods"
+          },
+          {
+            "id": "beams",
+            "name": "Beams"
+          },
+          {
+            "id": "battens",
+            "name": "Battens"
+          },
+          {
+            "id": "boards",
+            "name": "Boards"
+          }
+        ]
+      },
+      {
+        "id": "treated-timber",
+        "name": "Treated Timber",
+        "productTypes": [
+          {
+            "id": "pressure-treated-timber",
+            "name": "Pressure-Treated Timber"
+          },
+          {
+            "id": "outdoor-decking",
+            "name": "Outdoor Decking"
+          },
+          {
+            "id": "laminated-beams",
+            "name": "Laminated Beams"
+          }
+        ]
+      },
+      {
+        "id": "engineered-wood",
+        "name": "Engineered Wood Panels",
+        "productTypes": [
+          {
+            "id": "mdf",
+            "name": "MDF"
+          },
+          {
+            "id": "particle-board",
+            "name": "Particle Board"
+          },
+          {
+            "id": "osb",
+            "name": "OSB"
+          },
+          {
+            "id": "plywood",
+            "name": "Plywood"
+          },
+          {
+            "id": "melamine-board",
+            "name": "Melamine Board"
+          }
+        ]
+      },
+      {
+        "id": "flooring-cladding",
+        "name": "Flooring & Cladding",
+        "productTypes": [
+          {
+            "id": "hardwood-flooring",
+            "name": "Hardwood Flooring"
+          },
+          {
+            "id": "laminate-flooring",
+            "name": "Laminate Flooring"
+          },
+          {
+            "id": "wooden-decking",
+            "name": "Wooden Decking"
+          },
+          {
+            "id": "composite-decking",
+            "name": "Composite Decking"
+          },
+          {
+            "id": "skirting-boards",
+            "name": "Skirting Boards"
+          }
+        ]
+      },
+      {
+        "id": "wood-accessories",
+        "name": "Accessories & Treatments",
+        "productTypes": [
+          {
+            "id": "varnishes",
+            "name": "Varnishes"
+          },
+          {
+            "id": "oils",
+            "name": "Oils"
+          },
+          {
+            "id": "adhesives",
+            "name": "Adhesives"
+          },
+          {
+            "id": "screws",
+            "name": "Screws"
+          },
+          {
+            "id": "sealants",
+            "name": "Sealants"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "metals-structures",
+    "name": "Metals & Structures",
+    "subcategories": [
+      {
+        "id": "construction-steel",
+        "name": "Construction Steel",
+        "productTypes": [
+          {
+            "id": "steel-rebar",
+            "name": "Steel Rebar"
+          },
+          {
+            "id": "welded-mesh",
+            "name": "Welded Mesh"
+          },
+          {
+            "id": "annealed-wire",
+            "name": "Annealed Wire"
+          },
+          {
+            "id": "reinforcement-bars",
+            "name": "Reinforcement Bars"
+          },
+          {
+            "id": "stirrups",
+            "name": "Stirrups"
+          }
+        ]
+      },
+      {
+        "id": "metal-profiles-struct",
+        "name": "Metal Profiles",
+        "productTypes": [
+          {
+            "id": "i-h-profile",
+            "name": "I / H Profile"
+          },
+          {
+            "id": "u-profile",
+            "name": "U Profile"
+          },
+          {
+            "id": "l-profile",
+            "name": "L Profile"
+          },
+          {
+            "id": "t-profile",
+            "name": "T Profile"
+          },
+          {
+            "id": "tubular-profiles",
+            "name": "Tubular Profiles"
+          }
+        ]
+      },
+      {
+        "id": "sheets",
+        "name": "Sheets",
+        "productTypes": [
+          {
+            "id": "plain-sheet",
+            "name": "Plain Sheet"
+          },
+          {
+            "id": "perforated-sheet",
+            "name": "Perforated Sheet"
+          },
+          {
+            "id": "chequered-sheet",
+            "name": "Chequered Sheet"
+          },
+          {
+            "id": "galvanized-sheet",
+            "name": "Galvanized Sheet"
+          },
+          {
+            "id": "stainless-steel-sheet",
+            "name": "Stainless Steel Sheet"
+          }
+        ]
+      },
+      {
+        "id": "misc-metals",
+        "name": "Miscellaneous Metals",
+        "productTypes": [
+          {
+            "id": "aluminum",
+            "name": "Aluminum"
+          },
+          {
+            "id": "stainless-steel",
+            "name": "Stainless Steel"
+          },
+          {
+            "id": "copper",
+            "name": "Copper"
+          },
+          {
+            "id": "brass",
+            "name": "Brass"
+          }
+        ]
+      },
+      {
+        "id": "fixings",
+        "name": "Fixings",
+        "productTypes": [
+          {
+            "id": "screws",
+            "name": "Screws"
+          },
+          {
+            "id": "anchor-bolts",
+            "name": "Anchor Bolts"
+          },
+          {
+            "id": "electrodes",
+            "name": "Electrodes"
+          },
+          {
+            "id": "anti-corrosion-paints",
+            "name": "Anti-Corrosion Paints"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "plumbing-hydraulics",
+    "name": "Plumbing & Hydraulics",
+    "subcategories": [
+      {
+        "id": "pipes",
+        "name": "Pipes",
+        "productTypes": [
+          {
+            "id": "pvc-pipe",
+            "name": "PVC Pipe"
+          },
+          {
+            "id": "ppr-pipe",
+            "name": "PPR Pipe"
+          },
+          {
+            "id": "hdpe-pipe",
+            "name": "HDPE Pipe"
+          },
+          {
+            "id": "multilayer-pipe",
+            "name": "Multilayer Pipe"
+          },
+          {
+            "id": "copper-pipe",
+            "name": "Copper Pipe"
+          }
+        ]
+      },
+      {
+        "id": "connections",
+        "name": "Connections",
+        "productTypes": [
+          {
+            "id": "elbows",
+            "name": "Elbows"
+          },
+          {
+            "id": "unions",
+            "name": "Unions"
+          },
+          {
+            "id": "valves",
+            "name": "Valves"
+          },
+          {
+            "id": "stop-valves",
+            "name": "Stop Valves"
+          },
+          {
+            "id": "clamps",
+            "name": "Clamps"
+          }
+        ]
+      },
+      {
+        "id": "sewerage-drainage",
+        "name": "Sewerage & Drainage",
+        "productTypes": [
+          {
+            "id": "sewer-pipes",
+            "name": "Sewer Pipes"
+          },
+          {
+            "id": "inspection-chambers",
+            "name": "Inspection Chambers"
+          },
+          {
+            "id": "drains",
+            "name": "Drains"
+          },
+          {
+            "id": "traps",
+            "name": "Traps"
+          },
+          {
+            "id": "pumps",
+            "name": "Pumps"
+          }
+        ]
+      },
+      {
+        "id": "irrigation-water",
+        "name": "Irrigation & Water Supply",
+        "productTypes": [
+          {
+            "id": "hoses",
+            "name": "Hoses"
+          },
+          {
+            "id": "sprinklers",
+            "name": "Sprinklers"
+          },
+          {
+            "id": "filters",
+            "name": "Filters"
+          },
+          {
+            "id": "pumps",
+            "name": "Pumps"
+          },
+          {
+            "id": "water-tanks",
+            "name": "Water Tanks"
+          }
+        ]
+      },
+      {
+        "id": "sealing-plumbing",
+        "name": "Sealing",
+        "productTypes": [
+          {
+            "id": "ptfe-tapes",
+            "name": "PTFE Tapes"
+          },
+          {
+            "id": "sealants",
+            "name": "Sealants"
+          },
+          {
+            "id": "pvc-adhesives",
+            "name": "PVC Adhesives"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "electrical-lighting",
+    "name": "Electrical & Technical Lighting",
+    "subcategories": [
+      {
+        "id": "cables-wiring",
+        "name": "Cables & Wiring",
+        "productTypes": [
+          {
+            "id": "single-core-cable",
+            "name": "Single-Core Cable"
+          },
+          {
+            "id": "multi-core-cable",
+            "name": "Multi-Core Cable"
+          },
+          {
+            "id": "rigid-cable",
+            "name": "Rigid Cable"
+          },
+          {
+            "id": "flexible-cable",
+            "name": "Flexible Cable"
+          },
+          {
+            "id": "data-cable",
+            "name": "Data Cable"
+          },
+          {
+            "id": "corrugated-conduit",
+            "name": "Corrugated Conduit"
+          }
+        ]
+      },
+      {
+        "id": "panels-protection",
+        "name": "Panels & Protection",
+        "productTypes": [
+          {
+            "id": "electrical-panels",
+            "name": "Electrical Panels"
+          },
+          {
+            "id": "circuit-breakers",
+            "name": "Circuit Breakers"
+          },
+          {
+            "id": "fuses",
+            "name": "Fuses"
+          },
+          {
+            "id": "contactors",
+            "name": "Contactors"
+          },
+          {
+            "id": "din-rails",
+            "name": "DIN Rails"
+          }
+        ]
+      },
+      {
+        "id": "sockets-switches",
+        "name": "Sockets & Switches",
+        "productTypes": [
+          {
+            "id": "sockets",
+            "name": "Sockets"
+          },
+          {
+            "id": "switches",
+            "name": "Switches"
+          },
+          {
+            "id": "faceplates",
+            "name": "Faceplates"
+          },
+          {
+            "id": "industrial-sockets",
+            "name": "Industrial Sockets"
+          }
+        ]
+      },
+      {
+        "id": "technical-lighting",
+        "name": "Technical Lighting",
+        "productTypes": [
+          {
+            "id": "led-floodlights",
+            "name": "LED Floodlights"
+          },
+          {
+            "id": "led-panels",
+            "name": "LED Panels"
+          },
+          {
+            "id": "linear-led-lights",
+            "name": "Linear LED Lights"
+          },
+          {
+            "id": "emergency-lighting",
+            "name": "Emergency Lighting"
+          }
+        ]
+      },
+      {
+        "id": "electrical-accessories",
+        "name": "Accessories",
+        "productTypes": [
+          {
+            "id": "cable-trays",
+            "name": "Cable Trays"
+          },
+          {
+            "id": "fixings",
+            "name": "Fixings"
+          },
+          {
+            "id": "insulation-tapes",
+            "name": "Insulation Tapes"
+          },
+          {
+            "id": "terminal-blocks",
+            "name": "Terminal Blocks"
+          }
+        ]
+      },
+      {
+        "id": "instruments",
+        "name": "Instruments",
+        "productTypes": [
+          {
+            "id": "multimeters",
+            "name": "Multimeters"
+          },
+          {
+            "id": "testers",
+            "name": "Testers"
+          },
+          {
+            "id": "insulated-pliers",
+            "name": "Insulated Pliers"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "tools-equipment",
+    "name": "Tools & Equipment",
+    "subcategories": [
+      {
+        "id": "hand-tools",
+        "name": "Hand Tools",
+        "productTypes": [
+          {
+            "id": "hammers",
+            "name": "Hammers"
+          },
+          {
+            "id": "wrenches",
+            "name": "Wrenches"
+          },
+          {
+            "id": "pliers",
+            "name": "Pliers"
+          },
+          {
+            "id": "saws",
+            "name": "Saws"
+          },
+          {
+            "id": "putty-knives",
+            "name": "Putty Knives"
+          },
+          {
+            "id": "measuring-tapes",
+            "name": "Measuring Tapes"
+          }
+        ]
+      },
+      {
+        "id": "power-tools",
+        "name": "Power Tools",
+        "productTypes": [
+          {
+            "id": "drill",
+            "name": "Drill"
+          },
+          {
+            "id": "rotary-hammer",
+            "name": "Rotary Hammer"
+          },
+          {
+            "id": "circular-saw",
+            "name": "Circular Saw"
+          },
+          {
+            "id": "angle-grinder",
+            "name": "Angle Grinder"
+          },
+          {
+            "id": "sander",
+            "name": "Sander"
+          },
+          {
+            "id": "mixer",
+            "name": "Mixer"
+          }
+        ]
+      },
+      {
+        "id": "measuring-tools",
+        "name": "Measuring Tools",
+        "productTypes": [
+          {
+            "id": "levels",
+            "name": "Levels"
+          },
+          {
+            "id": "laser-levels",
+            "name": "Laser Levels"
+          },
+          {
+            "id": "plumb-bobs",
+            "name": "Plumb Bobs"
+          }
+        ]
+      },
+      {
+        "id": "plumbing-electrical-tools",
+        "name": "Plumbing & Electrical Tools",
+        "productTypes": [
+          {
+            "id": "pipe-cutters",
+            "name": "Pipe Cutters"
+          },
+          {
+            "id": "crimping-pliers",
+            "name": "Crimping Pliers"
+          },
+          {
+            "id": "cable-pullers",
+            "name": "Cable Pullers"
+          }
+        ]
+      },
+      {
+        "id": "consumables",
+        "name": "Consumables",
+        "productTypes": [
+          {
+            "id": "cutting-discs",
+            "name": "Cutting Discs"
+          },
+          {
+            "id": "drill-bits",
+            "name": "Drill Bits"
+          },
+          {
+            "id": "sandpapers",
+            "name": "Sandpapers"
+          },
+          {
+            "id": "wall-plugs",
+            "name": "Wall Plugs"
+          }
+        ]
+      },
+      {
+        "id": "construction-equipment",
+        "name": "Construction Equipment",
+        "productTypes": [
+          {
+            "id": "concrete-mixers",
+            "name": "Concrete Mixers"
+          },
+          {
+            "id": "scaffolding",
+            "name": "Scaffolding"
+          },
+          {
+            "id": "generators",
+            "name": "Generators"
+          },
+          {
+            "id": "air-compressors",
+            "name": "Air Compressors"
+          }
+        ]
+      },
+      {
+        "id": "storage-protection",
+        "name": "Storage & Protection",
+        "productTypes": [
+          {
+            "id": "tool-boxes",
+            "name": "Tool Boxes"
+          },
+          {
+            "id": "workbenches",
+            "name": "Workbenches"
+          },
+          {
+            "id": "ppe-personal-protective-equipment",
+            "name": "PPE (Personal Protective Equipment)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "paints-sealants",
+    "name": "Paints & Sealants",
+    "subcategories": [
+      {
+        "id": "paints",
+        "name": "Paints",
+        "productTypes": [
+          {
+            "id": "interior-paint",
+            "name": "Interior Paint"
+          },
+          {
+            "id": "exterior-paint",
+            "name": "Exterior Paint"
+          },
+          {
+            "id": "acrylic-paint",
+            "name": "Acrylic Paint"
+          },
+          {
+            "id": "facade-paint",
+            "name": "Facade Paint"
+          },
+          {
+            "id": "epoxy-paint",
+            "name": "Epoxy Paint"
+          },
+          {
+            "id": "anti-rust-paint",
+            "name": "Anti-Rust Paint"
+          },
+          {
+            "id": "swimming-pool-paint",
+            "name": "Swimming Pool Paint"
+          }
+        ]
+      },
+      {
+        "id": "primers",
+        "name": "Primers",
+        "productTypes": [
+          {
+            "id": "acrylic-primer",
+            "name": "Acrylic Primer"
+          },
+          {
+            "id": "bonding-primer",
+            "name": "Bonding Primer"
+          },
+          {
+            "id": "anti-rust-primer",
+            "name": "Anti-Rust Primer"
+          }
+        ]
+      },
+      {
+        "id": "varnishes",
+        "name": "Varnishes",
+        "productTypes": [
+          {
+            "id": "gloss-varnish",
+            "name": "Gloss Varnish"
+          },
+          {
+            "id": "matte-varnish",
+            "name": "Matte Varnish"
+          },
+          {
+            "id": "exterior-varnish",
+            "name": "Exterior Varnish"
+          }
+        ]
+      },
+      {
+        "id": "sealants",
+        "name": "Sealants",
+        "productTypes": [
+          {
+            "id": "silicone-sealant",
+            "name": "Silicone Sealant"
+          },
+          {
+            "id": "polyurethane-sealant",
+            "name": "Polyurethane Sealant"
+          },
+          {
+            "id": "pu-foam",
+            "name": "PU Foam"
+          }
+        ]
+      },
+      {
+        "id": "compounds",
+        "name": "Compounds",
+        "productTypes": [
+          {
+            "id": "wall-filler",
+            "name": "Wall Filler"
+          },
+          {
+            "id": "putty",
+            "name": "Putty"
+          },
+          {
+            "id": "levelling-compound",
+            "name": "Levelling Compound"
+          }
+        ]
+      },
+      {
+        "id": "paint-tools",
+        "name": "Tools",
+        "productTypes": [
+          {
+            "id": "rollers",
+            "name": "Rollers"
+          },
+          {
+            "id": "paint-brushes",
+            "name": "Paint Brushes"
+          },
+          {
+            "id": "sandpapers",
+            "name": "Sandpapers"
+          },
+          {
+            "id": "masking-tapes",
+            "name": "Masking Tapes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "doors-windows-frames",
+    "name": "Doors, Windows & Frames",
+    "subcategories": [
+      {
+        "id": "doors",
+        "name": "Doors",
+        "productTypes": [
+          {
+            "id": "interior-door",
+            "name": "Interior Door"
+          },
+          {
+            "id": "exterior-door",
+            "name": "Exterior Door"
+          },
+          {
+            "id": "security-door",
+            "name": "Security Door"
+          },
+          {
+            "id": "aluminum-pvc-door",
+            "name": "Aluminum / PVC Door"
+          },
+          {
+            "id": "glass-door",
+            "name": "Glass Door"
+          },
+          {
+            "id": "technical-door",
+            "name": "Technical Door"
+          }
+        ]
+      },
+      {
+        "id": "windows",
+        "name": "Windows",
+        "productTypes": [
+          {
+            "id": "aluminum-window",
+            "name": "Aluminum Window"
+          },
+          {
+            "id": "pvc-window",
+            "name": "PVC Window"
+          },
+          {
+            "id": "wooden-window",
+            "name": "Wooden Window"
+          },
+          {
+            "id": "tilt-and-turn-window",
+            "name": "Tilt-and-Turn Window"
+          },
+          {
+            "id": "sliding-window",
+            "name": "Sliding Window"
+          }
+        ]
+      },
+      {
+        "id": "frames",
+        "name": "Frames",
+        "productTypes": [
+          {
+            "id": "profiles",
+            "name": "Profiles"
+          },
+          {
+            "id": "thermal-break-systems",
+            "name": "Thermal Break Systems"
+          },
+          {
+            "id": "guides",
+            "name": "Guides"
+          }
+        ]
+      },
+      {
+        "id": "glass",
+        "name": "Glass",
+        "productTypes": [
+          {
+            "id": "single-glass",
+            "name": "Single Glass"
+          },
+          {
+            "id": "double-glazing",
+            "name": "Double Glazing"
+          },
+          {
+            "id": "laminated-glass",
+            "name": "Laminated Glass"
+          },
+          {
+            "id": "tempered-glass",
+            "name": "Tempered Glass"
+          },
+          {
+            "id": "polycarbonate",
+            "name": "Polycarbonate"
+          }
+        ]
+      },
+      {
+        "id": "hardware",
+        "name": "Hardware",
+        "productTypes": [
+          {
+            "id": "locks",
+            "name": "Locks"
+          },
+          {
+            "id": "handles",
+            "name": "Handles"
+          },
+          {
+            "id": "hinges",
+            "name": "Hinges"
+          }
+        ]
+      },
+      {
+        "id": "sealing-doors",
+        "name": "Sealing",
+        "productTypes": [
+          {
+            "id": "foams",
+            "name": "Foams"
+          },
+          {
+            "id": "silicones",
+            "name": "Silicones"
+          },
+          {
+            "id": "thresholds",
+            "name": "Thresholds"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bathroom-kitchen",
+    "name": "Bathroom & Kitchen",
+    "subcategories": [
+      {
+        "id": "sanitary-ware",
+        "name": "Sanitary Ware",
+        "productTypes": [
+          {
+            "id": "toilets",
+            "name": "Toilets"
+          },
+          {
+            "id": "cisterns",
+            "name": "Cisterns"
+          },
+          {
+            "id": "bidets",
+            "name": "Bidets"
+          },
+          {
+            "id": "wash-basins",
+            "name": "Wash Basins"
+          },
+          {
+            "id": "bathroom-furniture",
+            "name": "Bathroom Furniture"
+          }
+        ]
+      },
+      {
+        "id": "shower",
+        "name": "Shower",
+        "productTypes": [
+          {
+            "id": "shower-trays",
+            "name": "Shower Trays"
+          },
+          {
+            "id": "shower-cabins",
+            "name": "Shower Cabins"
+          },
+          {
+            "id": "shower-screens",
+            "name": "Shower Screens"
+          },
+          {
+            "id": "drains",
+            "name": "Drains"
+          }
+        ]
+      },
+      {
+        "id": "faucets",
+        "name": "Faucets",
+        "productTypes": [
+          {
+            "id": "basin-faucet",
+            "name": "Basin Faucet"
+          },
+          {
+            "id": "shower-faucet",
+            "name": "Shower Faucet"
+          },
+          {
+            "id": "bathtub-faucet",
+            "name": "Bathtub Faucet"
+          },
+          {
+            "id": "kitchen-faucet",
+            "name": "Kitchen Faucet"
+          }
+        ]
+      },
+      {
+        "id": "kitchen",
+        "name": "Kitchen",
+        "productTypes": [
+          {
+            "id": "kitchen-sinks",
+            "name": "Kitchen Sinks"
+          },
+          {
+            "id": "sink-bowls",
+            "name": "Sink Bowls"
+          },
+          {
+            "id": "valves",
+            "name": "Valves"
+          }
+        ]
+      },
+      {
+        "id": "bathroom-accessories",
+        "name": "Accessories",
+        "productTypes": [
+          {
+            "id": "towel-holders",
+            "name": "Towel Holders"
+          },
+          {
+            "id": "mirrors",
+            "name": "Mirrors"
+          },
+          {
+            "id": "cabinets",
+            "name": "Cabinets"
+          }
+        ]
+      },
+      {
+        "id": "complements",
+        "name": "Complements",
+        "productTypes": [
+          {
+            "id": "coverings",
+            "name": "Coverings"
+          },
+          {
+            "id": "sealants",
+            "name": "Sealants"
+          },
+          {
+            "id": "lighting",
+            "name": "Lighting"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "renovation-rehabilitation",
+    "name": "Renovation & Rehabilitation",
+    "subcategories": [
+      {
+        "id": "structural-repair",
+        "name": "Structural Repair",
+        "productTypes": [
+          {
+            "id": "repair-mortars",
+            "name": "Repair Mortars"
+          },
+          {
+            "id": "resins",
+            "name": "Resins"
+          },
+          {
+            "id": "injection-systems",
+            "name": "Injection Systems"
+          },
+          {
+            "id": "fibers",
+            "name": "Fibers"
+          },
+          {
+            "id": "anti-corrosion-treatments",
+            "name": "Anti-Corrosion Treatments"
+          }
+        ]
+      },
+      {
+        "id": "surface-treatment",
+        "name": "Surface Treatment",
+        "productTypes": [
+          {
+            "id": "cleaning-products",
+            "name": "Cleaning Products"
+          },
+          {
+            "id": "paint-strippers",
+            "name": "Paint Strippers"
+          },
+          {
+            "id": "neutralizers",
+            "name": "Neutralizers"
+          }
+        ]
+      },
+      {
+        "id": "waterproofing-reno",
+        "name": "Waterproofing",
+        "productTypes": [
+          {
+            "id": "membranes",
+            "name": "Membranes"
+          },
+          {
+            "id": "injection-systems",
+            "name": "Injection Systems"
+          },
+          {
+            "id": "protective-coatings",
+            "name": "Protective Coatings"
+          }
+        ]
+      },
+      {
+        "id": "insulation-reno",
+        "name": "Insulation",
+        "productTypes": [
+          {
+            "id": "etics-systems",
+            "name": "ETICS Systems"
+          },
+          {
+            "id": "cork",
+            "name": "Cork"
+          },
+          {
+            "id": "eps-xps",
+            "name": "EPS / XPS"
+          }
+        ]
+      },
+      {
+        "id": "facades",
+        "name": "Facades",
+        "productTypes": [
+          {
+            "id": "technical-plasters",
+            "name": "Technical Plasters"
+          },
+          {
+            "id": "mineral-paints",
+            "name": "Mineral Paints"
+          },
+          {
+            "id": "reinforcement-meshes",
+            "name": "Reinforcement Meshes"
+          }
+        ]
+      },
+      {
+        "id": "interiors",
+        "name": "Interiors",
+        "productTypes": [
+          {
+            "id": "crack-repair-products",
+            "name": "Crack Repair Products"
+          },
+          {
+            "id": "primers",
+            "name": "Primers"
+          },
+          {
+            "id": "special-coatings",
+            "name": "Special Coatings"
+          }
+        ]
+      },
+      {
+        "id": "protection",
+        "name": "Protection",
+        "productTypes": [
+          {
+            "id": "water-repellents",
+            "name": "Water Repellents"
+          },
+          {
+            "id": "anti-fungal-treatments",
+            "name": "Anti-Fungal Treatments"
+          },
+          {
+            "id": "technical-varnishes",
+            "name": "Technical Varnishes"
+          }
+        ]
+      }
+    ]
+  }
+]

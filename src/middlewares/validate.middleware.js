@@ -2,14 +2,36 @@ import { ZodError } from 'zod'
 import { sendError } from '../utils/apiResponse.js'
 
 /**
+ * Express 5 exposes `req.query` / `req.params` as getter-only.
+ * Replace via defineProperty so Zod defaults/coercion stick.
+ */
+function assignValidated(req, source, parsed) {
+  if (source === 'body') {
+    req.body = parsed
+    return
+  }
+
+  try {
+    req[source] = parsed
+  } catch {
+    Object.defineProperty(req, source, {
+      value: parsed,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    })
+  }
+}
+
+/**
  * Validate req.body / params / query with a Zod schema.
  * Shared — use from any module route.
  */
 export function validate(schema, source = 'body') {
   return (req, res, next) => {
     try {
-      const parsed = schema.parse(req[source])
-      req[source] = parsed
+      const parsed = schema.parse(req[source] ?? {})
+      assignValidated(req, source, parsed)
       next()
     } catch (err) {
       if (err instanceof ZodError) {

@@ -1,0 +1,12 @@
+-- AlterTable
+ALTER TABLE "Inventory" ALTER COLUMN "currentStock" SET DEFAULT 0,
+ALTER COLUMN "currentStock" SET DATA TYPE DOUBLE PRECISION,
+ALTER COLUMN "lowStockThreshold" SET DEFAULT 10,
+ALTER COLUMN "lowStockThreshold" SET DATA TYPE DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "InventoryTransaction" ALTER COLUMN "quantityChange" SET DATA TYPE DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "factoryName" TEXT,
+ALTER COLUMN "weightKg" SET DEFAULT 0;

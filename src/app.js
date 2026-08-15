@@ -4,6 +4,11 @@ import cors from 'cors'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth/auth.js'
 import authRoutes from './modules/auth/routes/auth.routes.js'
+import {
+  categoryRoutes,
+  subCategoryRoutes,
+} from './modules/catalog/routes/catalog.routes.js'
+import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import { UPLOAD_ROOT } from './modules/auth/upload.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
@@ -53,6 +58,9 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/uploads', express.static(UPLOAD_ROOT))
 
 app.use('/api/auth', authRoutes)
+app.use('/api/categories', categoryRoutes)
+app.use('/api/subcategories', subCategoryRoutes)
+app.use('/api/inventory', inventoryRoutes)
 
 app.get('/', (req, res) => {
   return sendSuccess(

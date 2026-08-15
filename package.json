@@ -9,12 +9,15 @@
     "description": "",
     "main": "src/server.js",
     "scripts": {
-        "start": "tsx src/server.js",
+        "postinstall": "prisma generate",
+        "start": "prisma generate && prisma migrate deploy && tsx src/server.js",
         "dev": "tsx --watch src/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
+        "prisma:deploy": "prisma migrate deploy",
         "prisma:studio": "prisma studio",
         "seed:admin": "tsx src/scripts/seed-admin.js",
+        "seed:catalog": "tsx src/scripts/seed-catalog.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
@@ -32,13 +35,13 @@
         "multer": "^2.2.0",
         "nodemailer": "^9.0.5",
         "pg": "^8.23.0",
+        "prisma": "^7.9.1",
+        "tsx": "^4.23.12",
         "zod": "^4.4.3"
     },
     "devDependencies": {
         "@types/cors": "^2.8.19",
         "@types/multer": "^2.2.0",
-        "nodemon": "3.1.14",
-        "prisma": "^7.9.1",
-        "tsx": "^4.23.12"
+        "nodemon": "3.1.14"
     }
 }

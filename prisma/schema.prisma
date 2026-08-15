@@ -376,12 +376,13 @@ model Product {
   slug              String                @unique
   shortDescription  String?
   longDescription   String?
+  factoryName       String?
   basePrice         Float
   b2bPrice          Float?
   minOrderQuantity  Int                   @default(1)
   minB2bQuantity    Int?
-  unitOfMeasure     String                // e.g. "per bag", "per ton"
-  weightKg          Float
+  unitOfMeasure     String                // e.g. "tons", "pieces"
+  weightKg          Float                 @default(0)
   marketplaceTier   MarketplaceTier       @default(RETAIL)
   approvalStatus    ProductApprovalStatus @default(PENDING_REVIEW)
   isSponsored       Boolean               @default(false)
@@ -440,8 +441,8 @@ model ProductFeature {
 model Inventory {
   id                 String                 @id @default(uuid())
   productId          String                 @unique
-  currentStock       Int                    @default(0)
-  lowStockThreshold  Int                    @default(10)
+  currentStock       Float                  @default(0)
+  lowStockThreshold  Float                  @default(10)
   updatedAt          DateTime               @updatedAt
 
   product            Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -451,8 +452,8 @@ model Inventory {
 model InventoryTransaction {
   id           String    @id @default(uuid())
   inventoryId  String
-  quantityChange Int     // Positive for restock, negative for order
-  sourceType   String    // "MANUFACTURED", "PURCHASED_FROM_FACTORY", "ORDER_FULFILLMENT"
+  quantityChange Float   // Positive for restock, negative for order
+  sourceType   String    // "MANUFACTURED", "PURCHASED_FROM_FACTORY", "ORDER_FULFILLMENT", "RESTOCK", "INITIAL"
   referenceId  String?   // Order ID or PO ID
   createdAt    DateTime  @default(now())
 

@@ -1,0 +1,9 @@
+# Coolify / Nixpacks — Prisma client is gitignored and must be generated in the image.
+[phases.install]
+cmds = [
+  "pnpm install",
+  "pnpm prisma generate"
+]
+
+[start]
+cmd = "pnpm start"
