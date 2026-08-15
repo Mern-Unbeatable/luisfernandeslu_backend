@@ -1308,7 +1308,11 @@ export class ProductService {
   async rejectListing(productId, reason = null) {
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, approvalStatus: true },
+      select: {
+        id: true,
+        approvalStatus: true,
+        inventory: { select: { id: true } },
+      },
     })
     if (!product) throw httpError('Product not found', 404, 'NotFound')
     if (product.approvalStatus !== 'PENDING_REVIEW') {
@@ -1320,7 +1324,10 @@ export class ProductService {
       data: {
         approvalStatus: 'REJECTED',
         rejectionReason: reason?.trim() || null,
-        inventory: { update: { listedQuantity: 0 } },
+        // Factory direct products have no inventory row
+        ...(product.inventory
+          ? { inventory: { update: { listedQuantity: 0 } } }
+          : {}),
       },
       select: {
         ...shortSelect,
@@ -1340,7 +1347,7 @@ export class ProductService {
         approvalStatus: updated.approvalStatus,
         rejectionReason: updated.rejectionReason,
         ...getStockBreakdown(updated.inventory, updated.approvalStatus),
-        message: 'Listing rejected. Supplier can edit and resubmit.',
+        message: 'Listing rejected. Seller can edit and resubmit.',
       },
     }
   }
