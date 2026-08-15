@@ -1,0 +1,783 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-auth-construpreco",
+    "name": "CONSTRUPRECO Auth",
+    "description": "Role-based Better Auth APIs — Login & Register.\n\nBase URL: {{baseUrl}}\n\nRoles:\n- user → customer\n- company, supplier, factory, transporter, affiliate, admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "item": [
+            {
+              "name": "user",
+              "item": [
+                {
+                  "name": "Login Customer",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"customer@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/customer",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "customer"]
+                    },
+                    "description": "Customer (user) email/password login."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "company",
+              "item": [
+                {
+                  "name": "Login Company",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"company@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/company",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "company"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "supplier",
+              "item": [
+                {
+                  "name": "Login Supplier",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"supplier@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/supplier",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "supplier"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Factory",
+              "item": [
+                {
+                  "name": "Login Factory",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"factory@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/factory",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "factory"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Transporter",
+              "item": [
+                {
+                  "name": "Login Transporter",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"transporter@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/transporter",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "transporter"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Affiliate",
+              "item": [
+                {
+                  "name": "Login Affiliate",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"affiliate@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/affiliate",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "affiliate"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Admin",
+              "item": [
+                {
+                  "name": "Login Admin",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"admin@construpreco.local\",\n  \"password\": \"AdminDemo123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login/admin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login", "admin"]
+                    },
+                    "description": "Seeded via `pnpm seed:admin`. Default password from .env ADMIN_PASSWORD."
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "item": [
+            {
+              "name": "user",
+              "item": [
+                {
+                  "name": "Register Customer",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"fullName\": \"Test Customer\",\n  \"email\": \"customer@test.local\",\n  \"password\": \"Password123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/customer",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "customer"]
+                    },
+                    "description": "Customer signup. Returns requiresEmailVerification=true and sends OTP email (console if SMTP empty). Then call Auth/OTP/Verify before Login. Google/Facebook skips OTP."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "company",
+              "item": [
+                {
+                  "name": "Register Company",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"companyName\": \"Acme Construction Lda\",\n  \"email\": \"company@test.local\",\n  \"nif\": \"PT500000000\",\n  \"password\": \"Password123!\",\n  \"referenceCode\": \"\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/company",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "company"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "supplier",
+              "item": [
+                {
+                  "name": "Register Supplier",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "companyName",
+                          "value": "Supplier Materials Lda",
+                          "type": "text"
+                        },
+                        {
+                          "key": "email",
+                          "value": "supplier@test.local",
+                          "type": "text"
+                        },
+                        {
+                          "key": "phone",
+                          "value": "+351910000001",
+                          "type": "text"
+                        },
+                        {
+                          "key": "iban",
+                          "value": "PT50 0002 0123 1234 5678 9013 4",
+                          "type": "text"
+                        },
+                        {
+                          "key": "password",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "confirmPassword",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "companyCertificate",
+                          "type": "file",
+                          "src": [],
+                          "description": "JPEG/PNG/PDF — optional for quick test"
+                        },
+                        {
+                          "key": "rcbe",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "ibanProof",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "idDocuments",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "addressProof",
+                          "type": "file",
+                          "src": []
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/supplier",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "supplier"]
+                    },
+                    "description": "Multipart form — documents optional for smoke test; required fields: companyName, email, phone, iban, password."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Factory",
+              "item": [
+                {
+                  "name": "Register Factory",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "factoryName",
+                          "value": "Factory Works Lda",
+                          "type": "text"
+                        },
+                        {
+                          "key": "email",
+                          "value": "factory@test.local",
+                          "type": "text"
+                        },
+                        {
+                          "key": "phone",
+                          "value": "+351910000002",
+                          "type": "text"
+                        },
+                        {
+                          "key": "iban",
+                          "value": "PT50 0002 0123 1234 5678 9015 4",
+                          "type": "text"
+                        },
+                        {
+                          "key": "password",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "confirmPassword",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "factoryCertificate",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "rcbe",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "ibanProof",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "idDocuments",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "addressProof",
+                          "type": "file",
+                          "src": []
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/factory",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "factory"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Transporter",
+              "item": [
+                {
+                  "name": "Register Transporter",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "fullName",
+                          "value": "João Transporter",
+                          "type": "text"
+                        },
+                        {
+                          "key": "email",
+                          "value": "transporter@test.local",
+                          "type": "text"
+                        },
+                        {
+                          "key": "phone",
+                          "value": "+351910000003",
+                          "type": "text"
+                        },
+                        {
+                          "key": "iban",
+                          "value": "PT50 0002 0123 1234 5678 9015 4",
+                          "type": "text"
+                        },
+                        {
+                          "key": "password",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "confirmPassword",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "ibanProof",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "civilLiability",
+                          "type": "file",
+                          "src": []
+                        },
+                        {
+                          "key": "transporterCivilLiability",
+                          "type": "file",
+                          "src": []
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/transporter",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "transporter"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Affiliate",
+              "item": [
+                {
+                  "name": "Register Affiliate",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "fullName",
+                          "value": "Ana Affiliate",
+                          "type": "text"
+                        },
+                        {
+                          "key": "email",
+                          "value": "affiliate@test.local",
+                          "type": "text"
+                        },
+                        {
+                          "key": "phone",
+                          "value": "+351910000004",
+                          "type": "text"
+                        },
+                        {
+                          "key": "iban",
+                          "value": "PT50 0002 0123 1234 5678 9015 4",
+                          "type": "text"
+                        },
+                        {
+                          "key": "password",
+                          "value": "Password123!",
+                          "type": "text"
+                        },
+                        {
+                          "key": "affiliateCode",
+                          "value": "",
+                          "type": "text",
+                          "description": "Optional"
+                        },
+                        {
+                          "key": "ibanProof",
+                          "type": "file",
+                          "src": []
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/affiliate",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "affiliate"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Admin",
+              "item": [
+                {
+                  "name": "Register Admin (not public)",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"admin@construpreco.local\",\n  \"password\": \"AdminDemo123!\",\n  \"name\": \"Platform Admin\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register/admin",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register", "admin"]
+                    },
+                    "description": "Public admin signup is DISABLED. Use `pnpm seed:admin` instead. This request is expected to fail with ValidationError."
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "OTP",
+          "item": [
+            {
+              "name": "Verify Email OTP",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.local\",\n  \"otp\": \"23541\",\n  \"role\": \"customer\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/verify-otp",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "verify-otp"]
+                },
+                "description": "5-digit OTP after customer/company email register (not Google/Facebook). Check email or server console if SMTP falls back."
+              },
+              "response": []
+            },
+            {
+              "name": "Resend Email OTP",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.local\",\n  \"role\": \"customer\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/resend-otp",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "resend-otp"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "item": [
+            {
+              "name": "1. Forgot Password (Send OTP)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.local\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/forgot-password",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "forgot-password"]
+                },
+                "description": "Sends a 5-digit OTP to the email if an account exists. Same response whether or not the email is registered."
+              },
+              "response": []
+            },
+            {
+              "name": "2. Verify Reset OTP",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.local\",\n  \"otp\": \"23541\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/verify-reset-otp",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "verify-reset-otp"]
+                },
+                "description": "Validates the 5-digit reset OTP and returns a short-lived resetToken (10m). OTP is kept until reset-password."
+              },
+              "response": []
+            },
+            {
+              "name": "3. Reset Password (with resetToken)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resetToken\": \"{{resetToken}}\",\n  \"password\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/reset-password",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "reset-password"]
+                },
+                "description": "Preferred after verify-reset-otp. Password min 8 chars."
+              },
+              "response": []
+            },
+            {
+              "name": "3b. Reset Password (email + OTP)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.local\",\n  \"otp\": \"23541\",\n  \"password\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/reset-password",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "reset-password"]
+                },
+                "description": "Alternative: skip verify-reset-otp and send email + OTP + new password in one step."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Session",
+          "item": [
+            {
+              "name": "Get Me",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "me"]
+                },
+                "description": "Requires Authorization: Bearer <accessToken> from Login. Token payload includes role."
+              },
+              "response": []
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

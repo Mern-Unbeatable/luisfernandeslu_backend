@@ -1,44 +1,86 @@
-import express from 'express';
-import userRoutes from './modules/user/routes/user.routes.js';
+import 'dotenv/config'
+import express from 'express'
+import cors from 'cors'
+import { toNodeHandler } from 'better-auth/node'
+import { auth } from './auth/auth.js'
+import authRoutes from './modules/auth/routes/auth.routes.js'
+import { UPLOAD_ROOT } from './modules/auth/upload.js'
+import { notFoundHandler } from './middlewares/notFound.middleware.js'
+import { globalErrorHandler } from './middlewares/globalError.middleware.js'
+import { sendSuccess } from './utils/apiResponse.js'
 
-const app = express();
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+const baHandler = toNodeHandler(auth)
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const app = express()
+
+app.set('trust proxy', 1)
+
+app.use(
+  cors({
+    origin: frontendUrl,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+)
+
+/**
+ * Better Auth handler for /api/auth/*
+ * Skip custom endpoints handled by authRoutes.
+ */
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/auth')) return next()
+  if (
+    req.path.startsWith('/api/auth/register') ||
+    req.path.startsWith('/api/auth/login') ||
+    req.path === '/api/auth/logout' ||
+    req.path === '/api/auth/me' ||
+    req.path === '/api/auth/verify-otp' ||
+    req.path === '/api/auth/resend-otp' ||
+    req.path === '/api/auth/forgot-password' ||
+    req.path === '/api/auth/verify-reset-otp' ||
+    req.path === '/api/auth/reset-password'
+  ) {
+    return next()
+  }
+  return baHandler(req, res)
+})
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+app.use('/uploads', express.static(UPLOAD_ROOT))
+
+app.use('/api/auth', authRoutes)
 
 app.get('/', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'Welcome to the API',
-    version: '1.0.0',
-    Email: 'shanjidahmed66@gmail.com',
-    timestamp: new Date().toISOString()
-  });
-});
+  return sendSuccess(
+    res,
+    200,
+    {
+      status: 'OK',
+      version: '1.0.0',
+      Email: 'shanjidahmed66@gmail.com',
+      timestamp: new Date().toISOString(),
+    },
+    'Welcome to the API',
+  )
+})
 
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'Server is running',
-    timestamp: new Date().toISOString()
-  });
-});
+  return sendSuccess(
+    res,
+    200,
+    {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+    },
+    'Server is running',
+  )
+})
 
-app.use('/api/users', userRoutes);
+app.use(notFoundHandler)
+app.use(globalErrorHandler)
 
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource does not exist'
-  });
-});
-
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
-
-export default app;
+export default app

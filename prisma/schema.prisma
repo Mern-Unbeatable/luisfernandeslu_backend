@@ -149,99 +149,128 @@ enum ChannelType {
 // ==========================================
 
 model User {
-  id                    String            @id @default(uuid())
-  email                 String            @unique
-  passwordHash          String
-  fullName              String
-  phoneNumber           String?
-  role                  UserRole
-  status                AccountStatus     @default(PENDING_VERIFICATION)
-  referralCode          String?           @unique
-  referredById          String?
-  vatRate               Float?            @default(0.0) // Admin configurable for Company users
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  emailVerified Boolean       @default(false)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // App-specific fields
+  phoneNumber  String?
+  role         UserRole
+  status       AccountStatus  @default(PENDING_VERIFICATION)
+  referralCode String?        @unique
+  referredById String?
+  vatRate      Float?         @default(0.0)
 
   // Self-Relation for Affiliates / Referrals
-  referrer              User?             @relation("UserReferrals", fields: [referredById], references: [id])
-  referees              User[]            @relation("UserReferrals")
+  referrer User?  @relation("UserReferrals", fields: [referredById], references: [id])
+  referees User[] @relation("UserReferrals")
 
-  // Relations
-  accounts              Account[]
-  profile               BusinessProfile?
-  addresses             UserAddressBridge[]
-  projects              Project[]
-  
-  // E-Commerce & Transactions
-  products              Product[]         @relation("SellerProducts")
-  customerOrders        Order[]           @relation("CustomerOrders")
-  sellerOrders          Order[]           @relation("SellerOrders")
-  quoteRequests         QuoteRequest[]    @relation("BuyerQuotes")
-  sellerQuotes          QuoteRequest[]    @relation("SellerQuotes")
-  
-  // Logistics & Vehicles
-  vehicles              Vehicle[]
-  bids                  TransporterBid[]
-  
-  // Affiliate
-  affiliateLinks        AffiliateLink[]
-  commissions           CommissionTransaction[]
-  
-  // Financial
-  wallet                Wallet?
-  withdrawalRequests    WithdrawalRequest[]
-  
-  // Reviews & Disputes
-  reviewsGiven          Review[]          @relation("ReviewAuthor")
-  reviewsReceived       Review[]          @relation("TransporterReviews")
-  disputesInitiated     Dispute[]         @relation("AccuserDisputes")
-  disputesDefended      Dispute[]         @relation("AccusedDisputes")
-  disputeMessages       DisputeMessage[]
-  supportTickets        SupportTicket[]
-  ticketMessages        TicketMessage[]
-  chatMessages          ChatMessage[]     @relation("SentMessages")
-  
-  // Admin Backoffice
-  adminRoleBridge       UserAdminRoleBridge[]
-  auditLogs             AuditLog[]
-  blogPosts             BlogPost[]
+  // Better Auth relations
+  sessions Session[]
+  accounts Account[]
+
+  // App relations
+  profile            BusinessProfile?
+  addresses          UserAddressBridge[]
+  projects           Project[]
+  products           Product[]               @relation("SellerProducts")
+  customerOrders     Order[]                 @relation("CustomerOrders")
+  sellerOrders       Order[]                 @relation("SellerOrders")
+  quoteRequests      QuoteRequest[]          @relation("BuyerQuotes")
+  sellerQuotes       QuoteRequest[]          @relation("SellerQuotes")
+  vehicles           Vehicle[]
+  bids               TransporterBid[]
+  affiliateLinks     AffiliateLink[]
+  commissions        CommissionTransaction[]
+  wallet             Wallet?
+  withdrawalRequests WithdrawalRequest[]
+  reviewsGiven       Review[]                @relation("ReviewAuthor")
+  reviewsReceived    Review[]                @relation("TransporterReviews")
+  disputesInitiated  Dispute[]               @relation("AccuserDisputes")
+  disputesDefended   Dispute[]               @relation("AccusedDisputes")
+  disputeMessages    DisputeMessage[]
+  supportTickets     SupportTicket[]
+  ticketMessages     TicketMessage[]
+  chatMessages       ChatMessage[]           @relation("SentMessages")
+  adminRoleBridge    UserAdminRoleBridge[]
+  auditLogs          AuditLog[]
+  blogPosts          BlogPost[]
 
   @@index([role, status])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
 }
 
 model Account {
-  id                  String   @id @default(uuid())
-  userId              String
-  providerName        String
-  providerAccountId   String
-  createdAt           DateTime @default(now())
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("account")
+}
 
-  @@unique([providerName, providerAccountId])
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
 }
 
 model BusinessProfile {
-  id                         String             @id @default(uuid())
-  userId                     String             @unique
-  companyName                String?
-  nifNumber                  String?
-  ibanNumber                 String?
-  rcbeNumber                 String?
-  logoUrl                    String?
-  coverImageUrl              String?
-  verificationStatus         VerificationStatus @default(UNVERIFIED)
-  rejectionReason            String?
-  companyCertificateUrl      String?
-  commercialRegistrationUrl  String?
-  nifDocumentUrl             String?
-  idDocumentUrl              String?
-  addressProofUrl            String?
-  insuranceDocumentUrl       String?
-  createdAt                  DateTime           @default(now())
-  updatedAt                  DateTime           @updatedAt
+  id                        String             @id @default(uuid())
+  userId                    String             @unique
+  companyName               String?
+  nifNumber                 String?
+  ibanNumber                String?
+  rcbeNumber                String?
+  logoUrl                   String?
+  coverImageUrl             String?
+  verificationStatus        VerificationStatus @default(UNVERIFIED)
+  rejectionReason           String?
+  companyCertificateUrl     String? // JSON array of URLs when multiple
+  commercialRegistrationUrl String? // JSON array of URLs when multiple
+  nifDocumentUrl            String?
+  idDocumentUrl             String? // JSON array of URLs when multiple
+  addressProofUrl           String? // JSON array of URLs when multiple
+  ibanProofUrl              String? // JSON array of URLs when multiple
+  insuranceDocumentUrl      String? // civil liability — JSON array when multiple
+  transporterInsuranceUrl   String? // transporter civil liability
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
-  user                       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Address {
@@ -974,4 +1003,26 @@ model NotificationLog {
   templateName String
   status       String      // "SENT", "FAILED"
   sentAt       DateTime    @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+/// Email OTP for post-register verification (customer / company email signup)
+model EmailOtp {
+  id        String   @id @default(cuid())
+  email     String
+  otpHash   String
+  purpose   String   // EMAIL_VERIFY
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, purpose])
+  @@index([email])
+  @@map("email_otp")
 }
