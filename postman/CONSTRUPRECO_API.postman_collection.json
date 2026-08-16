@@ -65,6 +65,18 @@
     {
       "key": "marketplaceProductId",
       "value": ""
+    },
+    {
+      "key": "quoteId",
+      "value": ""
+    },
+    {
+      "key": "offerId",
+      "value": ""
+    },
+    {
+      "key": "cartItemId",
+      "value": ""
     }
   ],
   "item": [
@@ -1466,8 +1478,425 @@
                     "description": "Company detail (image 3): basePrice + bulk table + b2bPrice + minOrderLabel + actions.sendQuote=true."
                   },
                   "response": []
+                },
+                {
+                  "name": "Send Quote",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.quote?.id) pm.collectionVariables.set(\"quoteId\", json.quote.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  // Send Quote modal (company only)\n  // budget: slider / presets e.g. 80, 50, 70, 60\n  \"budget\": 80,\n  // quantity: free text from UI (e.g. \"10 bags\")\n  \"quantity\": \"10 bags\",\n  \"message\": \"Need delivery within 2 weeks for our site project.\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}/quote",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductId}}",
+                        "quote"
+                      ]
+                    },
+                    "description": "Company Send Quote modal. Creates PENDING QuoteRequest for the product seller. Requires Login Company + marketplaceProductId."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List My Quote Chats",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const q = json.quotes?.[0];",
+                          "if (q?.id) pm.collectionVariables.set(\"quoteId\", q.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all|PENDING|IN_CHAT|ACCEPTED|REJECTED"
+                        }
+                      ]
+                    },
+                    "description": "Company: quotes I sent + messenger sidebar `chats` array"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Quote Thread",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Chat Messages",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "messages"
+                      ]
+                    },
+                    "description": "Poll for live chat. Optional ?after=ISO date for new messages only."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Send Chat Message",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"message\": \"Hi, can you confirm delivery timeline?\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "messages"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Negotiate Offer",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/negotiate",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "offers",
+                        "{{offerId}}",
+                        "negotiate"
+                      ]
+                    },
+                    "description": "Company taps Negotiate on Offer Card"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Accept Offer",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/accept",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "offers",
+                        "{{offerId}}",
+                        "accept"
+                      ]
+                    },
+                    "description": "Company accepts offer (Pay Now flow can follow later)"
+                  },
+                  "response": []
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "Cart",
+          "description": "Customer / Company shopping cart. Login as Customer or Company first.\n\nCompany sees b2bPrice as unitPrice when available; customer sees basePrice.",
+          "item": [
+            {
+              "name": "Get Cart",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart"
+                  ]
+                },
+                "description": "All cart items + totals (subtotal, shipping, vat, total)"
+              },
+              "response": []
+            },
+            {
+              "name": "Add Product to Cart",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.item?.id) pm.collectionVariables.set(\"cartItemId\", json.item.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"{{marketplaceProductId}}\",\n  \"quantity\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items"
+                  ]
+                },
+                "description": "Add approved marketplace product. Same SKU merges quantity."
+              },
+              "response": []
+            },
+            {
+              "name": "Increase Quantity",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"increase\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items",
+                    "{{cartItemId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Decrease Quantity",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"decrease\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items",
+                    "{{cartItemId}}"
+                  ]
+                },
+                "description": "If quantity reaches 0, item is deleted."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Cart Item",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/items/{{cartItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "items",
+                    "{{cartItemId}}"
+                  ]
+                }
+              },
+              "response": []
             }
           ]
         }
@@ -2846,6 +3275,210 @@
                         "{{promoCodeId}}"
                       ]
                     }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Quotes & Chat",
+              "description": "Supplier quote inbox + live Socket.IO chat + Create Offer Card.\n\nSocket path: /socket.io — auth.token = accessToken",
+              "item": [
+                {
+                  "name": "Socket.IO Live Chat (docs)",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/health",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "health"
+                      ]
+                    },
+                    "description": "Live quote chat uses Socket.IO (not this HTTP request).\n\nConnect:\n  io(\"{{baseUrl}}\", { auth: { token: \"<accessToken>\" }, path: \"/socket.io\" })\n\nClient → Server:\n  quote:join     { quoteId }           // join room\n  quote:leave    { quoteId }\n  quote:message  { quoteId, message }  // send + persist\n  quote:typing   { quoteId, isTyping }\n\nServer → Client:\n  connected\n  quote:message        { quoteId, chatMessage }\n  quote:offer          { quoteId, offer, chatMessage }\n  quote:offer_updated  { quoteId, offerId, offer, action }\n  quote:typing         { quoteId, userId, isTyping }\n  quote:presence       { quoteId, userId, status }\n  quote:error          { message }\n\nREST endpoints below still work (history + fallback). Socket broadcasts when REST/socket sends a message."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Incoming Quotes (Chat sidebar)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const q = json.quotes?.[0];",
+                          "if (q?.id) pm.collectionVariables.set(\"quoteId\", q.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Login Supplier. Returns incoming quotes + `chats` for messenger sidebar."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Quote Thread",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Chat Messages",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "messages"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Send Chat Message",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"message\": \"Thanks for the quote request. I will send an offer shortly.\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "messages"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Offer Card",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.offer?.id) pm.collectionVariables.set(\"offerId\", json.offer.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  // Create Offer modal fields (UI aliases warehouse/product also OK)\n  \"warehouseLocation\": \"Main Warehouse\",\n  \"productName\": \"Portland Cement\",\n  \"totalQuantity\": 180,\n  \"quantityUnit\": \"bags\",\n  \"projectName\": \"Downtown Office Complex\",\n  \"deliveryLocation\": \"123 Main St., Downtown\",\n  \"unloadingType\": \"Tipper truck\",\n  \"accessConditions\": \"Manual Unloading\",\n  \"totalPrice\": 125500,\n  \"installmentMonths\": 10,\n  \"installments\": [\n    { \"price\": 25100, \"quantity\": 30 },\n    { \"price\": 100400, \"quantity\": 150 }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "offers"
+                      ]
+                    },
+                    "description": "Supplier Create Offer → posts Offer Card into chat (messageType=OFFER)."
                   },
                   "response": []
                 }

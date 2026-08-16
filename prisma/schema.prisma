@@ -98,6 +98,20 @@ enum AuctionStatus {
   CANCELLED
 }
 
+enum ChatMessageType {
+  TEXT
+  OFFER
+  SYSTEM
+}
+
+enum QuoteOfferStatus {
+  PENDING_RESPONSE
+  NEGOTIATING
+  ACCEPTED
+  REJECTED
+  PAID
+}
+
 enum BidStatus {
   SUBMITTED
   ACCEPTED
@@ -217,10 +231,12 @@ model User {
   supportTickets     SupportTicket[]
   ticketMessages     TicketMessage[]
   chatMessages       ChatMessage[]           @relation("SentMessages")
+  quoteOffersCreated QuoteOffer[]            @relation("QuoteOfferCreator")
   adminRoleBridge    UserAdminRoleBridge[]
   auditLogs          AuditLog[]
   blogPosts          BlogPost[]
   promoCodes         PromoCode[]             @relation("SellerPromoCodes")
+  cart               Cart?
 
   @@index([role, status])
   @@map("user")
@@ -426,9 +442,11 @@ model Product {
   inventory         Inventory?
   orderLineItems    OrderLineItem[]
   quoteItems        QuoteItem[]
+  quoteOffers       QuoteOffer[]
   promotions        ProductPromotion[]
   promoCodes        PromoCodeProductBridge[]
   reviews           Review[]
+  cartItems         CartItem[]
 
   @@index([sellerId, approvalStatus])
   @@index([categoryId, marketplaceTier])
@@ -442,6 +460,35 @@ model ProductMedia {
   sortOrder Int      @default(0)
 
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 4b. SHOPPING CART (customer / company)
+// ==========================================
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([cartId])
 }
 
 model PricingTier {
@@ -585,7 +632,7 @@ model QuoteRequest {
   buyerId         String
   sellerId        String
   projectId       String?
-  status          String       // "PENDING", "ACCEPTED", "REJECTED"
+  status          String       // "PENDING", "ACCEPTED", "REJECTED", "IN_CHAT"
   proposedBudget  Float?
   message         String?
   createdAt       DateTime     @default(now())
@@ -597,7 +644,11 @@ model QuoteRequest {
   
   quoteItems      QuoteItem[]
   chatMessages    ChatMessage[]
+  offers          QuoteOffer[]
   convertedOrders Order[]
+
+  @@index([sellerId, status])
+  @@index([buyerId, status])
 }
 
 model QuoteItem {
@@ -611,16 +662,61 @@ model QuoteItem {
   product        Product      @relation(fields: [productId], references: [id])
 }
 
+model QuoteOffer {
+  id                String           @id @default(uuid())
+  quoteRequestId    String
+  createdById       String
+  productId         String?
+  warehouseLocation String
+  productName       String
+  totalQuantity     Float
+  quantityUnit      String           @default("bags")
+  projectName       String
+  deliveryLocation  String
+  unloadingType     String
+  accessConditions  String
+  totalPrice        Float
+  installmentMonths Int
+  status            QuoteOfferStatus @default(PENDING_RESPONSE)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  quoteRequest      QuoteRequest            @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  createdBy         User                    @relation("QuoteOfferCreator", fields: [createdById], references: [id])
+  product           Product?                @relation(fields: [productId], references: [id], onDelete: SetNull)
+  installments      QuoteOfferInstallment[]
+  chatMessages      ChatMessage[]
+
+  @@index([quoteRequestId, status])
+}
+
+model QuoteOfferInstallment {
+  id                String     @id @default(uuid())
+  offerId           String
+  installmentNumber Int
+  amount            Float
+  quantity          Float
+
+  offer             QuoteOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId])
+}
+
 model ChatMessage {
-  id             String        @id @default(uuid())
+  id             String          @id @default(uuid())
   senderId       String
   quoteRequestId String?
+  messageType    ChatMessageType @default(TEXT)
   messageText    String
   attachmentUrl  String?
-  createdAt      DateTime      @default(now())
+  offerId        String?
+  createdAt      DateTime        @default(now())
 
-  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
-  quoteRequest   QuoteRequest? @relation(fields: [quoteRequestId], references: [id])
+  sender         User            @relation("SentMessages", fields: [senderId], references: [id])
+  quoteRequest   QuoteRequest?   @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  offer          QuoteOffer?     @relation(fields: [offerId], references: [id], onDelete: SetNull)
+
+  @@index([quoteRequestId, createdAt])
 }
 
 // ==========================================

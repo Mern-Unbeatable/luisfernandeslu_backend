@@ -1,35 +1,38 @@
 import 'dotenv/config'
 import app from './app.js'
+import { setupSocket } from './socket/index.js'
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080
 
 const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Health check available at: http://localhost:${PORT}/health`);
-});
+  console.log(`Server is running on port ${PORT}`)
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+  console.log(`Health check available at: http://localhost:${PORT}/health`)
+})
+
+setupSocket(server)
 
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  console.log('SIGTERM signal received: closing HTTP server')
   server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
+    console.log('HTTP server closed')
+    process.exit(0)
+  })
+})
 
 process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  console.log('SIGINT signal received: closing HTTP server')
   server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
+    console.log('HTTP server closed')
+    process.exit(0)
+  })
+})
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
   server.close(() => {
-    process.exit(1);
-  });
-});
+    process.exit(1)
+  })
+})
 
-export default server;
+export default server

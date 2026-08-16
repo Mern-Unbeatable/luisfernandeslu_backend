@@ -9,6 +9,8 @@ import {
   subCategoryRoutes,
 } from './modules/catalog/routes/catalog.routes.js'
 import marketplaceRoutes from './modules/marketplace/routes/marketplace.routes.js'
+import quoteRoutes from './modules/quotes/routes/quote.routes.js'
+import cartRoutes from './modules/cart/routes/cart.routes.js'
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import productRoutes from './modules/products/routes/product.routes.js'
 import factoryProductRoutes from './modules/factory-products/routes/factory-product.routes.js'
@@ -67,6 +69,8 @@ app.use('/api/auth', authRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/subcategories', subCategoryRoutes)
 app.use('/api/marketplace/products', marketplaceRoutes)
+app.use('/api/quotes', quoteRoutes)
+app.use('/api/cart', cartRoutes)
 app.use('/api/inventory', inventoryRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/factory/products', factoryProductRoutes)
