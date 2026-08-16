@@ -77,6 +77,18 @@
     {
       "key": "cartItemId",
       "value": ""
+    },
+    {
+      "key": "addressId",
+      "value": ""
+    },
+    {
+      "key": "checkoutId",
+      "value": ""
+    },
+    {
+      "key": "eupagoReference",
+      "value": ""
     }
   ],
   "item": [
@@ -1753,7 +1765,7 @@
                     "cart"
                   ]
                 },
-                "description": "All cart items + totals (subtotal, shipping, vat, total)"
+                "description": "All cart items + per-item promo/subtotal. fees = { shipping, vat, vatRate, currency } only — FE sums selected item.subtotal for Card Totals."
               },
               "response": []
             },
@@ -1766,7 +1778,8 @@
                     "type": "text/javascript",
                     "exec": [
                       "const json = pm.response.json();",
-                      "if (json.item?.id) pm.collectionVariables.set(\"cartItemId\", json.item.id);"
+                      "if (json.item?.id) pm.collectionVariables.set(\"cartItemId\", json.item.id);",
+                      "else if (json.id) pm.collectionVariables.set(\"cartItemId\", json.id);"
                     ]
                   }
                 }
@@ -1895,6 +1908,364 @@
                     "{{cartItemId}}"
                   ]
                 }
+              },
+              "response": []
+            },
+            {
+              "name": "Apply Promo Code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"SAVE10\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/promo",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "promo"
+                  ]
+                },
+                "description": "Adds a promo code to the cart (multiple allowed). Matching products get stacked discounts. Item.promo.codes[] shows per-code breakdown. Cart.promos[] lists all applied codes. Duplicate code → 409."
+              },
+              "response": []
+            },
+            {
+              "name": "Remove One Promo Code",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"SAVE10\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/promo",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "promo"
+                  ]
+                },
+                "description": "Removes one applied promo by code. Omit body.code to clear all promos."
+              },
+              "response": []
+            },
+            {
+              "name": "Remove All Promo Codes",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart/promo",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cart",
+                    "promo"
+                  ]
+                },
+                "description": "Clears every promo code from the cart."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Addresses",
+          "description": "Customer / Company saved billing & shipping addresses for checkout.",
+          "item": [
+            {
+              "name": "List Addresses",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/addresses",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "addresses"]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const rows = json.addresses || [];",
+                      "if (rows[0] && rows[0].id) {",
+                      "  pm.collectionVariables.set(\"addressId\", rows[0].id);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Create Address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Home\",\n  \"streetAddress\": \"Rua Example 123\",\n  \"city\": \"Lisbon\",\n  \"state\": \"Lisboa\",\n  \"zipCode\": \"1000-001\",\n  \"country\": \"Portugal\",\n  \"addressType\": \"SHIPPING\",\n  \"isDefault\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/addresses",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "addresses"]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.address?.id) pm.collectionVariables.set(\"addressId\", json.address.id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Address",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"city\": \"Porto\",\n  \"isDefault\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "addresses", "{{addressId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Address",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "addresses", "{{addressId}}"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Checkout",
+          "description": "Place order from selected cart items.\n\nPAYMENT_PROVIDER=mock (default): no EuPago — after place, call POST /api/checkout/:id/pay.\nPAYMENT_PROVIDER=eupago: real Split Pay — needs EUPAGO_API_KEY, EUPAGO_ADMIN_EXTERN_KEY, seller eupagoExternKey + webhook.\n\nCart page: select items on FE from GET /api/cart (item.subtotal + fees.shipping/vat). No preview endpoint.",
+          "item": [
+            {
+              "name": "Place Checkout (Multibanco)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"firstName\": \"Luis\",\n  \"lastName\": \"Fernandes\",\n  \"email\": \"buyer@example.com\",\n  \"phone\": \"912345678\",\n  \"billingAddressId\": \"{{addressId}}\",\n  \"sameAsBilling\": true,\n  \"paymentMethod\": \"multibanco\",\n  \"projectName\": \"Site A\",\n  \"projectLocation\": \"Lisbon Yard\",\n  \"unloadingType\": \"Forklift\",\n  \"unloadingLocationDescription\": \"Warehouse yard\",\n  \"accessConditions\": \"Wide gate\",\n  \"additionalNotes\": \"Call on arrival\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "checkout"]
+                },
+                "description": "Creates CheckoutSession + per-seller Orders, calls EuPago split-payments/multibanco. Returns entity/reference for payment."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.id) pm.collectionVariables.set(\"checkoutId\", json.id);",
+                      "else if (json.checkout?.id) pm.collectionVariables.set(\"checkoutId\", json.checkout.id);",
+                      "const ref = json.payment?.reference || json.checkout?.payment?.reference;",
+                      "if (ref) pm.collectionVariables.set(\"eupagoReference\", ref);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Place Checkout (One-off Address)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"firstName\": \"Luis\",\n  \"lastName\": \"Fernandes\",\n  \"email\": \"buyer@example.com\",\n  \"phone\": \"912345678\",\n  \"billingAddress\": {\n    \"streetAddress\": \"Rua Temp 9\",\n    \"city\": \"Lisbon\",\n    \"state\": \"Lisboa\",\n    \"zipCode\": \"1000-002\",\n    \"country\": \"Portugal\"\n  },\n  \"saveBillingAddress\": false,\n  \"sameAsBilling\": true,\n  \"paymentMethod\": \"multibanco\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "checkout"]
+                },
+                "description": "Uses inline address for this order only (optional saveBillingAddress)."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Checkout",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout/{{checkoutId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "checkout", "{{checkoutId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Confirm Mock Payment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout/{{checkoutId}}/pay",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "checkout", "{{checkoutId}}", "pay"]
+                },
+                "description": "Returns only Order Confirmed page fields: page, orderNumber, date, email, itemCount, shippingAddress, shippingMethod, items[], subtotal, shipping, vat, total, currency, paymentMethod."
+              },
+              "response": []
+            },
+            {
+              "name": "EuPago Webhook (simulate paid)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"referencia\": \"{{eupagoReference}}\",\n  \"identifier\": \"\",\n  \"secret\": \"{{eupagoWebhookSecret}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout/webhook/eupago",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "checkout", "webhook", "eupago"]
+                },
+                "description": "Public callback. Marks checkout PAID, orders PENDING, removes paid cart items. If EUPAGO_WEBHOOK_SECRET is set, pass secret in body/query."
               },
               "response": []
             }

@@ -4,6 +4,8 @@ import {
   addCartItemBodySchema,
   updateCartItemBodySchema,
   cartItemIdParamSchema,
+  applyPromoBodySchema,
+  removePromoBodySchema,
 } from '../validations/cart.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
@@ -41,6 +43,18 @@ class CartRoutes {
       '/items/:id',
       validate(cartItemIdParamSchema, 'params'),
       (req, res, next) => cartController.removeItem(req, res, next),
+    )
+
+    this.router.post(
+      '/promo',
+      validate(applyPromoBodySchema, 'body'),
+      (req, res, next) => cartController.applyPromo(req, res, next),
+    )
+
+    this.router.delete(
+      '/promo',
+      validate(removePromoBodySchema, 'body'),
+      (req, res, next) => cartController.removePromo(req, res, next),
     )
   }
 

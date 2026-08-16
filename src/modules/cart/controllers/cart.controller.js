@@ -50,6 +50,32 @@ export class CartController {
       next(err)
     }
   }
+
+  async applyPromo(req, res, next) {
+    try {
+      const result = await cartService.applyPromoCode(
+        req.auth,
+        req.body,
+        resolveRequestBaseUrl(req),
+      )
+      return sendResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async removePromo(req, res, next) {
+    try {
+      const result = await cartService.removePromoCode(
+        req.auth,
+        { ...req.body, ...req.query },
+        resolveRequestBaseUrl(req),
+      )
+      return sendResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new CartController()

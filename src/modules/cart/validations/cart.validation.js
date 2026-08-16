@@ -19,3 +19,11 @@ export const updateCartItemBodySchema = z
   .refine((data) => data.quantity != null || data.action != null, {
     message: 'Provide quantity and/or action (increase|decrease|set)',
   })
+
+export const applyPromoBodySchema = z.object({
+  code: z.string().trim().min(1, 'Promo code is required').max(64),
+})
+
+export const removePromoBodySchema = z.object({
+  code: z.string().trim().min(1).max(64).optional(),
+})

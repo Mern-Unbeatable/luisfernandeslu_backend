@@ -84,6 +84,24 @@ enum OrderSource {
   QUOTE_CONVERSION
 }
 
+enum CheckoutPaymentStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum CheckoutPaymentMethod {
+  MULTIBANCO
+  MBWAY
+  CREDITCARD
+}
+
+enum CheckoutSplitBeneficiary {
+  SELLER
+  ADMIN
+}
+
 enum InstallmentStatus {
   PENDING
   COMPLETED
@@ -237,6 +255,7 @@ model User {
   blogPosts          BlogPost[]
   promoCodes         PromoCode[]             @relation("SellerPromoCodes")
   cart               Cart?
+  checkoutSessions   CheckoutSession[]
 
   @@index([role, status])
   @@map("user")
@@ -292,6 +311,7 @@ model BusinessProfile {
   companyName               String?
   nifNumber                 String?
   ibanNumber                String?
+  eupagoExternKey           String?
   rcbeNumber                String?
   logoUrl                   String?
   coverImageUrl             String?
@@ -323,9 +343,11 @@ model Address {
   longitude      Float?
   createdAt      DateTime            @default(now())
 
-  users          UserAddressBridge[]
-  shippingOrders Order[]             @relation("ShippingAddress")
-  billingOrders  Order[]             @relation("BillingAddress")
+  users              UserAddressBridge[]
+  shippingOrders     Order[]             @relation("ShippingAddress")
+  billingOrders      Order[]             @relation("BillingAddress")
+  checkoutBilling    CheckoutSession[]   @relation("CheckoutBillingAddress")
+  checkoutShipping   CheckoutSession[]   @relation("CheckoutShippingAddress")
 }
 
 // Bridge Table for User <-> Address (M:N)
@@ -467,13 +489,26 @@ model ProductMedia {
 // ==========================================
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String          @id @default(uuid())
+  userId    String          @unique
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
+  promoCodes CartPromoCode[]
+}
+
+model CartPromoCode {
+  cartId      String
+  promoCodeId String
+  appliedAt   DateTime @default(now())
+
+  cart        Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@id([cartId, promoCodeId])
+  @@index([promoCodeId])
 }
 
 model CartItem {
@@ -558,6 +593,7 @@ model PromoCode {
   applicableProducts     PromoCodeProductBridge[]
   applicableCategories   PromoCodeCategoryBridge[]
   orders                 Order[]
+  cartLinks              CartPromoCode[]
 
   @@index([sellerId, isActive])
   @@index([expiryDate])
@@ -735,6 +771,65 @@ model Project {
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders         Order[]
   quoteRequests  QuoteRequest[]
+  checkoutSessions CheckoutSession[]
+}
+
+model CheckoutSession {
+  id                          String                 @id @default(uuid())
+  checkoutNumber              String                 @unique
+  customerId                  String
+  paymentStatus               CheckoutPaymentStatus  @default(PENDING_PAYMENT)
+  paymentMethod               CheckoutPaymentMethod  @default(MULTIBANCO)
+  firstName                   String
+  lastName                    String
+  email                       String
+  phone                       String
+  billingAddressId            String
+  shippingAddressId           String
+  projectId                   String?
+  unloadingType               String?
+  unloadingLocationDescription String?
+  accessConditions            String?
+  additionalNotes             String?
+  subTotal                    Float
+  vatAmount                   Float
+  shippingFee                 Float
+  discountAmount              Float                  @default(0.0)
+  grandTotal                  Float
+  currency                    String                 @default("EUR")
+  eupagoReference             String?
+  eupagoEntity                String?
+  eupagoTransactionId         String?
+  cartItemIds                 String[]               @default([])
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  paidAt                      DateTime?
+
+  customer                    User                   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  billingAddress              Address                @relation("CheckoutBillingAddress", fields: [billingAddressId], references: [id])
+  shippingAddress             Address                @relation("CheckoutShippingAddress", fields: [shippingAddressId], references: [id])
+  project                     Project?               @relation(fields: [projectId], references: [id])
+  orders                      Order[]
+  splits                      CheckoutPaymentSplit[]
+
+  @@index([customerId, paymentStatus])
+  @@index([eupagoReference])
+}
+
+model CheckoutPaymentSplit {
+  id                String                   @id @default(uuid())
+  checkoutSessionId String
+  beneficiaryType   CheckoutSplitBeneficiary
+  sellerId          String?
+  amount            Float
+  externKey         String
+  identifier        String?
+  createdAt         DateTime                 @default(now())
+
+  checkoutSession   CheckoutSession          @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
+
+  @@index([checkoutSessionId])
+  @@index([sellerId])
 }
 
 model Order {
@@ -742,6 +837,7 @@ model Order {
   orderNumber          String               @unique
   customerId           String
   sellerId             String
+  checkoutSessionId    String?
   projectId            String?
   quoteRequestId       String?
   promoCodeId          String?
@@ -764,6 +860,7 @@ model Order {
 
   customer             User                 @relation("CustomerOrders", fields: [customerId], references: [id])
   seller               User                 @relation("SellerOrders", fields: [sellerId], references: [id])
+  checkoutSession      CheckoutSession?     @relation(fields: [checkoutSessionId], references: [id], onDelete: SetNull)
   project              Project?             @relation(fields: [projectId], references: [id])
   quoteRequest         QuoteRequest?        @relation(fields: [quoteRequestId], references: [id])
   promoCode            PromoCode?           @relation(fields: [promoCodeId], references: [id])
@@ -781,6 +878,7 @@ model Order {
 
   @@index([customerId, orderStatus])
   @@index([sellerId, orderStatus])
+  @@index([checkoutSessionId])
 }
 
 model OrderLineItem {

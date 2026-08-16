@@ -11,6 +11,8 @@ import {
 import marketplaceRoutes from './modules/marketplace/routes/marketplace.routes.js'
 import quoteRoutes from './modules/quotes/routes/quote.routes.js'
 import cartRoutes from './modules/cart/routes/cart.routes.js'
+import addressRoutes from './modules/addresses/routes/address.routes.js'
+import checkoutRoutes from './modules/checkout/routes/checkout.routes.js'
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import productRoutes from './modules/products/routes/product.routes.js'
 import factoryProductRoutes from './modules/factory-products/routes/factory-product.routes.js'
@@ -71,6 +73,8 @@ app.use('/api/subcategories', subCategoryRoutes)
 app.use('/api/marketplace/products', marketplaceRoutes)
 app.use('/api/quotes', quoteRoutes)
 app.use('/api/cart', cartRoutes)
+app.use('/api/addresses', addressRoutes)
+app.use('/api/checkout', checkoutRoutes)
 app.use('/api/inventory', inventoryRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/factory/products', factoryProductRoutes)
