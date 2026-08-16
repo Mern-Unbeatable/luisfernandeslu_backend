@@ -46,6 +46,32 @@ export function requireAccessToken(req, res, next) {
   }
 }
 
+/**
+ * Optional Bearer auth for public routes (guest OK).
+ * Sets req.auth when token is valid; otherwise req.auth = null.
+ * Invalid/expired token → still continues as guest (does not 401).
+ */
+export function optionalAccessToken(req, _res, next) {
+  try {
+    const token = extractBearerToken(req.headers)
+    if (!token) {
+      req.auth = null
+      return next()
+    }
+    const payload = verifyAccessToken(token)
+    req.auth = {
+      id: payload.id || payload.sub,
+      email: payload.email,
+      role: String(payload.role || '').toLowerCase(),
+      status: payload.status,
+      name: payload.name,
+    }
+  } catch {
+    req.auth = null
+  }
+  return next()
+}
+
 /** Require one of the allowed roles (after requireAccessToken). */
 export function requireRoles(...roles) {
   const allowed = roles.map((r) => String(r).toLowerCase())
@@ -113,6 +139,7 @@ export function assertAuth(condition, message, statusCode = 403, code = 'Forbidd
 
 export default {
   requireAccessToken,
+  optionalAccessToken,
   requireRoles,
   requireAccessTokenWithUser,
 }

@@ -61,6 +61,10 @@
     {
       "key": "productId",
       "value": ""
+    },
+    {
+      "key": "marketplaceProductId",
+      "value": ""
     }
   ],
   "item": [
@@ -1171,6 +1175,299 @@
                 }
               },
               "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CONSTRUPRECO (Website)",
+      "description": "Public storefront APIs for the CONSTRUPRECO website.\n\nProducts → Public | Customer | Company\n\nSame endpoints; response changes by optional Bearer role.",
+      "item": [
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "Public",
+              "description": "No login (guest). Sees regular basePrice only. No b2bPrice / company price.",
+              "item": [
+                {
+                  "name": "List Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "disabled": true
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "sponsored",
+                          "value": "true",
+                          "disabled": true,
+                          "description": "true|false"
+                        }
+                      ]
+                    },
+                    "description": "Guest list — basePrice / price only. APPROVED supplier products with listedQuantity > 0."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductId}}"
+                      ]
+                    },
+                    "description": "Guest detail (image 2 style): priceLabel, pricingTable/bulkOptions, gallery, tabs. sendQuote=false."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Customer",
+              "description": "Logged-in customer. Same retail pricing as public (basePrice). Login Customer first.",
+              "item": [
+                {
+                  "name": "List Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "disabled": true
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "sponsored",
+                          "value": "true",
+                          "disabled": true,
+                          "description": "true|false"
+                        }
+                      ]
+                    },
+                    "description": "Customer token — still retail pricing (basePrice only, b2bPrice null)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductId}}"
+                      ]
+                    },
+                    "description": "Customer detail (image 2): priceLabel + bulk pricing table. actions.sendQuote=false. No minimum-order banner."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Company",
+              "description": "Logged-in company. Sees basePrice + b2bPrice on list; detail shows min order + Send Quote. Login Company first.",
+              "item": [
+                {
+                  "name": "List Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "disabled": true
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "sponsored",
+                          "value": "true",
+                          "disabled": true,
+                          "description": "true|false"
+                        }
+                      ]
+                    },
+                    "description": "Company token — card shows basePrice + companyPriceText (b2bPrice) + minOrder when set."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductId}}"
+                      ]
+                    },
+                    "description": "Company detail (image 3): basePrice + bulk table + b2bPrice + minOrderLabel + actions.sendQuote=true."
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         }
