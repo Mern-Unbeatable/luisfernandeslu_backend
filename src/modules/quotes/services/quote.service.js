@@ -544,10 +544,31 @@ class QuoteService {
         })
       }
 
+      let thread = await tx.chatThread.findUnique({
+        where: { quoteRequestId: quoteId },
+        select: { id: true },
+      })
+      if (!thread) {
+        thread = await tx.chatThread.create({
+          data: {
+            type: 'QUOTE',
+            quoteRequestId: quoteId,
+            participants: {
+              create: [
+                { userId: quote.buyerId },
+                { userId: quote.sellerId },
+              ],
+            },
+          },
+          select: { id: true },
+        })
+      }
+
       return tx.chatMessage.create({
         data: {
           senderId: auth.id,
           quoteRequestId: quoteId,
+          chatThreadId: thread.id,
           messageType: 'TEXT',
           messageText: body.message.trim(),
         },

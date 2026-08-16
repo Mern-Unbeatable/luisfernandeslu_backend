@@ -1,5 +1,5 @@
 import { initSocket } from './io.js'
-import { registerQuoteChatSocket } from './quoteChat.js'
+import { registerLiveChatSocket } from './liveChat.js'
 
 /**
  * Boot Socket.IO on the HTTP server.
@@ -7,10 +7,12 @@ import { registerQuoteChatSocket } from './quoteChat.js'
  */
 export function setupSocket(httpServer) {
   const io = initSocket(httpServer)
-  registerQuoteChatSocket(io)
-  console.log('Socket.IO ready at path /socket.io (quote live chat)')
+  registerLiveChatSocket(io)
+  console.log(
+    'Socket.IO ready at path /socket.io (live chat: quote / transport / factory / admin)',
+  )
   return io
 }
 
-export { getIO, emitToQuote, quoteRoom } from './io.js'
+export { getIO, emitToQuote, emitToChat, quoteRoom, chatRoom } from './io.js'
 export default setupSocket

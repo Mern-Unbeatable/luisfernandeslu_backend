@@ -122,6 +122,13 @@ enum ChatMessageType {
   SYSTEM
 }
 
+enum ChatThreadType {
+  QUOTE
+  ORDER_TRANSPORT
+  FACTORY_SUPPLIER
+  ADMIN_SUPPORT
+}
+
 enum QuoteOfferStatus {
   PENDING_RESPONSE
   NEGOTIATING
@@ -249,6 +256,7 @@ model User {
   supportTickets     SupportTicket[]
   ticketMessages     TicketMessage[]
   chatMessages       ChatMessage[]           @relation("SentMessages")
+  chatParticipations ChatThreadParticipant[]
   quoteOffersCreated QuoteOffer[]            @relation("QuoteOfferCreator")
   adminRoleBridge    UserAdminRoleBridge[]
   auditLogs          AuditLog[]
@@ -469,6 +477,7 @@ model Product {
   promoCodes        PromoCodeProductBridge[]
   reviews           Review[]
   cartItems         CartItem[]
+  chatThreads       ChatThread[]
 
   @@index([sellerId, approvalStatus])
   @@index([categoryId, marketplaceTier])
@@ -663,6 +672,49 @@ model PromotionPlan {
 // 6. QUOTING & CHAT ENGINE
 // ==========================================
 
+/**
+ * Chat access rules (enforced in socket + services):
+ * - QUOTE: company (buyer) ↔ supplier (seller) after quote exists. Customer never.
+ * - ORDER_TRANSPORT: after transporter assigned — buyer + seller + transporter.
+ *   Customer may only use this type (not QUOTE). Admin may join any.
+ * - FACTORY_SUPPLIER: supplier ↔ factory (product context).
+ * - ADMIN_SUPPORT: admin ↔ any single user.
+ */
+model ChatThread {
+  id               String        @id @default(uuid())
+  type             ChatThreadType
+  quoteRequestId   String?       @unique
+  orderId          String?
+  productId        String?
+  peerUserId       String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  quoteRequest     QuoteRequest? @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  order            Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  participants     ChatThreadParticipant[]
+  messages         ChatMessage[]
+
+  @@index([type, orderId])
+  @@index([type, productId])
+  @@unique([type, orderId])
+  @@unique([type, productId])
+  @@unique([type, peerUserId])
+}
+
+model ChatThreadParticipant {
+  threadId   String
+  userId     String
+  joinedAt   DateTime @default(now())
+
+  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, userId])
+  @@index([userId])
+}
+
 model QuoteRequest {
   id              String       @id @default(uuid())
   buyerId         String
@@ -682,6 +734,7 @@ model QuoteRequest {
   chatMessages    ChatMessage[]
   offers          QuoteOffer[]
   convertedOrders Order[]
+  chatThread      ChatThread?
 
   @@index([sellerId, status])
   @@index([buyerId, status])
@@ -741,6 +794,7 @@ model QuoteOfferInstallment {
 model ChatMessage {
   id             String          @id @default(uuid())
   senderId       String
+  chatThreadId   String?
   quoteRequestId String?
   messageType    ChatMessageType @default(TEXT)
   messageText    String
@@ -749,10 +803,12 @@ model ChatMessage {
   createdAt      DateTime        @default(now())
 
   sender         User            @relation("SentMessages", fields: [senderId], references: [id])
+  chatThread     ChatThread?     @relation(fields: [chatThreadId], references: [id], onDelete: Cascade)
   quoteRequest   QuoteRequest?   @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
   offer          QuoteOffer?     @relation(fields: [offerId], references: [id], onDelete: SetNull)
 
   @@index([quoteRequestId, createdAt])
+  @@index([chatThreadId, createdAt])
 }
 
 // ==========================================
@@ -875,6 +931,7 @@ model Order {
   returnRequests       ReturnRequest[]
   disputes             Dispute[]
   commission           CommissionTransaction?
+  chatThreads          ChatThread[]
 
   @@index([customerId, orderStatus])
   @@index([sellerId, orderStatus])
