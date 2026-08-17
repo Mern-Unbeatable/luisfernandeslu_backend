@@ -55,6 +55,22 @@ function paymentLabel(method) {
   return method || 'Online Payment'
 }
 
+function ordinalInstallment(n) {
+  const num = Number(n) || 0
+  const mod100 = num % 100
+  if (mod100 >= 11 && mod100 <= 13) return `${num}th Installment`
+  switch (num % 10) {
+    case 1:
+      return `${num}st Installment`
+    case 2:
+      return `${num}nd Installment`
+    case 3:
+      return `${num}rd Installment`
+    default:
+      return `${num}th Installment`
+  }
+}
+
 /**
  * Supplier / system invoice PDF (no logo).
  * @param {object} data
@@ -252,6 +268,93 @@ export async function buildSupplierInvoicePdf(data) {
     })
 
     y += 20
+
+    // ——— Installment schedule (chat / quote orders only) ———
+    const installments = Array.isArray(data.installments) ? data.installments : []
+    if (installments.length) {
+      if (y > doc.page.height - 180) {
+        doc.addPage()
+        y = 48
+      }
+
+      doc
+        .font(boldFont)
+        .fontSize(12)
+        .fillColor(accent)
+        .text('Installment Schedule', left, y)
+      y += 18
+
+      if (data.paymentPlan) {
+        const planBits = [
+          data.paymentPlan.termMonths
+            ? `Term: ${data.paymentPlan.termMonths} months`
+            : null,
+          data.paymentPlan.downPayment != null
+            ? `Down payment: ${money(data.paymentPlan.downPayment, currency)}`
+            : null,
+          data.paymentPlan.remainingBalance != null
+            ? `Remaining: ${money(data.paymentPlan.remainingBalance, currency)}`
+            : null,
+        ].filter(Boolean)
+        if (planBits.length) {
+          doc.font(bodyFont).fontSize(9).fillColor(muted).text(planBits.join('  ·  '), left, y, {
+            width: contentW,
+          })
+          y += 16
+        }
+      }
+
+      doc.roundedRect(left, y, contentW, 22, 4).fill('#F3F4F6')
+      doc.font(boldFont).fontSize(9).fillColor(muted)
+      doc.text('Installment', left + 8, y + 6, { width: contentW * 0.34 })
+      doc.text('Due Date', left + contentW * 0.36, y + 6, {
+        width: contentW * 0.22,
+      })
+      doc.text('Status', left + contentW * 0.58, y + 6, {
+        width: contentW * 0.16,
+      })
+      doc.text('Amount', left + contentW * 0.74, y + 6, {
+        width: contentW * 0.24,
+        align: 'right',
+      })
+      y += 28
+
+      installments.forEach((inst, idx) => {
+        if (y > doc.page.height - 80) {
+          doc.addPage()
+          y = 48
+        }
+        const label =
+          inst.title ||
+          ordinalInstallment(inst.installmentNumber || idx + 1)
+        doc.font(bodyFont).fontSize(10).fillColor(dark)
+        doc.text(label, left + 8, y, { width: contentW * 0.34 })
+        doc.text(fmtDate(inst.dueDate), left + contentW * 0.36, y, {
+          width: contentW * 0.22,
+        })
+        doc.text(String(inst.status || 'PENDING'), left + contentW * 0.58, y, {
+          width: contentW * 0.16,
+        })
+        doc
+          .font(boldFont)
+          .text(money(inst.amount, currency), left + contentW * 0.74, y, {
+            width: contentW * 0.24,
+            align: 'right',
+          })
+        y += 18
+        if (idx < installments.length - 1) {
+          doc
+            .moveTo(left, y)
+            .lineTo(right, y)
+            .strokeColor(line)
+            .lineWidth(0.5)
+            .stroke()
+          y += 8
+        }
+      })
+
+      y += 20
+    }
 
     // ——— Summary ———
     const sumX = left + contentW * 0.52

@@ -19,6 +19,7 @@ import factoryProductRoutes from './modules/factory-products/routes/factory-prod
 import promotionRoutes from './modules/promotions/routes/promotion.routes.js'
 import promoCodeRoutes from './modules/promo-codes/routes/promo-code.routes.js'
 import supplierCustomerOrderRoutes from './modules/supplier-customer-orders/routes/customer-order.routes.js'
+import supplierCompanyOrderRoutes from './modules/supplier-company-orders/routes/company-order.routes.js'
 import adminRoutes from './modules/admin/routes/admin.routes.js'
 import { UPLOAD_ROOT } from './modules/auth/upload.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
@@ -82,6 +83,7 @@ app.use('/api/factory/products', factoryProductRoutes)
 app.use('/api/promotions', promotionRoutes)
 app.use('/api/promo-codes', promoCodeRoutes)
 app.use('/api/supplier/customer-orders', supplierCustomerOrderRoutes)
+app.use('/api/supplier/company-orders', supplierCompanyOrderRoutes)
 app.use('/api/admin', adminRoutes)
 
 app.get('/', (req, res) => {

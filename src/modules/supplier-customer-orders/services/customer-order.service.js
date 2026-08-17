@@ -13,21 +13,16 @@ function httpError(message, status = 400, code = 'Error', details) {
 
 const CURRENCY = process.env.CART_CURRENCY || 'EUR'
 
-/** UI status keys used by frontend badges */
-const UI_STATUS = {
-  NEW: 'new',
-  PENDING: 'pending',
-  PROCESSING: 'processing',
-  ASSIGNED: 'assigned',
-  IN_TRANSIT: 'assigned',
-  DELIVERED: 'completed',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancel',
-}
-
-function toUiStatus(dbStatus) {
-  return UI_STATUS[dbStatus] || String(dbStatus || '').toLowerCase()
-}
+const ORDER_STATUSES = [
+  'NEW',
+  'PENDING',
+  'PROCESSING',
+  'ASSIGNED',
+  'IN_TRANSIT',
+  'DELIVERED',
+  'COMPLETED',
+  'CANCELLED',
+]
 
 function normalizeStatusFilter(raw) {
   if (!raw || raw === 'all') return null
@@ -39,7 +34,7 @@ function normalizeStatusFilter(raw) {
   if (s === 'cancel' || s === 'cancelled') return 'CANCELLED'
   if (s === 'completed') return { in: ['COMPLETED', 'DELIVERED'] }
   const upper = String(raw).toUpperCase()
-  if (Object.keys(UI_STATUS).includes(upper)) return upper
+  if (ORDER_STATUSES.includes(upper)) return upper
   return null
 }
 
@@ -201,7 +196,6 @@ class SupplierCustomerOrderService {
         totalQuantity,
         total: money(o.grandTotal),
         currency: CURRENCY,
-        status: toUiStatus(o.orderStatus),
         orderStatus: o.orderStatus,
         date: o.createdAt,
       }
@@ -339,7 +333,6 @@ class SupplierCustomerOrderService {
       }
     }
 
-    const uiStatus = toUiStatus(order.orderStatus)
     const supplierInvoice = order.invoices?.[0] || null
     const hasInvoice = Boolean(supplierInvoice)
     const isNew = order.orderStatus === 'NEW'
@@ -385,7 +378,6 @@ class SupplierCustomerOrderService {
           orderNumber: order.orderNumber,
           orderId: order.orderNumber,
           orderDate: order.createdAt,
-          status: uiStatus,
           orderStatus: order.orderStatus,
           hasInstallment: Boolean(order.paymentPlan),
           recipientType: 'customer',
@@ -528,7 +520,6 @@ class SupplierCustomerOrderService {
       body: {
         id: updated.id,
         orderNumber: updated.orderNumber,
-        status: toUiStatus(updated.orderStatus),
         orderStatus: updated.orderStatus,
         cancelReason: updated.cancellationReason,
         message:

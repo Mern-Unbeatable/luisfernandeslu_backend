@@ -673,11 +673,7 @@ class CheckoutService {
         },
       })
 
-      await tx.order.updateMany({
-        where: { checkoutSessionId: session.id },
-        data: { orderStatus: 'PENDING' },
-      })
-
+      // Keep orderStatus NEW after payment — supplier must Accept (→ PENDING).
       const orders =
         session.orders ||
         (await tx.order.findMany({
@@ -689,8 +685,8 @@ class CheckoutService {
         await tx.orderStatusHistory.create({
           data: {
             orderId: order.id,
-            status: 'PENDING',
-            note,
+            status: 'NEW',
+            note: note || 'Payment confirmed — awaiting supplier acceptance',
           },
         })
       }

@@ -91,6 +91,10 @@
       "value": ""
     },
     {
+      "key": "supplierCompanyOrderId",
+      "value": ""
+    },
+    {
       "key": "eupagoReference",
       "value": ""
     }
@@ -3652,6 +3656,309 @@
                         "supplier",
                         "customer-orders",
                         "{{supplierOrderId}}",
+                        "status"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Company Orders (B2B)",
+              "description": "Supplier dashboard — orders from buyers with role=company.\n\nDirect (cart): GET /direct, same flow as customer orders + invoice.\nChat (quote): GET /chat with installment fields; detail includes payment + timeline + breakdown.\n\nStats: GET /stats?type=direct|chat\nCompanies filter: GET /companies\nStatus: PATCH /:id/status (accept→PENDING, PROCESSING, CANCELLED+reason)\nInvoice: GET /:id/invoice",
+              "item": [
+                {
+                  "name": "Direct Order Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/stats?type=direct",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "company-orders", "stats"],
+                      "query": [
+                        {
+                          "key": "type",
+                          "value": "direct",
+                          "description": "direct | chat"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Chat Order Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/stats?type=chat",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "company-orders", "stats"],
+                      "query": [{ "key": "type", "value": "chat" }]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Companies (Filter)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/companies",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "company-orders", "companies"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Direct Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const rows = json.orders || [];",
+                          "if (rows[0]?.id) pm.collectionVariables.set(\"supplierCompanyOrderId\", rows[0].id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/direct?page=1&limit=10&status=all&search=&companyId=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "company-orders", "direct"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" },
+                        { "key": "status", "value": "all" },
+                        { "key": "search", "value": "" },
+                        {
+                          "key": "companyId",
+                          "value": "",
+                          "description": "Optional company user id filter"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Chat Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const rows = json.orders || [];",
+                          "if (rows[0]?.id) pm.collectionVariables.set(\"supplierCompanyOrderId\", rows[0].id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/chat?page=1&limit=10&status=all&search=&companyId=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "company-orders", "chat"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" },
+                        { "key": "status", "value": "all" },
+                        { "key": "search", "value": "" },
+                        { "key": "companyId", "value": "" }
+                      ]
+                    },
+                    "description": "Returns installmentAmount + installmentNumber (current installment)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Company Order Detail",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "{{supplierCompanyOrderId}}"
+                      ]
+                    },
+                    "description": "Direct: products + totals + actions. Chat: + payment, installmentBreakdown, installments timeline."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Invoice PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/invoice",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "{{supplierCompanyOrderId}}",
+                        "invoice"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Accept Order (→ PENDING)",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"PENDING\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "{{supplierCompanyOrderId}}",
+                        "status"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Mark Processing",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"PROCESSING\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "{{supplierCompanyOrderId}}",
+                        "status"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Cancel Order",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"CANCELLED\",\n  \"reason\": \"Unable to fulfill requested volume\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "{{supplierCompanyOrderId}}",
                         "status"
                       ]
                     }
