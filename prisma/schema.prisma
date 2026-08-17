@@ -84,6 +84,11 @@ enum OrderSource {
   QUOTE_CONVERSION
 }
 
+enum InvoiceAudience {
+  SUPPLIER
+  CUSTOMER
+}
+
 enum CheckoutPaymentStatus {
   PENDING_PAYMENT
   PAID
@@ -926,7 +931,7 @@ model Order {
   orderLineItems       OrderLineItem[]
   statusHistory        OrderStatusHistory[]
   paymentPlan          PaymentPlan?
-  invoice              Invoice?
+  invoices             Invoice[]
   shipment             Shipment?
   returnRequests       ReturnRequest[]
   disputes             Dispute[]
@@ -1003,13 +1008,17 @@ model InstallmentFulfillmentBridge {
 }
 
 model Invoice {
-  id            String   @id @default(uuid())
-  orderId       String   @unique
-  invoiceNumber String   @unique
-  issueDate     DateTime @default(now())
+  id            String          @id @default(uuid())
+  orderId       String
+  audience      InvoiceAudience @default(SUPPLIER)
+  invoiceNumber String          @unique
+  issueDate     DateTime        @default(now())
   pdfUrl        String?
 
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, audience])
+  @@index([orderId])
 }
 
 // ==========================================

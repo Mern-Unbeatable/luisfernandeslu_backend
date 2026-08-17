@@ -87,6 +87,10 @@
       "value": ""
     },
     {
+      "key": "supplierOrderId",
+      "value": ""
+    },
+    {
       "key": "eupagoReference",
       "value": ""
     }
@@ -3429,6 +3433,228 @@
                       ]
                     },
                     "description": "Confirm payment → promotion goes to admin PENDING_REVIEW"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Customer Orders",
+              "description": "Supplier dashboard — orders from buyers with role=customer.\n\n1) GET /stats — status cards\n2) GET / — list + pagination/search/status filter\n3) GET /:id — detail + actions flags\n4) PATCH /:id/status — accept (PENDING), processing, cancel(+reason)",
+              "item": [
+                {
+                  "name": "Order Stats (Status Cards)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "customer-orders", "stats"]
+                    },
+                    "description": "Returns totalOrders, pending, processing, completed counts."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Customer Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const rows = json.orders || [];",
+                          "if (rows[0]?.id) pm.collectionVariables.set(\"supplierOrderId\", rows[0].id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders?page=1&limit=10&status=all&search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "customer-orders"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all|new|pending|processing|assigned|cancel|completed"
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "description": "order number, customer name, email"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Customer Order Detail",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders",
+                        "{{supplierOrderId}}"
+                      ]
+                    },
+                    "description": "Detail + actions (canAccept, canMarkProcessing, canCancel, canDownloadInvoice, canMessageTransporter, showTransporter)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Invoice PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/invoice",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders",
+                        "{{supplierOrderId}}",
+                        "invoice"
+                      ]
+                    },
+                    "description": "System invoice PDF (no logo). Creates Invoice row on first download if order is past NEW. Save response as .pdf in Postman (Send and Download)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Accept Order (NEW → PENDING)",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"PENDING\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders",
+                        "{{supplierOrderId}}",
+                        "status"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Mark Processing (PENDING → PROCESSING)",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"PROCESSING\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders",
+                        "{{supplierOrderId}}",
+                        "status"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Cancel Order",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"CANCELLED\",\n  \"reason\": \"Out of stock for requested quantity\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders",
+                        "{{supplierOrderId}}",
+                        "status"
+                      ]
+                    }
                   },
                   "response": []
                 }
