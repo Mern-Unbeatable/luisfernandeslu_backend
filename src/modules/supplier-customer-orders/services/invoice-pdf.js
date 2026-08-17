@@ -363,8 +363,17 @@ export async function buildSupplierInvoicePdf(data) {
     const valueW = sumW * 0.45
 
     const rows = [
+      data.showShippingVat
+        ? ['Subtotal', money(data.subtotal, currency), dark]
+        : null,
       data.discount > 0
         ? ['Discount', `-${money(data.discount, currency)}`, greenFg]
+        : null,
+      data.showShippingVat
+        ? ['Shipping', money(data.shipping, currency), dark]
+        : null,
+      data.showShippingVat && Number(data.vat) > 0
+        ? ['VAT', money(data.vat, currency), dark]
         : null,
     ].filter(Boolean)
 

@@ -95,6 +95,10 @@
       "value": ""
     },
     {
+      "key": "fiscalDocumentId",
+      "value": ""
+    },
+    {
       "key": "eupagoReference",
       "value": ""
     }
@@ -3962,6 +3966,216 @@
                         "status"
                       ]
                     }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Fiscal Documents",
+              "description": "Supplier dashboard — generate invoices for completed customer/company deliveries.\n\nPOST /  { orderId } — creates supplier PDF (no shipping/VAT) + buyer PDF (with shipping/VAT)\nGET /stats — totalDocuments, thisMonth, invoices, totalValue\nGET /eligible-orders — completed deliveries without a document yet\nGET / — list generated invoices\nGET /:id — view (supplier totals, no shipping/VAT)\nGET /:id/pdf — supplier PDF\nGET /:id/pdf?audience=CUSTOMER — customer/company PDF with shipping + VAT",
+              "item": [
+                {
+                  "name": "Document Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "documents", "stats"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Eligible Orders",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents/eligible-orders?search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "documents", "eligible-orders"],
+                      "query": [
+                        {
+                          "key": "search",
+                          "value": ""
+                        }
+                      ]
+                    },
+                    "description": "Completed/delivered customer+company orders that do not yet have a fiscal invoice."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Documents",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const rows = json.documents || [];",
+                          "if (rows[0]?.id) pm.collectionVariables.set(\"fiscalDocumentId\", rows[0].id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents?page=1&limit=10&search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "documents"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" },
+                        { "key": "search", "value": "" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Generate Invoice",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.document?.id) pm.collectionVariables.set(\"fiscalDocumentId\", json.document.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"orderId\": \"{{supplierOrderId}}\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "documents"]
+                    },
+                    "description": "orderId can be UUID or orderNumber. Order must be DELIVERED or COMPLETED."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Document",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents/{{fiscalDocumentId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents",
+                        "{{fiscalDocumentId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Supplier PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents/{{fiscalDocumentId}}/pdf",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents",
+                        "{{fiscalDocumentId}}",
+                        "pdf"
+                      ]
+                    },
+                    "description": "No shipping / VAT lines."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Buyer PDF (shipping + VAT)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/documents/{{fiscalDocumentId}}/pdf?audience=CUSTOMER",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents",
+                        "{{fiscalDocumentId}}",
+                        "pdf"
+                      ],
+                      "query": [
+                        {
+                          "key": "audience",
+                          "value": "CUSTOMER"
+                        }
+                      ]
+                    },
+                    "description": "Customer/company copy — includes shipping and VAT."
                   },
                   "response": []
                 }

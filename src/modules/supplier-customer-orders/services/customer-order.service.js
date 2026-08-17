@@ -671,13 +671,13 @@ class SupplierCustomerOrderService {
         title: li.product?.title || 'Product',
         quantity: li.quantity,
         unitPrice: money(li.unitPriceLocked),
-        total: money(li.totalPriceLocked),
+        total: money(Number(li.unitPriceLocked || 0) * Number(li.quantity || 0)),
       })),
-      subtotal: money(order.subTotal),
+      subtotal: money(Number(order.subTotal || 0) + Number(order.discountAmount || 0)),
       discount: money(order.discountAmount),
       shipping: money(order.shippingFee),
       vat: money(order.vatAmount),
-      total: money(order.grandTotal),
+      total: money(order.subTotal),
     }
 
     const buffer = await buildSupplierInvoicePdf(pdfData)
