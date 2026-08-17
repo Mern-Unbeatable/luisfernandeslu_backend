@@ -75,6 +75,10 @@
       "value": ""
     },
     {
+      "key": "factoryOfferId",
+      "value": ""
+    },
+    {
       "key": "cartItemId",
       "value": ""
     },
@@ -1745,6 +1749,35 @@
                       ]
                     },
                     "description": "Company accepts offer (Pay Now flow can follow later)"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Pay Offer (Demo)",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/pay",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "quotes",
+                        "{{quoteId}}",
+                        "offers",
+                        "{{offerId}}",
+                        "pay"
+                      ]
+                    },
+                    "description": "Company demo-pays the supplier offer card. Creates QUOTE_CONVERSION chat order (first installment marked paid). Then GET /api/supplier/company-orders/chat as the supplier."
                   },
                   "response": []
                 }
@@ -4182,6 +4215,122 @@
               ]
             },
             {
+              "name": "Buy from Factory",
+              "description": "Supplier catalog of admin-approved factory products.\n\nGET / — list\nGET /:id — details (includes chat payload)\n\nMessage factory via existing live chat (no extra REST):\n  chat:open { type: \"FACTORY_SUPPLIER\", productId }\n  chat:join { threadId }\n  chat:message { threadId, message }",
+              "item": [
+                {
+                  "name": "List Factory Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.products?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"factoryProductId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/factory-products?page=1&limit=12&search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "factory-products"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "12" },
+                        { "key": "search", "value": "" },
+                        {
+                          "key": "factoryId",
+                          "value": "",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Factory Product",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/factory-products/{{factoryProductId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "factory-products",
+                        "{{factoryProductId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Pay Factory Offer (Demo)",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory-offers/{{factoryOfferId}}/pay",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory-offers", "{{factoryOfferId}}", "pay"]
+                    },
+                    "description": "Supplier demo-pays a factory offer card. No quote. Creates FACTORY_CONVERSION order. Login as Supplier."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Factory Chat Orders (Supplier)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory-offers/orders?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory-offers", "orders"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" }
+                      ]
+                    },
+                    "description": "Supplier view of factory offers they paid."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Promo Codes",
               "item": [
                 {
@@ -4608,6 +4757,74 @@
           "name": "Factory",
           "description": "Factory dashboard APIs. Login as Factory first.",
           "item": [
+            {
+              "name": "Offers (to Supplier)",
+              "description": "No quote. Factory sends the same offer-card body as supplier→company. Supplier pays via POST /api/factory-offers/:offerId/pay.",
+              "item": [
+                {
+                  "name": "Create Factory Offer Card",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.offer?.id) pm.collectionVariables.set(\"factoryOfferId\", json.offer.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"supplierId\": \"{{userId}}\",\n  \"productId\": \"{{factoryProductId}}\",\n  \"warehouseLocation\": \"Factory warehouse\",\n  \"productName\": \"Factory Cement\",\n  \"totalQuantity\": 100,\n  \"quantityUnit\": \"bags\",\n  \"projectName\": \"Supplier restock\",\n  \"deliveryLocation\": \"Lisbon\",\n  \"unloadingType\": \"forklift\",\n  \"accessConditions\": \"street level\",\n  \"totalPrice\": 1800,\n  \"installmentMonths\": 2,\n  \"installments\": [\n    { \"price\": 800, \"quantity\": 40 },\n    { \"price\": 1000, \"quantity\": 60 }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory-offers",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory-offers"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Factory Chat Orders",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory-offers/orders?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory-offers", "orders"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" }
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
             {
               "name": "Products",
               "description": "Factory direct products — no inventory. Requires factory access token (Login Factory).",

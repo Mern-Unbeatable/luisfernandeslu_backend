@@ -1,7 +1,7 @@
 import prisma from '../../../../lib/prisma.js'
 import { AppError } from '../../../utils/AppError.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
-import { emitToQuote } from '../../../socket/io.js'
+import { emitToChat, emitToQuote } from '../../../socket/io.js'
 
 function httpError(message, status = 400, code = 'Error', details) {
   return new AppError(message, status, code, details)
@@ -236,6 +236,31 @@ function mapMessage(msg, viewerId, baseUrl) {
 
 function broadcastQuoteEvent(quoteId, event, payload) {
   emitToQuote(quoteId, event, payload)
+}
+
+function checkoutNumber() {
+  const t = Date.now().toString(36).toUpperCase()
+  const r = Math.random().toString(36).slice(2, 6).toUpperCase()
+  return `CHK-${t}-${r}`
+}
+
+function orderNumber() {
+  const t = Date.now().toString(36).toUpperCase()
+  const r = Math.random().toString(36).slice(2, 5).toUpperCase()
+  return `ORD-${t}-${r}-Q`
+}
+
+function addMonths(date, months) {
+  const d = new Date(date)
+  d.setMonth(d.getMonth() + months)
+  return d
+}
+
+function splitName(fullName) {
+  const parts = String(fullName || 'Company').trim().split(/\s+/)
+  const firstName = parts[0] || 'Company'
+  const lastName = parts.slice(1).join(' ') || firstName
+  return { firstName, lastName }
 }
 
 class QuoteService {
@@ -809,6 +834,285 @@ class QuoteService {
       body: {
         offer: offerCard,
         message: 'Offer accepted',
+      },
+    }
+  }
+
+  /**
+   * Company → Pay offer (demo/mock). Creates QUOTE_CONVERSION chat order.
+   */
+  async payOffer(auth, quoteId, offerId, baseUrl) {
+    this.assertCompany(auth)
+    const quote = await this.getAccessibleQuote(auth, quoteId)
+    if (quote.buyerId !== auth.id) {
+      throw httpError('Only the company buyer can pay this offer', 403, 'Forbidden')
+    }
+
+    const offer = await prisma.quoteOffer.findFirst({
+      where: { id: offerId, quoteRequestId: quoteId },
+      include: { installments: { orderBy: { installmentNumber: 'asc' } } },
+    })
+    if (!offer) throw httpError('Offer not found', 404, 'NotFound')
+    if (offer.status === 'PAID') {
+      throw httpError('Offer is already paid', 409, 'AlreadyPaid')
+    }
+    if (offer.status === 'REJECTED') {
+      throw httpError('Rejected offers cannot be paid', 400, 'OfferRejected')
+    }
+
+    const existingOrder = await prisma.order.findFirst({
+      where: { quoteRequestId: quoteId, orderSource: 'QUOTE_CONVERSION' },
+      select: { id: true, orderNumber: true },
+    })
+    if (existingOrder) {
+      throw httpError(
+        'This quote was already converted to an order',
+        409,
+        'AlreadyConverted',
+        { orderId: existingOrder.id, orderNumber: existingOrder.orderNumber },
+      )
+    }
+
+    const productId = offer.productId || quote.quoteItems?.[0]?.productId || null
+    if (!productId) {
+      throw httpError('Offer has no product to convert into an order', 400, 'MissingProduct')
+    }
+
+    const buyer = await prisma.user.findUnique({
+      where: { id: auth.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        addresses: {
+          include: { address: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    })
+
+    const quantity = Math.max(1, Math.round(Number(offer.totalQuantity) || 1))
+    const total = money(offer.totalPrice)
+    const unitPrice = money(total / quantity)
+    const now = new Date()
+    const { firstName, lastName } = splitName(buyer?.name)
+    const phone = buyer?.phoneNumber || '000000000'
+    const email = buyer?.email || 'company@local'
+    const savedAddress =
+      buyer?.addresses?.find((a) => a.addressType === 'SHIPPING') ||
+      buyer?.addresses?.find((a) => a.addressType === 'BILLING') ||
+      buyer?.addresses?.[0] ||
+      null
+
+    const result = await prisma.$transaction(async (tx) => {
+      let shippingAddressId = savedAddress?.addressId || null
+      let billingAddressId = savedAddress?.addressId || null
+
+      if (!shippingAddressId) {
+        const createdAddress = await tx.address.create({
+          data: {
+            title: offer.projectName || 'Delivery',
+            streetAddress: offer.deliveryLocation || 'Delivery address',
+            city: 'Lisbon',
+            state: 'Lisboa',
+            zipCode: '1000-001',
+            country: 'Portugal',
+          },
+        })
+        shippingAddressId = createdAddress.id
+        billingAddressId = createdAddress.id
+      }
+
+      const project = await tx.project.create({
+        data: {
+          userId: auth.id,
+          projectName: offer.projectName || 'Chat order',
+          location: offer.deliveryLocation || 'Portugal',
+        },
+      })
+
+      const session = await tx.checkoutSession.create({
+        data: {
+          checkoutNumber: checkoutNumber(),
+          customerId: auth.id,
+          paymentStatus: 'PAID',
+          paymentMethod: 'MULTIBANCO',
+          firstName,
+          lastName,
+          email,
+          phone,
+          billingAddressId,
+          shippingAddressId,
+          projectId: project.id,
+          unloadingType: offer.unloadingType || null,
+          accessConditions: offer.accessConditions || null,
+          additionalNotes: `Quote offer ${offer.id} demo pay`,
+          subTotal: total,
+          vatAmount: 0,
+          shippingFee: 0,
+          discountAmount: 0,
+          grandTotal: total,
+          currency: process.env.CART_CURRENCY || 'EUR',
+          paidAt: now,
+        },
+      })
+
+      const order = await tx.order.create({
+        data: {
+          orderNumber: orderNumber(),
+          customerId: auth.id,
+          sellerId: quote.sellerId,
+          checkoutSessionId: session.id,
+          projectId: project.id,
+          quoteRequestId: quoteId,
+          shippingAddressId,
+          billingAddressId,
+          orderStatus: 'NEW',
+          orderSource: 'QUOTE_CONVERSION',
+          subTotal: total,
+          vatAmount: 0,
+          shippingFee: 0,
+          discountAmount: 0,
+          grandTotal: total,
+          unloadingType: offer.unloadingType || null,
+          siteConditions: offer.accessConditions || null,
+          orderLineItems: {
+            create: {
+              productId,
+              quantity,
+              unitPriceLocked: unitPrice,
+              totalPriceLocked: total,
+              warehouseLocation: offer.warehouseLocation || null,
+            },
+          },
+          statusHistory: {
+            create: [
+              { status: 'NEW', note: 'Chat offer paid (demo) — awaiting supplier acceptance' },
+            ],
+          },
+        },
+      })
+
+      const offerInstallments = offer.installments?.length
+        ? offer.installments
+        : [{ installmentNumber: 1, amount: total, quantity }]
+
+      const firstAmount = money(offerInstallments[0]?.amount || total)
+      const remaining = money(Math.max(0, total - firstAmount))
+
+      await tx.paymentPlan.create({
+        data: {
+          orderId: order.id,
+          totalAmount: total,
+          downPayment: firstAmount,
+          remainingBalance: remaining,
+          termMonths: offer.installmentMonths || offerInstallments.length || 1,
+          installments: {
+            create: offerInstallments.map((row, index) => ({
+              installmentNumber: row.installmentNumber || index + 1,
+              amount: money(row.amount),
+              dueDate: addMonths(now, index),
+              status: index === 0 ? 'COMPLETED' : 'PENDING',
+              paidAt: index === 0 ? now : null,
+            })),
+          },
+        },
+      })
+
+      const paidOffer = await tx.quoteOffer.update({
+        where: { id: offerId },
+        data: { status: 'PAID' },
+        include: { installments: { orderBy: { installmentNumber: 'asc' } } },
+      })
+
+      await tx.quoteRequest.update({
+        where: { id: quoteId },
+        data: { status: 'ACCEPTED' },
+      })
+
+      let thread = await tx.chatThread.findUnique({
+        where: { quoteRequestId: quoteId },
+        select: { id: true },
+      })
+      if (!thread) {
+        thread = await tx.chatThread.create({
+          data: {
+            type: 'QUOTE',
+            quoteRequestId: quoteId,
+            participants: {
+              create: [{ userId: quote.buyerId }, { userId: quote.sellerId }],
+            },
+          },
+          select: { id: true },
+        })
+      }
+
+      const chatMessage = await tx.chatMessage.create({
+        data: {
+          senderId: auth.id,
+          quoteRequestId: quoteId,
+          chatThreadId: thread.id,
+          messageType: 'SYSTEM',
+          messageText: `Demo payment confirmed for offer card. Order ${order.orderNumber} created.`,
+          offerId,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              profile: { select: { companyName: true } },
+            },
+          },
+          offer: {
+            include: {
+              installments: { orderBy: { installmentNumber: 'asc' } },
+            },
+          },
+        },
+      })
+
+      return { order, session, offer: paidOffer, chatMessage, threadId: thread.id }
+    })
+
+    const offerCard = mapOfferCard(result.offer)
+    const chatMessage = mapMessage(result.chatMessage, auth.id, baseUrl)
+
+    broadcastQuoteEvent(quoteId, 'quote:offer_updated', {
+      quoteId,
+      offerId,
+      offer: offerCard,
+      action: 'pay',
+    })
+    broadcastQuoteEvent(quoteId, 'quote:message', {
+      quoteId,
+      chatMessage: mapMessage(result.chatMessage, null, baseUrl),
+    })
+    emitToChat(result.threadId, 'chat:message', {
+      threadId: result.threadId,
+      chatMessage: mapMessage(result.chatMessage, null, baseUrl),
+    })
+
+    return {
+      status: 201,
+      body: {
+        offer: offerCard,
+        chatMessage,
+        order: {
+          id: result.order.id,
+          orderNumber: result.order.orderNumber,
+          orderStatus: result.order.orderStatus,
+          orderSource: result.order.orderSource,
+          grandTotal: money(result.order.grandTotal),
+        },
+        checkout: {
+          id: result.session.id,
+          checkoutNumber: result.session.checkoutNumber,
+          paymentStatus: result.session.paymentStatus,
+        },
+        message: 'Demo payment confirmed. Chat order created for the supplier.',
       },
     }
   }

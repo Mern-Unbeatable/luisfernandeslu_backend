@@ -8,6 +8,9 @@ const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
   console.log(`Health check available at: http://localhost:${PORT}/health`)
+  console.log(
+    `Live chat tester: http://localhost:${PORT}/live-chat-tester.html`,
+  )
 })
 
 setupSocket(server)

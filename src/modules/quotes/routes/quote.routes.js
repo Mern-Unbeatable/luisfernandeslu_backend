@@ -73,6 +73,13 @@ class QuoteRoutes {
       validate(offerIdParamSchema, 'params'),
       (req, res, next) => quoteController.acceptOffer(req, res, next),
     )
+
+    this.router.post(
+      '/:id/offers/:offerId/pay',
+      requireRoles('company'),
+      validate(offerIdParamSchema, 'params'),
+      (req, res, next) => quoteController.payOffer(req, res, next),
+    )
   }
 
   getRoutes() {

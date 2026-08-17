@@ -82,6 +82,7 @@ enum OrderStatus {
 enum OrderSource {
   DIRECT_CART
   QUOTE_CONVERSION
+  FACTORY_CONVERSION
 }
 
 enum InvoiceAudience {
@@ -262,7 +263,8 @@ model User {
   ticketMessages     TicketMessage[]
   chatMessages       ChatMessage[]           @relation("SentMessages")
   chatParticipations ChatThreadParticipant[]
-  quoteOffersCreated QuoteOffer[]            @relation("QuoteOfferCreator")
+  quoteOffersCreated  QuoteOffer[]            @relation("QuoteOfferCreator")
+  quoteOffersReceived QuoteOffer[]            @relation("QuoteOfferBuyer")
   adminRoleBridge    UserAdminRoleBridge[]
   auditLogs          AuditLog[]
   blogPosts          BlogPost[]
@@ -700,6 +702,7 @@ model ChatThread {
   product          Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
   participants     ChatThreadParticipant[]
   messages         ChatMessage[]
+  offers           QuoteOffer[]
 
   @@index([type, orderId])
   @@index([type, productId])
@@ -758,7 +761,9 @@ model QuoteItem {
 
 model QuoteOffer {
   id                String           @id @default(uuid())
-  quoteRequestId    String
+  quoteRequestId    String?
+  chatThreadId      String?
+  buyerId           String?
   createdById       String
   productId         String?
   warehouseLocation String
@@ -775,13 +780,17 @@ model QuoteOffer {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
-  quoteRequest      QuoteRequest            @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  quoteRequest      QuoteRequest?           @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  chatThread        ChatThread?             @relation(fields: [chatThreadId], references: [id], onDelete: Cascade)
+  buyer             User?                   @relation("QuoteOfferBuyer", fields: [buyerId], references: [id])
   createdBy         User                    @relation("QuoteOfferCreator", fields: [createdById], references: [id])
   product           Product?                @relation(fields: [productId], references: [id], onDelete: SetNull)
   installments      QuoteOfferInstallment[]
   chatMessages      ChatMessage[]
 
   @@index([quoteRequestId, status])
+  @@index([chatThreadId, status])
+  @@index([buyerId])
 }
 
 model QuoteOfferInstallment {

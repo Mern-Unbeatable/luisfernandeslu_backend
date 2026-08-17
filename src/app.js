@@ -1,4 +1,6 @@
 import 'dotenv/config'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import { toNodeHandler } from 'better-auth/node'
@@ -21,6 +23,8 @@ import promoCodeRoutes from './modules/promo-codes/routes/promo-code.routes.js'
 import supplierCustomerOrderRoutes from './modules/supplier-customer-orders/routes/customer-order.routes.js'
 import supplierCompanyOrderRoutes from './modules/supplier-company-orders/routes/company-order.routes.js'
 import supplierDocumentRoutes from './modules/supplier-documents/routes/document.routes.js'
+import supplierFactoryCatalogRoutes from './modules/supplier-factory-catalog/routes/factory-catalog.routes.js'
+import factoryOfferRoutes from './modules/factory-offers/routes/factory-offer.routes.js'
 import adminRoutes from './modules/admin/routes/admin.routes.js'
 import { UPLOAD_ROOT } from './modules/auth/upload.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
@@ -29,6 +33,7 @@ import { sendSuccess } from './utils/apiResponse.js'
 
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 const baHandler = toNodeHandler(auth)
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 
@@ -86,7 +91,15 @@ app.use('/api/promo-codes', promoCodeRoutes)
 app.use('/api/supplier/customer-orders', supplierCustomerOrderRoutes)
 app.use('/api/supplier/company-orders', supplierCompanyOrderRoutes)
 app.use('/api/supplier/documents', supplierDocumentRoutes)
+app.use('/api/supplier/factory-products', supplierFactoryCatalogRoutes)
+app.use('/api/factory-offers', factoryOfferRoutes)
 app.use('/api/admin', adminRoutes)
+
+app.get('/live-chat-tester.html', (req, res) => {
+  return res.sendFile(
+    path.resolve(__dirname, '../live-chat-tester.html'),
+  )
+})
 
 app.get('/', (req, res) => {
   return sendSuccess(

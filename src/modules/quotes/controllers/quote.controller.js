@@ -117,6 +117,20 @@ export class QuoteController {
       next(err)
     }
   }
+
+  async payOffer(req, res, next) {
+    try {
+      const result = await quoteService.payOffer(
+        req.auth,
+        req.params.id,
+        req.params.offerId,
+        resolveRequestBaseUrl(req),
+      )
+      return sendResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new QuoteController()

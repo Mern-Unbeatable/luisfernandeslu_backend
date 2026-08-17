@@ -36,10 +36,24 @@ export function emitToChat(threadId, event, payload) {
  */
 export function initSocket(httpServer) {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const apiPort = process.env.PORT || 8080
+  const allowedOrigins = new Set([
+    frontendUrl,
+    `http://localhost:${apiPort}`,
+    `http://127.0.0.1:${apiPort}`,
+  ])
 
   io = new Server(httpServer, {
     cors: {
-      origin: frontendUrl,
+      origin(origin, callback) {
+        if (!origin || allowedOrigins.has(origin)) {
+          return callback(null, true)
+        }
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return callback(null, true)
+        }
+        return callback(new Error(`Socket CORS blocked: ${origin}`))
+      },
       credentials: true,
       methods: ['GET', 'POST'],
     },

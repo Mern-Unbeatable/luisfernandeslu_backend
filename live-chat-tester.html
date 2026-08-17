@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Chat Tester</title>
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #171e27;
+      --panel-2: #1e2733;
+      --line: #2b3644;
+      --text: #e8eef5;
+      --muted: #8b9bb0;
+      --accent: #3d8bfd;
+      --accent-2: #2f6fd6;
+      --ok: #2fb36a;
+      --warn: #e0a100;
+      --danger: #e05555;
+      --me: #1f4f8a;
+      --them: #243040;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: Segoe UI, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    header h1 { font-size: 16px; margin: 0; font-weight: 650; }
+    header .meta { font-size: 12px; color: var(--muted); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #222c38;
+      color: var(--muted);
+    }
+    .badge.online { color: #b8f0cc; background: #163425; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7788; }
+    .badge.online .dot { background: var(--ok); }
+    .wrap {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      height: calc(100% - 53px);
+    }
+    aside {
+      border-right: 1px solid var(--line);
+      overflow: auto;
+      padding: 14px;
+      background: var(--panel);
+    }
+    .chat-col {
+      display: grid;
+      grid-template-rows: auto 1fr auto 140px;
+      min-width: 0;
+    }
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 8px; }
+    h2:first-child { margin-top: 0; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+    input, select, textarea, button {
+      width: 100%;
+      font: inherit;
+      color: var(--text);
+    }
+    input, select, textarea {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    textarea { min-height: 64px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    button {
+      border: 0;
+      background: var(--accent);
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    button:hover { background: var(--accent-2); }
+    button.secondary { background: #2a3544; }
+    button.ok { background: var(--ok); color: #062; }
+    button.warn { background: #8a6a12; }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .hint { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 6px; }
+    .user-box {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px;
+      font-size: 12px;
+      word-break: break-all;
+    }
+    .user-box b { color: #cfe3ff; }
+    .thread-bar {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #141b23;
+      font-size: 13px;
+    }
+    #messages {
+      overflow: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg {
+      max-width: 78%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.me { align-self: flex-end; background: var(--me); }
+    .msg.them { align-self: flex-start; background: var(--them); }
+    .msg.sys { align-self: center; background: #2a2416; color: #f0d48a; font-size: 12px; }
+    .msg .who { font-size: 11px; color: #b7c7da; margin-bottom: 4px; }
+    .msg .time { font-size: 10px; color: #9aacbf; margin-top: 4px; text-align: right; }
+    .offer {
+      max-width: 86%;
+      align-self: flex-start;
+      background: #1b2634;
+      border: 1px solid #355278;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+    }
+    .offer.me { align-self: flex-end; }
+    .offer h3 { margin: 0 0 8px; font-size: 14px; }
+    .offer .status {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #3a2d12;
+      color: #ffd27a;
+      margin-left: 6px;
+    }
+    .offer .status.paid { background: #163425; color: #b8f0cc; }
+    .offer dl { margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: 4px 8px; }
+    .offer dt { color: var(--muted); }
+    .offer dd { margin: 0; }
+    .offer .actions { display: flex; gap: 8px; margin-top: 10px; }
+    .offer .actions button { width: auto; margin: 0; padding: 7px 10px; }
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 10px;
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .composer textarea { min-height: 48px; margin: 0; }
+    .composer button { width: auto; margin: 0; min-width: 90px; }
+    #log {
+      border-top: 1px solid var(--line);
+      background: #0c1015;
+      color: #9fb3c8;
+      font: 11px/1.4 ui-monospace, Consolas, monospace;
+      overflow: auto;
+      padding: 8px 12px;
+      white-space: pre-wrap;
+    }
+    .quote-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .quote-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      background: #121820;
+    }
+    .quote-item button { margin-top: 6px; }
+    .quote-item.active { border-color: var(--accent); }
+    .hidden { display: none !important; }
+    .installments { font-size: 12px; margin-top: 8px; color: #c9d7e6; }
+    @media (max-width: 900px) {
+      .wrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      aside { max-height: 46vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Live Chat Tester</h1>
+      <div class="meta">Open this page in two browsers. Login as different roles. Use demo pay for factory offers.</div>
+    </div>
+    <span id="connBadge" class="badge"><span class="dot"></span> disconnected</span>
+  </header>
+
+  <div class="wrap">
+    <aside>
+      <h2>1. Login</h2>
+      <label>API base</label>
+      <input id="apiBase" />
+      <label>Role</label>
+      <select id="role">
+        <option value="company">company</option>
+        <option value="supplier">supplier</option>
+        <option value="factory">factory</option>
+      </select>
+      <label>Email</label>
+      <input id="email" placeholder="company@test.local" />
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Password123!" />
+      <button id="btnLogin">Login + connect socket</button>
+      <div id="meBox" class="user-box hidden"></div>
+
+      <h2>2. Open chat</h2>
+      <label>Chat type</label>
+      <select id="chatType">
+        <option value="QUOTE">QUOTE — company ↔ supplier</option>
+        <option value="FACTORY_SUPPLIER">FACTORY_SUPPLIER — supplier ↔ factory</option>
+      </select>
+      <label>Product ID</label>
+      <input id="productId" placeholder="uuid of the product" />
+      <label>Peer user ID</label>
+      <input id="peerUserId" placeholder="other user's id (copy from their login box)" />
+      <p class="hint" id="flowHint">
+        <b>Company:</b> product দিয়ে quote পাঠান → chat খুলবে।<br>
+        <b>Supplier (company chat):</b> incoming quote খুলুন → offer পাঠান।<br>
+        <b>Factory ↔ Supplier:</b> quote নেই। Factory offer পাঠায়, supplier Pay (Demo) করে।
+      </p>
+      <div id="quoteListBox" class="user-box hidden">
+        <b id="quoteListTitle">Incoming quotes</b>
+        <div id="quoteList" class="quote-list"></div>
+      </div>
+      <label id="quoteIdLabel">Quote ID (শুধু manual paste করতে চাইলে)</label>
+      <input id="quoteId" placeholder="auto-filled when you pick a quote below" />
+      <button id="btnLoadQuotes" class="secondary">Refresh quotes</button>
+      <button id="btnOpen">Open / join chat</button>
+
+      <div id="quotePanel" class="hidden">
+        <h2>Company → send quote</h2>
+        <div class="row">
+          <div>
+            <label>Budget</label>
+            <input id="qBudget" type="number" value="1200" />
+          </div>
+          <div>
+            <label>Quantity</label>
+            <input id="qQty" value="100 bags" />
+          </div>
+        </div>
+        <label>Message</label>
+        <textarea id="qMsg">Need a quote for this product.</textarea>
+        <button id="btnQuote">Send quote to supplier</button>
+      </div>
+
+      <div id="supplierOfferPanel" class="hidden">
+        <h2 id="offerPanelTitle">Supplier → offer card</h2>
+        <label>Product name</label>
+        <input id="oProduct" value="Cement 42.5" />
+        <div class="row">
+          <div>
+            <label>Total qty</label>
+            <input id="oQty" type="number" value="100" />
+          </div>
+          <div>
+            <label>Unit</label>
+            <input id="oUnit" value="bags" />
+          </div>
+        </div>
+        <label>Warehouse</label>
+        <input id="oWh" value="Lisbon warehouse" />
+        <label>Project name</label>
+        <input id="oProject" value="Site A" />
+        <label>Delivery location</label>
+        <input id="oAddr" value="Porto" />
+        <div class="row">
+          <div>
+            <label>Unloading</label>
+            <input id="oUnload" value="forklift" />
+          </div>
+          <div>
+            <label>Access</label>
+            <input id="oAccess" value="street level" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Total price</label>
+            <input id="oTotal" type="number" value="2500" />
+          </div>
+          <div>
+            <label>Months</label>
+            <input id="oMonths" type="number" value="3" />
+          </div>
+        </div>
+        <label>Installment 1 price / qty</label>
+        <div class="row">
+          <input id="i1p" type="number" value="1000" />
+          <input id="i1q" type="number" value="40" />
+        </div>
+        <label>Installment 2 price / qty</label>
+        <div class="row">
+          <input id="i2p" type="number" value="1500" />
+          <input id="i2q" type="number" value="60" />
+        </div>
+        <button id="btnOffer">Send offer card</button>
+      </div>
+    </aside>
+
+    <section class="chat-col">
+      <div class="thread-bar" id="threadBar">Not in a thread yet.</div>
+      <div id="messages"></div>
+      <form class="composer" id="composer">
+        <textarea id="text" placeholder="Type a message…"></textarea>
+        <button type="submit" id="btnSend">Send</button>
+      </form>
+      <div id="log"></div>
+    </section>
+  </div>
+
+<script>
+(() => {
+  const CARD = '[[LIVE_CHAT_CARD]]'
+  const seenIds = new Set()
+  const paidOffers = new Set()
+
+  const state = {
+    token: null,
+    user: null,
+    socket: null,
+    threadId: null,
+    quoteId: null,
+    chatType: 'QUOTE',
+    quotes: [],
+    supplierId: null,
+  }
+
+  const $ = (id) => document.getElementById(id)
+  const apiBaseEl = $('apiBase')
+  apiBaseEl.value = localStorage.getItem('lct.api') || window.location.origin.replace(/\/$/, '')
+  $('email').value = localStorage.getItem('lct.email') || ''
+  $('role').value = localStorage.getItem('lct.role') || 'company'
+  $('password').value = localStorage.getItem('lct.pass') || ''
+
+  function log(msg, obj) {
+    const line = `[${new Date().toLocaleTimeString()}] ${msg}` +
+      (obj !== undefined ? '\n' + JSON.stringify(obj, null, 2) : '')
+    const el = $('log')
+    el.textContent = (el.textContent + '\n' + line).slice(-12000)
+    el.scrollTop = el.scrollHeight
+    console.log(msg, obj)
+  }
+
+  function setConn(ok, text) {
+    const el = $('connBadge')
+    el.classList.toggle('online', !!ok)
+    el.innerHTML = `<span class="dot"></span> ${text}`
+  }
+
+  function api() {
+    return apiBaseEl.value.replace(/\/$/, '')
+  }
+
+  async function req(method, path, body) {
+    const headers = { 'Content-Type': 'application/json' }
+    if (state.token) headers.Authorization = 'Bearer ' + state.token
+    const res = await fetch(api() + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data.success === false) {
+      throw new Error(data.message || data.error || ('HTTP ' + res.status))
+    }
+    return data
+  }
+
+  function emitAck(event, payload) {
+    return new Promise((resolve, reject) => {
+      if (!state.socket) return reject(new Error('Socket not connected'))
+      state.socket.emit(event, payload, (ack) => {
+        if (!ack) return reject(new Error('No socket ack'))
+        if (!ack.ok) return reject(new Error(ack.message || event + ' failed'))
+        resolve(ack)
+      })
+    })
+  }
+
+  function role() { return $('role').value }
+  function chatType() { return $('chatType').value }
+
+  function renderQuoteList() {
+    const box = $('quoteList')
+    box.innerHTML = ''
+    if (!state.quotes.length) {
+      box.innerHTML = '<div class="hint">কোনো quote নেই। Company browser থেকে আগে quote পাঠান।</div>'
+      return
+    }
+    state.quotes.forEach((q) => {
+      const item = document.createElement('div')
+      item.className = 'quote-item' + (state.quoteId === q.id ? ' active' : '')
+      const partner = state.user?.role === 'company' ? q.seller?.name : q.buyer?.name
+      item.innerHTML =
+        `<div><b>${esc(q.product?.title || 'Product')}</b> · ${esc(q.status)}</div>` +
+        `<div class="hint">${esc(partner || 'partner')} · budget ${esc(q.budget ?? q.proposedBudget ?? '—')}</div>` +
+        `<div class="hint">quote: ${esc(q.id)}</div>` +
+        `<button type="button" class="secondary">Open this chat</button>`
+      item.querySelector('button').onclick = async () => {
+        selectQuote(q)
+        try { await openChat() } catch (err) { alert(err.message) }
+      }
+      box.appendChild(item)
+    })
+  }
+
+  function selectQuote(q) {
+    state.quoteId = q.id
+    $('quoteId').value = q.id
+    if (q.product?.id) $('productId').value = q.product.id
+    renderQuoteList()
+  }
+
+  async function loadQuotes(silent) {
+    if (!state.token) return
+    const r = state.user?.role
+    if (r !== 'supplier' && r !== 'company') return
+    if (chatType() !== 'QUOTE') return
+
+    const data = await req('GET', '/api/quotes?limit=30')
+    state.quotes = data.quotes || []
+    renderQuoteList()
+    if (!silent) log('Quotes loaded', { count: state.quotes.length })
+
+    // Supplier: auto-pick latest incoming quote if none selected
+    if (r === 'supplier' && !state.quoteId && state.quotes.length) {
+      selectQuote(state.quotes[0])
+    }
+    return state.quotes
+  }
+
+  function refreshPanels() {
+    const r = state.user?.role || role()
+    const t = chatType()
+
+    // Factory cannot use company-supplier quote chat
+    const quoteOpt = $('chatType').querySelector('option[value="QUOTE"]')
+    const factoryOpt = $('chatType').querySelector('option[value="FACTORY_SUPPLIER"]')
+    if (quoteOpt) quoteOpt.hidden = r === 'factory'
+    if (factoryOpt) factoryOpt.hidden = r === 'company'
+
+    if (r === 'factory' && t === 'QUOTE') {
+      $('chatType').value = 'FACTORY_SUPPLIER'
+    }
+    if (r === 'company' && t === 'FACTORY_SUPPLIER') {
+      $('chatType').value = 'QUOTE'
+    }
+
+    const currentType = chatType()
+    const isQuoteChat = currentType === 'QUOTE'
+
+    $('quotePanel').classList.toggle('hidden', !(r === 'company' && isQuoteChat))
+    const showOfferForm =
+      (r === 'supplier' && isQuoteChat) ||
+      (r === 'factory' && currentType === 'FACTORY_SUPPLIER')
+    $('supplierOfferPanel').classList.toggle('hidden', !showOfferForm)
+    $('offerPanelTitle').textContent =
+      r === 'factory'
+        ? 'Factory → offer card (no quote)'
+        : 'Supplier → offer card'
+    $('quoteListBox').classList.toggle('hidden', !(isQuoteChat && (r === 'supplier' || r === 'company')))
+    $('quoteIdLabel').classList.toggle('hidden', !isQuoteChat)
+    $('quoteId').classList.toggle('hidden', !isQuoteChat)
+    $('btnLoadQuotes').classList.toggle('hidden', !isQuoteChat)
+
+    if (r === 'supplier' && isQuoteChat) {
+      $('quoteListTitle').textContent = 'Incoming quotes (company পাঠিয়েছে)'
+    } else if (r === 'company' && isQuoteChat) {
+      $('quoteListTitle').textContent = 'Your sent quotes'
+    }
+  }
+
+  $('chatType').addEventListener('change', () => {
+    refreshPanels()
+    if (state.token && (state.user?.role === 'supplier' || state.user?.role === 'company')) {
+      loadQuotes(true).catch(() => {})
+    }
+  })
+  $('role').addEventListener('change', refreshPanels)
+  refreshPanels()
+
+  function showMe() {
+    const u = state.user
+    const box = $('meBox')
+    box.classList.remove('hidden')
+    box.innerHTML =
+      `<b>Logged in</b><br>name: ${esc(u.name || '')}<br>role: ${esc(u.role)}<br>` +
+      `id: <b>${esc(u.id)}</b><br><span class="hint">Paste this id into the other browser as Peer user ID.</span>`
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]))
+  }
+
+  function addBubble(html, cls) {
+    const div = document.createElement('div')
+    div.className = cls
+    div.innerHTML = html
+    $('messages').appendChild(div)
+    $('messages').scrollTop = $('messages').scrollHeight
+    return div
+  }
+
+  function isMine(senderId) {
+    return senderId && state.user && senderId === state.user.id
+  }
+
+  function parseCard(text) {
+    if (!text || !String(text).startsWith(CARD)) return null
+    try { return JSON.parse(String(text).slice(CARD.length)) } catch { return null }
+  }
+
+  function offerStatus(offer) {
+    if (paidOffers.has(offer.id) || offer.status === 'PAID' || offer.statusLabel === 'Paid') return 'Paid'
+    return offer.statusLabel || offer.status || 'Pending'
+  }
+
+  function renderOffer(offer, senderId, extra = {}) {
+    if (!offer?.id) return
+    const mine = extra.mine ?? isMine(senderId)
+    const paid = offerStatus(offer) === 'Paid'
+    const r = state.user?.role
+    const t = chatType()
+    const canPay = !paid && (
+      (t === 'FACTORY_SUPPLIER' && r === 'supplier' && !mine) ||
+      (t === 'QUOTE' && r === 'company' && !mine)
+    )
+    const rows = [
+      ['Product', offer.product || offer.productName],
+      ['Quantity', offer.quantity || offer.totalQuantity],
+      ['Total', offer.totalPrice],
+      ['Installment months', offer.installmentMonths],
+      ['Warehouse', offer.warehouseLocation],
+      ['Project', offer.projectName],
+      ['Address', offer.address || offer.deliveryLocation],
+    ].filter(([, v]) => v != null && v !== '')
+    const inst = (offer.installments || []).map((row) =>
+      `${row.label || ('#' + row.installmentNumber)}: ${row.amountLabel || row.amount || row.price} / ${row.quantityLabel || row.quantity}`
+    ).join('<br>')
+
+    const existing = document.querySelector(`[data-offer-id="${CSS.escape(offer.id)}"]`)
+    const html =
+      `<h3>${esc(offer.title || 'Offer Card')} <span class="status ${paid ? 'paid' : ''}">${esc(offerStatus(offer))}</span></h3>` +
+      `<dl>${rows.map(([k,v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` +
+      (inst ? `<div class="installments">${inst}</div>` : '') +
+      `<div class="actions">` +
+        (canPay ? `<button class="ok" data-act="pay">Pay (Demo)</button>` : '') +
+      `</div>`
+
+    if (existing) {
+      existing.innerHTML = html
+      existing.className = 'offer' + (mine ? ' me' : '')
+      bindOfferActions(existing, offer)
+      return
+    }
+    const div = addBubble(html, 'offer' + (mine ? ' me' : ''))
+    div.dataset.offerId = offer.id
+    bindOfferActions(div, offer)
+  }
+
+  function bindOfferActions(el, offer) {
+    el.querySelectorAll('button[data-act]').forEach((btn) => {
+      btn.onclick = () => handleOfferAction(btn.dataset.act, offer)
+    })
+  }
+
+  async function handleOfferAction(act, offer) {
+    try {
+      if (act !== 'pay') return
+      if (!offer.id) throw new Error('Offer id missing')
+
+      let data
+      if (chatType() === 'FACTORY_SUPPLIER') {
+        data = await req('POST', `/api/factory-offers/${offer.id}/pay`)
+      } else {
+        if (!state.quoteId) throw new Error('Quote ID missing — open the quote chat first')
+        data = await req('POST', `/api/quotes/${state.quoteId}/offers/${offer.id}/pay`)
+      }
+
+      paidOffers.add(offer.id)
+      offer.status = 'PAID'
+      offer.statusLabel = 'Paid'
+      renderOffer(offer)
+      if (data.chatMessage) ingestChatMessage(data.chatMessage)
+      log('Offer paid — order created', {
+        offerId: offer.id,
+        order: data.order,
+        checkout: data.checkout,
+      })
+    } catch (err) {
+      log('Pay failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+
+  function ingestChatMessage(raw) {
+    const msg = raw?.chatMessage || raw
+    if (!msg) return
+    const id = msg.id
+    if (id && seenIds.has(id)) return
+    if (id) seenIds.add(id)
+
+    const text = msg.text || msg.messageText || ''
+    const senderId = msg.senderId || msg.sender?.id
+    const name = msg.senderName || msg.sender?.name || senderId || 'user'
+    const time = msg.time || (msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : '')
+    const type = String(msg.messageType || msg.type || 'TEXT').toUpperCase()
+    const mine = isMine(senderId)
+
+    const card = parseCard(text)
+    if (card?.kind === 'FACTORY_OFFER') {
+      renderOffer(card.offer || card, senderId)
+      return
+    }
+    if (card?.kind === 'FACTORY_PAY') {
+      paidOffers.add(card.offerId)
+      const existingOffer = { id: card.offerId, status: 'PAID', statusLabel: 'Paid', title: 'Offer Card' }
+      const node = document.querySelector(`[data-offer-id="${CSS.escape(card.offerId)}"]`)
+      if (node) {
+        const status = node.querySelector('.status')
+        if (status) {
+          status.textContent = 'Paid'
+          status.classList.add('paid')
+        }
+        node.querySelector('.actions')?.remove()
+      } else {
+        renderOffer(existingOffer, senderId)
+      }
+      addBubble(`<div class="who">system</div>Demo payment received for offer ${esc(card.offerId)}<div class="time">${esc(time)}</div>`, 'msg sys')
+      return
+    }
+
+    if ((type === 'OFFER' || msg.offer) && msg.offer) {
+      renderOffer(msg.offer, senderId)
+      return
+    }
+
+    if (type === 'SYSTEM') {
+      addBubble(`<div class="who">system</div>${esc(text)}<div class="time">${esc(time)}</div>`, 'msg sys')
+      return
+    }
+
+    addBubble(
+      `<div class="who">${esc(name)} ${mine ? '(you)' : ''}</div>${esc(text)}<div class="time">${esc(time)}</div>`,
+      'msg ' + (mine ? 'me' : 'them'),
+    )
+  }
+
+  function bindSocket(socket) {
+    socket.on('connect', () => setConn(true, 'socket connected'))
+    socket.on('disconnect', () => setConn(false, 'disconnected'))
+    socket.on('connect_error', (err) => {
+      setConn(false, 'connect error')
+      log('connect_error', err.message)
+    })
+    socket.on('connected', (p) => log('connected', p))
+    socket.on('chat:error', (p) => log('chat:error', p))
+    socket.on('quote:error', (p) => log('quote:error', p))
+    socket.on('chat:message', (p) => ingestChatMessage(p))
+    socket.on('quote:message', (p) => ingestChatMessage(p.chatMessage || p))
+    socket.on('quote:offer', (p) => {
+      log('quote:offer', p)
+      if (p.chatMessage) ingestChatMessage(p.chatMessage)
+      else if (p.offer) renderOffer(p.offer, state.user?.id)
+    })
+    socket.on('quote:offer_updated', (p) => {
+      log('quote:offer_updated', p)
+      if (p.offer) renderOffer(p.offer)
+    })
+    socket.on('chat:presence', (p) => log('presence', p))
+    socket.on('quote:presence', (p) => log('quote presence', p))
+    socket.on('factory:offer', (p) => {
+      log('factory:offer', p)
+      if (p.chatMessage) ingestChatMessage(p.chatMessage)
+      else if (p.offer) renderOffer(p.offer)
+    })
+    socket.on('factory:offer_updated', (p) => {
+      log('factory:offer_updated', p)
+      if (p.offer) renderOffer(p.offer)
+    })
+    socket.on('quote:opened', (p) => {
+      log('quote:opened', p)
+      if (state.user?.role === 'supplier') {
+        loadQuotes(true).catch(() => {})
+      }
+    })
+  }
+
+  async function connectSocket() {
+    if (state.socket) {
+      state.socket.disconnect()
+      state.socket = null
+    }
+    const socket = io(api(), {
+      path: '/socket.io',
+      auth: { token: state.token },
+      transports: ['websocket', 'polling'],
+    })
+    state.socket = socket
+    bindSocket(socket)
+  }
+
+  $('btnLogin').onclick = async () => {
+    try {
+      localStorage.setItem('lct.api', api())
+      localStorage.setItem('lct.email', $('email').value.trim())
+      localStorage.setItem('lct.role', role())
+      localStorage.setItem('lct.pass', $('password').value)
+      const data = await req('POST', `/api/auth/login/${role()}`, {
+        email: $('email').value.trim(),
+        password: $('password').value,
+      })
+      state.token = data.accessToken
+      state.user = data.user
+      if (data.user.role === 'factory') $('chatType').value = 'FACTORY_SUPPLIER'
+      if (data.user.role === 'company' || data.user.role === 'supplier') {
+        $('chatType').value = 'QUOTE'
+      }
+      showMe()
+      refreshPanels()
+      await connectSocket()
+      refreshPanels()
+      if (data.user.role === 'supplier' || data.user.role === 'company') {
+        await loadQuotes(true)
+      }
+      log('Logged in', { id: data.user.id, role: data.user.role })
+    } catch (err) {
+      log('Login failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+
+  $('btnQuote').onclick = async () => {
+    try {
+      const productId = $('productId').value.trim()
+      if (!productId) throw new Error('Product ID is required')
+      const data = await req('POST', `/api/marketplace/products/${productId}/quote`, {
+        budget: Number($('qBudget').value),
+        quantity: $('qQty').value,
+        message: $('qMsg').value,
+      })
+      state.quoteId = data.quote.id
+      $('quoteId').value = data.quote.id
+      await loadQuotes(true)
+      log('Quote created', data.quote)
+      await openChat()
+    } catch (err) {
+      log('Quote failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+
+  $('btnLoadQuotes').onclick = async () => {
+    try {
+      await loadQuotes(false)
+    } catch (err) {
+      log('Load quotes failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+
+  async function openChat() {
+    const type = chatType()
+    state.chatType = type
+    const productId = $('productId').value.trim()
+    const peerUserId = $('peerUserId').value.trim()
+    const quoteId = $('quoteId').value.trim()
+    state.quoteId = quoteId || state.quoteId
+
+    let payload
+    if (type === 'QUOTE') {
+      if (!state.quoteId) {
+        await loadQuotes(true)
+        if (!state.quoteId) {
+          if (state.user.role === 'supplier') {
+            throw new Error('কোনো incoming quote নেই। আগে company browser থেকে quote পাঠান, তারপর Refresh quotes চাপুন।')
+          }
+          throw new Error('Quote ID নেই। Company হিসেবে আগে Send quote to supplier চাপুন।')
+        }
+      }
+      payload = { type: 'QUOTE', quoteRequestId: state.quoteId, quoteId: state.quoteId }
+    } else {
+      if (!productId) throw new Error('Product ID is required')
+      payload = { type: 'FACTORY_SUPPLIER', productId }
+      if (state.user.role === 'factory') {
+        if (!peerUserId) throw new Error('Factory must set Peer user ID = supplier id')
+        payload.supplierId = peerUserId
+      } else if (state.user.role === 'supplier') {
+        payload.supplierId = state.user.id
+      }
+    }
+
+    const opened = await emitAck('chat:open', payload)
+    state.threadId = opened.thread.id
+    const others = (opened.thread.participantIds || []).filter((id) => id !== state.user.id)
+    if (state.user.role === 'factory' && others[0]) {
+      state.supplierId = others[0]
+      if (!$('peerUserId').value.trim()) $('peerUserId').value = others[0]
+    }
+    if (state.user.role === 'supplier') {
+      state.supplierId = state.user.id
+    }
+    await emitAck('chat:join', { threadId: state.threadId })
+    $('threadBar').textContent =
+      `${type}  ·  thread ${state.threadId}` +
+      (state.quoteId ? `  ·  quote ${state.quoteId}` : '') +
+      (productId ? `  ·  product ${productId}` : '')
+    log('Chat opened', opened)
+
+    if (type === 'QUOTE' && state.quoteId) {
+      const hist = await req('GET', `/api/quotes/${state.quoteId}/messages?limit=80`)
+      $('messages').innerHTML = ''
+      seenIds.clear()
+      ;(hist.messages || []).forEach(ingestChatMessage)
+    } else if (type === 'FACTORY_SUPPLIER' && state.threadId) {
+      const hist = await req('GET', `/api/factory-offers/threads/${state.threadId}/messages?limit=80`)
+      $('messages').innerHTML = ''
+      seenIds.clear()
+      ;(hist.messages || []).forEach(ingestChatMessage)
+    }
+  }
+
+  $('btnOpen').onclick = async () => {
+    try { await openChat() }
+    catch (err) {
+      log('Open chat failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+
+  $('btnOffer').onclick = async () => {
+    try {
+      const body = {
+        warehouseLocation: $('oWh').value,
+        productName: $('oProduct').value,
+        productId: $('productId').value.trim() || undefined,
+        totalQuantity: Number($('oQty').value),
+        quantityUnit: $('oUnit').value,
+        projectName: $('oProject').value,
+        deliveryLocation: $('oAddr').value,
+        unloadingType: $('oUnload').value,
+        accessConditions: $('oAccess').value,
+        totalPrice: Number($('oTotal').value),
+        installmentMonths: Number($('oMonths').value),
+        installments: [
+          { price: Number($('i1p').value), quantity: Number($('i1q').value) },
+          { price: Number($('i2p').value), quantity: Number($('i2q').value) },
+        ],
+      }
+
+      let data
+      if (chatType() === 'FACTORY_SUPPLIER') {
+        const supplierId =
+          $('peerUserId').value.trim() ||
+          state.supplierId ||
+          ''
+        if (!supplierId) throw new Error('Peer user ID = supplier id is required')
+        if (!body.productId) throw new Error('Product ID is required')
+        data = await req('POST', '/api/factory-offers', {
+          ...body,
+          supplierId,
+        })
+        if (data.threadId) {
+          state.threadId = data.threadId
+          try {
+            await emitAck('chat:join', { threadId: data.threadId })
+          } catch (_) { /* already joined */ }
+        }
+      } else {
+        if (!state.quoteId) throw new Error('Open a quote chat first')
+        data = await req('POST', `/api/quotes/${state.quoteId}/offers`, body)
+      }
+
+      log('Offer sent', data.offer)
+      if (data.chatMessage) ingestChatMessage(data.chatMessage)
+      else if (data.offer) renderOffer(data.offer, state.user.id)
+    } catch (err) {
+      log('Offer failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+
+  $('composer').onsubmit = async (e) => {
+    e.preventDefault()
+    const text = $('text').value.trim()
+    if (!text) return
+    try {
+      if (!state.threadId) throw new Error('Open a chat first')
+      await emitAck('chat:message', { threadId: state.threadId, message: text })
+      $('text').value = ''
+    } catch (err) {
+      log('Send failed: ' + err.message)
+      alert(err.message)
+    }
+  }
+})()
+</script>
+</body>
+</html>
