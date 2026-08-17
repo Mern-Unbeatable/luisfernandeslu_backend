@@ -312,7 +312,7 @@ export class AuthService {
     })
 
     if (!existing) {
-      throw httpError('Invalid email or password', 401, 'InvalidCredentials')
+      throw httpError('Invalid email', 401, 'InvalidEmail')
     }
 
     if (existing.role !== expectedRole) {
@@ -353,9 +353,9 @@ export class AuthService {
     } catch (err) {
       if (err instanceof APIError) {
         throw httpError(
-          'Invalid email or password',
+          'Invalid password',
           err.statusCode || 401,
-          'InvalidCredentials',
+          'InvalidPassword',
         )
       }
       throw err
