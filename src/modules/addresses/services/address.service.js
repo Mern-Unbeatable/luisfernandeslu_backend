@@ -1,11 +1,7 @@
 import prisma from '../../../../lib/prisma.js'
-import { AppError } from '../../../utils/AppError.js'
+import { httpError } from '../../../shared/errors.js'
 
-function httpError(message, status = 400, code = 'Error', details) {
-  return new AppError(message, status, code, details)
-}
-
-function mapAddress(bridge) {
+function mapAddressBridge(bridge) {
   const a = bridge.address
   return {
     id: a.id,
@@ -48,7 +44,7 @@ class AddressService {
     return {
       status: 200,
       body: {
-        addresses: bridges.map(mapAddress),
+        addresses: bridges.map(mapAddressBridge),
         message: 'Addresses fetched',
       },
     }
@@ -97,7 +93,7 @@ class AddressService {
     return {
       status: 201,
       body: {
-        address: mapAddress(result),
+        address: mapAddressBridge(result),
         message: 'Address created',
       },
     }
@@ -194,7 +190,7 @@ class AddressService {
     return {
       status: 200,
       body: {
-        address: mapAddress(updated),
+        address: mapAddressBridge(updated),
         message: 'Address updated',
       },
     }

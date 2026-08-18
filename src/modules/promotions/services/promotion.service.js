@@ -1,9 +1,6 @@
 import prisma from '../../../../lib/prisma.js'
-import { AppError } from '../../../utils/AppError.js'
-
-function httpError(message, status = 400, code = 'Error') {
-  return new AppError(message, status, code)
-}
+import { httpError, conflict } from '../../../shared/errors.js'
+import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 
 function mapPlan(plan) {
   return {
@@ -180,9 +177,8 @@ export class PromotionService {
       },
     })
     if (activeOrPending) {
-      throw new AppError(
+      throw conflict(
         'This product already has an active or pending promotion',
-        409,
         'PromotionExists',
         { promotionId: activeOrPending.id },
       )
@@ -251,9 +247,7 @@ export class PromotionService {
   }
 
   async adminList(query) {
-    const page = Math.max(1, Number(query.page) || 1)
-    const limit = Math.min(50, Math.max(1, Number(query.limit) || 12))
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const where =
       query.status && query.status !== 'all'
         ? { approvalStatus: query.status }
@@ -291,12 +285,7 @@ export class PromotionService {
           ...mapPromotion(r),
           seller: r.product?.seller,
         })),
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / limit)),
-        },
+        pagination: paginationMeta({ page, limit, total }),
         message: 'Promotions fetched',
       },
     }

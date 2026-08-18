@@ -106,7 +106,6 @@ Server runs on `http://localhost:3000` by default.
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 | GET | `/` | API info |
-| GET | `/api/users` | Users list (example) |
 
 ## Environment Variables
 

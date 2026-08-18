@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import express from 'express'
@@ -12,26 +11,30 @@ import {
 } from './modules/catalog/routes/catalog.routes.js'
 import marketplaceRoutes from './modules/marketplace/routes/marketplace.routes.js'
 import quoteRoutes from './modules/quotes/routes/quote.routes.js'
+import marketplaceQuoteRoutes from './modules/quotes/routes/marketplace-quote.routes.js'
 import cartRoutes from './modules/cart/routes/cart.routes.js'
 import addressRoutes from './modules/addresses/routes/address.routes.js'
 import checkoutRoutes from './modules/checkout/routes/checkout.routes.js'
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import productRoutes from './modules/products/routes/product.routes.js'
-import factoryProductRoutes from './modules/factory-products/routes/factory-product.routes.js'
+import productAdminRoutes from './modules/products/routes/admin.routes.js'
+import factoryProductRoutes from './modules/listings/routes/factory-product.routes.js'
 import promotionRoutes from './modules/promotions/routes/promotion.routes.js'
+import promotionProductRoutes from './modules/promotions/routes/supplier-product.routes.js'
+import promotionAdminRoutes from './modules/promotions/routes/admin.routes.js'
 import promoCodeRoutes from './modules/promo-codes/routes/promo-code.routes.js'
-import supplierCustomerOrderRoutes from './modules/supplier-customer-orders/routes/customer-order.routes.js'
-import supplierCompanyOrderRoutes from './modules/supplier-company-orders/routes/company-order.routes.js'
-import supplierDocumentRoutes from './modules/supplier-documents/routes/document.routes.js'
-import supplierFactoryCatalogRoutes from './modules/supplier-factory-catalog/routes/factory-catalog.routes.js'
-import factoryOfferRoutes from './modules/factory-offers/routes/factory-offer.routes.js'
-import adminRoutes from './modules/admin/routes/admin.routes.js'
-import { UPLOAD_ROOT } from './modules/auth/upload.js'
+import supplierCustomerOrderRoutes from './modules/orders/routes/customer-order.routes.js'
+import supplierCompanyOrderRoutes from './modules/orders/routes/company-order.routes.js'
+import supplierDocumentRoutes from './modules/invoicing/routes/document.routes.js'
+import supplierFactoryCatalogRoutes from './modules/listings/routes/factory-catalog.routes.js'
+import factoryOfferRoutes from './modules/offers/routes/factory-offer.routes.js'
+import { UPLOAD_ROOT } from './shared/storage.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
 import { sendSuccess } from './utils/apiResponse.js'
+import { env } from './config/env.js'
 
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+const frontendUrl = env.frontendUrl
 const baHandler = toNodeHandler(auth)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -79,12 +82,14 @@ app.use('/api/auth', authRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/subcategories', subCategoryRoutes)
 app.use('/api/marketplace/products', marketplaceRoutes)
+app.use('/api/marketplace/products', marketplaceQuoteRoutes)
 app.use('/api/quotes', quoteRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/addresses', addressRoutes)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/inventory', inventoryRoutes)
 app.use('/api/products', productRoutes)
+app.use('/api/products', promotionProductRoutes)
 app.use('/api/factory/products', factoryProductRoutes)
 app.use('/api/promotions', promotionRoutes)
 app.use('/api/promo-codes', promoCodeRoutes)
@@ -93,7 +98,8 @@ app.use('/api/supplier/company-orders', supplierCompanyOrderRoutes)
 app.use('/api/supplier/documents', supplierDocumentRoutes)
 app.use('/api/supplier/factory-products', supplierFactoryCatalogRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
-app.use('/api/admin', adminRoutes)
+app.use('/api/admin', productAdminRoutes)
+app.use('/api/admin', promotionAdminRoutes)
 
 app.get('/live-chat-tester.html', (req, res) => {
   return res.sendFile(

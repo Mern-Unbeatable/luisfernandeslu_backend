@@ -1,129 +1,17 @@
 import prisma from '../../../../lib/prisma.js'
-import { AppError } from '../../../utils/AppError.js'
-import { getListingQuota } from '../../products/services/listing-quota.js'
-import { getStockBreakdown } from '../../products/services/stock-listing.js'
-
-function slugify(input) {
-  return String(input)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 80)
-}
-
-function httpError(message, status = 400, code = 'Error') {
-  return new AppError(message, status, code)
-}
-
-function publicSlug(slug) {
-  if (!slug) return slug
-  const parts = String(slug).split('__')
-  return parts[parts.length - 1]
-}
-
-async function resolveCategoryPath(productTypeId) {
-  // Lean select — less data over remote DB link
-  const productType = await prisma.category.findUnique({
-    where: { id: productTypeId },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      parentCategoryId: true,
-      parentCategory: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          parentCategoryId: true,
-          parentCategory: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              parentCategoryId: true,
-            },
-          },
-        },
-      },
-    },
-  })
-
-  if (!productType?.parentCategory?.parentCategory) {
-    return null
-  }
-
-  const subCategory = productType.parentCategory
-  const category = subCategory.parentCategory
-
-  if (category.parentCategoryId !== null) {
-    return null
-  }
-
-  return { category, subCategory, productType }
-}
-
-function mapInventoryProduct(product) {
-  const stockInfo = getStockBreakdown(
-    product.inventory,
-    product.approvalStatus,
-  )
-  const stock = stockInfo.warehouseStock
-  const threshold = product.inventory?.lowStockThreshold ?? 10
-  let stockStatus = 'IN_STOCK'
-  if (stock <= 0) stockStatus = 'OUT_OF_STOCK'
-  else if (stock <= threshold) stockStatus = 'LOW_STOCK'
-
-  const path = product._categoryPath
-
-  return {
-    id: product.id,
-    inventoryId: product.inventory?.id ?? null,
-    name: product.title,
-    sku: product.sku,
-    price: product.basePrice,
-    quantity: stock,
-    warehouseStock: stockInfo.warehouseStock,
-    listedQuantity: stockInfo.listedQuantity,
-    remainingListable: stockInfo.remainingListable,
-    unitOfMeasure: product.unitOfMeasure,
-    factoryName: product.factoryName,
-    warehouseLocation: product.warehouseLocation,
-    lowStockThreshold: threshold,
-    stockStatus,
-    stockValue: Number((stock * product.basePrice).toFixed(2)),
-    approvalStatus: product.approvalStatus,
-    category: path
-      ? {
-          id: path.category.id,
-          slug: publicSlug(path.category.slug),
-          name: path.category.name,
-        }
-      : null,
-    subCategory: path
-      ? {
-          id: path.subCategory.id,
-          slug: publicSlug(path.subCategory.slug),
-          name: path.subCategory.name,
-        }
-      : null,
-    productType: path
-      ? {
-          id: path.productType.id,
-          slug: publicSlug(path.productType.slug),
-          name: path.productType.name,
-        }
-      : {
-          id: product.categoryId,
-          slug: null,
-          name: product.category?.name ?? null,
-        },
-    createdAt: product.createdAt,
-    updatedAt: product.updatedAt,
-  }
-}
+import { getListingQuota } from '../../../shared/listing-quota.js'
+import { httpError } from '../../../shared/errors.js'
+import { assertCategoryPath } from '../../../shared/catalog.query.js'
+import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
+import {
+  uniqueProductSlug,
+  rethrowSkuConflict,
+} from '../../listings/write.js'
+import { inventoryListInclude } from '../../listings/includes.js'
+import {
+  mapInventoryProduct,
+  attachInventoryCategoryPath,
+} from '../../listings/inventory.mapper.js'
 
 export class InventoryService {
   async assertSupplier(auth) {
@@ -137,27 +25,8 @@ export class InventoryService {
     await this.assertSupplier(auth)
 
     const sku = String(body.sku).trim()
-    // Unique slug without extra DB round-trips (remote DB latency dominates)
-    const slug = `${slugify(body.name) || 'product'}-${Date.now().toString(36)}`
-
-    const path = await resolveCategoryPath(body.productTypeId)
-    if (!path) {
-      throw httpError('Invalid product type', 400, 'InvalidProductType')
-    }
-    if (path.category.id !== body.categoryId) {
-      throw httpError(
-        'productTypeId does not belong to categoryId',
-        400,
-        'CategoryMismatch',
-      )
-    }
-    if (path.subCategory.id !== body.subCategoryId) {
-      throw httpError(
-        'productTypeId does not belong to subCategoryId',
-        400,
-        'SubCategoryMismatch',
-      )
-    }
+    const slug = uniqueProductSlug(body.name)
+    await assertCategoryPath(body)
 
     let product
     try {
@@ -198,15 +67,7 @@ export class InventoryService {
         },
       })
     } catch (err) {
-      if (err?.code === 'P2002') {
-        const target = err?.meta?.target
-        const fields = Array.isArray(target) ? target.join(',') : String(target || '')
-        if (fields.includes('sku')) {
-          throw httpError('SKU already exists', 409, 'SkuExists')
-        }
-        throw httpError('Product already exists', 409, 'Duplicate')
-      }
-      throw err
+      rethrowSkuConflict(err, { distinguishDuplicate: true })
     }
 
     return {
@@ -224,9 +85,7 @@ export class InventoryService {
   async list(auth, query) {
     await this.assertSupplier(auth)
 
-    const page = query.page || 1
-    const limit = query.limit || 20
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(query, { defaultLimit: 20 })
 
     const where = {
       sellerId: auth.id,
@@ -245,43 +104,22 @@ export class InventoryService {
       prisma.product.count({ where }),
       prisma.product.findMany({
         where,
-        include: {
-          inventory: true,
-          category: {
-            include: {
-              parentCategory: {
-                include: { parentCategory: true },
-              },
-            },
-          },
-        },
+        include: inventoryListInclude,
         orderBy: { updatedAt: 'desc' },
         skip,
         take: limit,
       }),
     ])
 
-    const mapped = products.map((p) => {
-      const productType = p.category
-      const subCategory = productType?.parentCategory
-      const category = subCategory?.parentCategory
-      p._categoryPath =
-        category && subCategory && productType
-          ? { category, subCategory, productType }
-          : null
-      return mapInventoryProduct(p)
-    })
+    const mapped = products.map((p) =>
+      mapInventoryProduct(attachInventoryCategoryPath(p)),
+    )
 
     return {
       status: 200,
       body: {
         products: mapped,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit) || 1,
-        },
+        pagination: paginationMeta({ page, limit, total }),
         message: 'Inventory products fetched',
       },
     }

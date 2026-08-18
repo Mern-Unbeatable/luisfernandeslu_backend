@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import productController from '../controllers/product.controller.js'
-import promotionController from '../../promotions/controllers/promotion.controller.js'
 import {
   aiGenerateBodySchema,
   createProductBodySchema,
@@ -11,12 +10,7 @@ import {
 import {
   listProductsQuerySchema,
 } from '../validations/product-list.validation.js'
-import {
-  payPromotionBodySchema,
-  promoteBodySchema,
-  productPromotionParamsSchema,
-} from '../../promotions/validations/promotion.validation.js'
-import { PRODUCT_FILE_FIELDS, productUpload, productCsvUpload } from '../upload.js'
+import { PRODUCT_FILE_FIELDS, productUpload, productCsvUpload } from '../../../shared/upload/product-upload.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
   requireAccessToken,
@@ -98,21 +92,6 @@ class ProductRoutes {
       '/:id/cancel-listing',
       validate(productIdParamSchema, 'params'),
       (req, res, next) => productController.cancelListing(req, res, next),
-    )
-
-    // Promote → pay (admin-defined plans)
-    this.router.post(
-      '/:id/promote',
-      validate(productIdParamSchema, 'params'),
-      validate(promoteBodySchema, 'body'),
-      (req, res, next) => promotionController.requestPromotion(req, res, next),
-    )
-
-    this.router.post(
-      '/:id/promotions/:promotionId/pay',
-      validate(productPromotionParamsSchema, 'params'),
-      validate(payPromotionBodySchema, 'body'),
-      (req, res, next) => promotionController.confirmPayment(req, res, next),
     )
   }
 

@@ -1,12 +1,14 @@
-import 'dotenv/config'
+import { env, assertEnv } from './config/env.js'
 import app from './app.js'
 import { setupSocket } from './socket/index.js'
 
-const PORT = process.env.PORT || 8080
+assertEnv()
+
+const PORT = env.port
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+  console.log(`Environment: ${env.nodeEnv}`)
   console.log(`Health check available at: http://localhost:${PORT}/health`)
   console.log(
     `Live chat tester: http://localhost:${PORT}/live-chat-tester.html`,

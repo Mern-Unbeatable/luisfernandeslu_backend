@@ -1,336 +1,41 @@
 import prisma from '../../../../lib/prisma.js'
 import { AppError } from '../../../utils/AppError.js'
 import { generateProductCopy } from '../../../lib/ai.js'
-import { absolutizeUrl } from '../../../lib/requestUrl.js'
-import { productFilePublicUrl, downloadRemoteProductImage } from '../upload.js'
-import { assertCanSubmitListing, getListingQuota } from './listing-quota.js'
+import { downloadRemoteProductImage } from '../../../shared/upload/product-upload.js'
+import { assertCanSubmitListing, getListingQuota } from '../../../shared/listing-quota.js'
 import {
   getStockBreakdown,
   assertListedWithinWarehouse,
   isMarketplaceListed,
-} from './stock-listing.js'
+} from '../../../shared/stock-listing.js'
 import {
   parseCsv,
   buildProductCsvTemplate,
   decodeCsvBuffer,
   PRODUCT_CSV_HEADERS,
-} from './product-csv.js'
-import { buildCategoryGuidePdf } from './catalog-guide-pdf.js'
+} from '../../../shared/csv.js'
+import { buildCategoryGuidePdf } from '../../../shared/pdf/catalog-guide-pdf.js'
 import { createProductBodySchema } from '../validations/product.validation.js'
-
-function httpError(message, status = 400, code = 'Error') {
-  return new AppError(message, status, code)
-}
+import { httpError } from '../../../shared/errors.js'
+import { categoryFilter } from '../../../shared/catalog.js'
+import {
+  assertCategoryPath,
+  resolveCategoryPathByNames,
+} from '../../../shared/catalog.query.js'
+import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
+import {
+  supplierListingParts,
+  uniqueProductSlug,
+  rethrowSkuConflict,
+} from '../../listings/write.js'
+import { supplierProductInclude } from '../../listings/includes.js'
+import { mapSupplierProduct } from '../../listings/supplier.mapper.js'
 
 const shortSelect = {
   id: true,
   sku: true,
   title: true,
   approvalStatus: true,
-}
-
-function buildListingParts(body, files = {}) {
-  const discount = Number(body.b2bDiscount || 0)
-  const b2bPrice =
-    discount > 0
-      ? Number((body.basePrice * (1 - discount / 100)).toFixed(2))
-      : null
-
-  const bannerFiles = files?.bannerImage || []
-  const otherFiles = files?.images || []
-  const mediaCreates = []
-  if (bannerFiles[0]) {
-    mediaCreates.push({
-      mediaUrl: productFilePublicUrl(bannerFiles[0]),
-      isBanner: true,
-      sortOrder: 0,
-    })
-  }
-  otherFiles.forEach((file, index) => {
-    mediaCreates.push({
-      mediaUrl: productFilePublicUrl(file),
-      isBanner: false,
-      sortOrder: index + 1,
-    })
-  })
-
-  const featureRows = featureLines(body.feature).map((featureText) => ({
-    featureText,
-  }))
-  const bulkEnabled = Boolean(body.bulkEnabled)
-  const tierCreates = (bulkEnabled ? body.bulkOptions || [] : []).map((t) => ({
-    minQuantity: t.minQuantity,
-    maxQuantity: t.maxQuantity ?? null,
-    tierPrice: t.price,
-  }))
-
-  const sharedData = {
-    title: body.title.trim(),
-    warehouseLocation: body.warehouseLocation.trim(),
-    factoryName: body.factoryName?.trim() || null,
-    basePrice: body.basePrice,
-    b2bPrice,
-    minB2bQuantity: body.minB2bQuantity ?? null,
-    weightKg: body.weightKg ?? 0,
-    unitOfMeasure: 'bag',
-    longDescription: body.description || null,
-    shortDescription: body.additionalInfo || null,
-    specifications: body.specifications || null,
-    marketplaceTier: bulkEnabled ? 'WHOLESALE' : 'RETAIL',
-    approvalStatus: 'PENDING_REVIEW',
-    rejectionReason: null,
-  }
-
-  return { sharedData, mediaCreates, featureRows, tierCreates }
-}
-
-async function validateCategoryPath(body) {
-  const path = await resolveCategoryPath(body.productTypeId)
-  if (!path) throw httpError('Invalid product type', 400, 'InvalidProductType')
-  if (path.category.id !== body.categoryId) {
-    throw httpError('productTypeId does not belong to categoryId', 400, 'CategoryMismatch')
-  }
-  if (path.subCategory.id !== body.subCategoryId) {
-    throw httpError(
-      'productTypeId does not belong to subCategoryId',
-      400,
-      'SubCategoryMismatch',
-    )
-  }
-  return path
-}
-
-function slugify(input) {
-  return String(input)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 80)
-}
-
-function publicSlug(slug) {
-  if (!slug) return slug
-  const parts = String(slug).split('__')
-  return parts[parts.length - 1]
-}
-
-function featureLines(text) {
-  return String(text || '')
-    .replace(/\\n/g, '\n')
-    .split(/\r?\n/)
-    .map((l) => l.replace(/^[-•*\d.)\s]+/, '').trim())
-    .filter(Boolean)
-}
-
-async function resolveCategoryPath(productTypeId) {
-  const productType = await prisma.category.findUnique({
-    where: { id: productTypeId },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      parentCategoryId: true,
-      parentCategory: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          parentCategoryId: true,
-          parentCategory: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              parentCategoryId: true,
-            },
-          },
-        },
-      },
-    },
-  })
-
-  if (!productType?.parentCategory?.parentCategory) return null
-  const subCategory = productType.parentCategory
-  const category = subCategory.parentCategory
-  if (category.parentCategoryId !== null) return null
-  return { category, subCategory, productType }
-}
-
-function mapCategoryNode(node) {
-  if (!node) return null
-  return {
-    id: node.id,
-    slug: publicSlug(node.slug),
-    name: node.name,
-  }
-}
-
-function mapProduct(product, baseUrl, categoryPath = null) {
-  const stockInfo = getStockBreakdown(
-    product.inventory,
-    product.approvalStatus,
-  )
-  const path =
-    categoryPath ||
-    (product.category?.parentCategory?.parentCategory
-      ? {
-          productType: product.category,
-          subCategory: product.category.parentCategory,
-          category: product.category.parentCategory.parentCategory,
-        }
-      : null)
-
-  const b2bDiscount =
-    product.b2bPrice != null && product.basePrice > 0
-      ? Number(
-          (
-            ((product.basePrice - product.b2bPrice) / product.basePrice) *
-            100
-          ).toFixed(2),
-        )
-      : 0
-
-  const warehouseStock = stockInfo.warehouseStock
-  const threshold = product.inventory?.lowStockThreshold ?? 10
-  let availability = 'IN_STOCK'
-  let availabilityLabel = 'In Stock'
-  if (warehouseStock <= 0) {
-    availability = 'OUT_OF_STOCK'
-    availabilityLabel = 'Out of Stock'
-  } else if (warehouseStock <= threshold) {
-    availability = 'LOW_STOCK'
-    availabilityLabel = 'Low Stock'
-  }
-
-  const bannerImage =
-    (product.media || [])
-      .filter((m) => m.isBanner)
-      .map((m) => ({
-        id: m.id,
-        url: absolutizeUrl(m.mediaUrl, baseUrl),
-      }))[0] || null
-
-  const images = (product.media || [])
-    .filter((m) => !m.isBanner)
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((m) => ({
-      id: m.id,
-      url: absolutizeUrl(m.mediaUrl, baseUrl),
-    }))
-
-  // Main gallery: banner first, then other images (detail page)
-  const gallery = [
-    ...(bannerImage ? [bannerImage] : []),
-    ...images,
-  ]
-
-  return {
-    id: product.id,
-    sku: product.sku,
-    title: product.title,
-    warehouseLocation: product.warehouseLocation,
-    factoryName: product.factoryName,
-    quantity: warehouseStock,
-    warehouseStock,
-    listedQuantity: stockInfo.listedQuantity,
-    remainingListable: stockInfo.remainingListable,
-    availability,
-    availabilityLabel,
-    averageRating: Number(product.averageRating ?? 0),
-    reviewCount: Number(product.reviewCount ?? 0),
-    basePrice: product.basePrice,
-    b2bPrice: product.b2bPrice,
-    b2bDiscount,
-    minB2bQuantity: product.minB2bQuantity,
-    weightKg: product.weightKg,
-    unitOfMeasure: product.unitOfMeasure || 'bag',
-    priceLabel: `$${Number(product.basePrice).toFixed(2)} Per ${product.unitOfMeasure || 'bag'}${
-      product.weightKg ? ` ( ${product.weightKg}kg )` : ''
-    }`,
-    description: product.longDescription,
-    additionalInfo: product.shortDescription,
-    specifications: product.specifications,
-    feature: (product.features || []).map((f) => f.featureText).join('\n'),
-    features: (product.features || []).map((f) => f.featureText),
-    bulkOptions: (product.pricingTiers || []).map((t) => ({
-      id: t.id,
-      minQuantity: t.minQuantity,
-      maxQuantity: t.maxQuantity,
-      price: t.tierPrice,
-      label:
-        t.maxQuantity != null
-          ? `${t.minQuantity} - ${t.maxQuantity}`
-          : `${t.minQuantity}+`,
-    })),
-    bannerImage,
-    images,
-    gallery,
-    category: mapCategoryNode(path?.category),
-    subCategory: mapCategoryNode(path?.subCategory),
-    productType: mapCategoryNode(path?.productType || product.category),
-    approvalStatus: product.approvalStatus,
-    rejectionReason: product.rejectionReason || null,
-    marketplaceTier: product.marketplaceTier,
-    isSponsored: Boolean(product.isSponsored),
-    isFeatured: Boolean(product.isFeatured),
-    cardStatus: resolveCardStatus(product),
-    promotionExpiry: resolvePromotionExpiry(product),
-    reviews: (product.reviews || []).map((r) => ({
-      id: r.id,
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.createdAt,
-      author: r.author
-        ? { id: r.author.id, name: r.author.name }
-        : null,
-    })),
-    createdAt: product.createdAt,
-    updatedAt: product.updatedAt,
-  }
-}
-
-function resolveCardStatus(product) {
-  if (product.approvalStatus === 'PENDING_REVIEW') return 'pending'
-  if (product.approvalStatus === 'REJECTED') return 'rejected'
-  if (product.approvalStatus === 'DRAFT') return 'draft'
-  // Inventory-only (approved stock, not yet marketplace-listed)
-  if (
-    product.approvalStatus === 'APPROVED' &&
-    Number(product.inventory?.listedQuantity ?? 0) <= 0
-  ) {
-    return 'draft'
-  }
-  if (product.isFeatured || product.isSponsored) return 'featured'
-  if (product.marketplaceTier === 'WHOLESALE') return 'bulk'
-  return 'regular'
-}
-
-function resolvePromotionExpiry(product) {
-  const active = (product.promotions || []).find(
-    (p) => p.approvalStatus === 'APPROVED' && p.endDate,
-  )
-  return active?.endDate || null
-}
-
-const productInclude = {
-  inventory: true,
-  features: true,
-  pricingTiers: { orderBy: { minQuantity: 'asc' } },
-  media: { orderBy: { sortOrder: 'asc' } },
-  promotions: {
-    where: { approvalStatus: 'APPROVED' },
-    orderBy: { endDate: 'desc' },
-    take: 1,
-  },
-  category: {
-    include: {
-      parentCategory: {
-        include: { parentCategory: true },
-      },
-    },
-  },
 }
 
 function mapCsvRowToBody(row, pathIds) {
@@ -371,75 +76,6 @@ function mapCsvRowToBody(row, pathIds) {
     specifications: row.specifications || '',
     bulkEnabled: row.bulkEnabled || false,
     bulkOptions: bulkOptions || [],
-  }
-}
-
-/**
- * Resolve catalog path from human-readable names (case-insensitive).
- * category → root, subCategory → child, productType → leaf.
- */
-async function resolveCategoryPathByNames({ category, subCategory, productType }) {
-  const categoryName = String(category || '').trim().normalize('NFC')
-  const subName = String(subCategory || '').trim().normalize('NFC')
-  const typeName = String(productType || '').trim().normalize('NFC')
-
-  if (!categoryName || !subName || !typeName) {
-    throw httpError(
-      'category, subCategory and productType names are required',
-      400,
-      'CategoryNamesRequired',
-    )
-  }
-
-  const root = await prisma.category.findFirst({
-    where: {
-      parentCategoryId: null,
-      name: { equals: categoryName, mode: 'insensitive' },
-    },
-    select: { id: true, name: true },
-  })
-  if (!root) {
-    throw httpError(
-      `Category not found: "${categoryName}"`,
-      400,
-      'CategoryNotFound',
-    )
-  }
-
-  const sub = await prisma.category.findFirst({
-    where: {
-      parentCategoryId: root.id,
-      name: { equals: subName, mode: 'insensitive' },
-    },
-    select: { id: true, name: true },
-  })
-  if (!sub) {
-    throw httpError(
-      `Subcategory not found under "${root.name}": "${subName}"`,
-      400,
-      'SubCategoryNotFound',
-    )
-  }
-
-  const leaf = await prisma.category.findFirst({
-    where: {
-      parentCategoryId: sub.id,
-      name: { equals: typeName, mode: 'insensitive' },
-    },
-    select: { id: true, name: true },
-  })
-  if (!leaf) {
-    throw httpError(
-      `Product type not found under "${sub.name}": "${typeName}"`,
-      400,
-      'ProductTypeNotFound',
-    )
-  }
-
-  return {
-    categoryId: root.id,
-    subCategoryId: sub.id,
-    productTypeId: leaf.id,
   }
 }
 
@@ -484,14 +120,14 @@ export class ProductService {
 
     const product = await prisma.product.findFirst({
       where: { sellerId: auth.id, sku: normalized },
-      include: productInclude,
+      include: supplierProductInclude,
     })
 
     if (!product) {
       throw httpError('No inventory product found for this SKU', 404, 'SkuNotFound')
     }
 
-    const mapped = mapProduct(product, baseUrl)
+    const mapped = mapSupplierProduct(product, baseUrl)
     const alreadyListed = isMarketplaceListed(
       product.approvalStatus,
       product.inventory,
@@ -519,7 +155,7 @@ export class ProductService {
     const product = await prisma.product.findFirst({
       where: { id: productId, sellerId: auth.id },
       include: {
-        ...productInclude,
+        ...supplierProductInclude,
         reviews: {
           orderBy: { createdAt: 'desc' },
           take: 20,
@@ -537,7 +173,7 @@ export class ProductService {
     return {
       status: 200,
       body: {
-        product: mapProduct(product, baseUrl),
+        product: mapSupplierProduct(product, baseUrl),
         message: 'Product details fetched',
       },
     }
@@ -579,7 +215,7 @@ export class ProductService {
     }
 
     const { sharedData, mediaCreates, featureRows, tierCreates } =
-      buildListingParts(body, files)
+      supplierListingParts(body, files)
 
     const existing = await prisma.product.findUnique({
       where: { sku },
@@ -651,7 +287,7 @@ export class ProductService {
         productId: existing.id,
         alreadyListed: false,
       })
-      await validateCategoryPath(body)
+      await assertCategoryPath(body)
 
       const product = await prisma.product.update({
         where: { id: existing.id },
@@ -690,7 +326,7 @@ export class ProductService {
 
     // Brand-new SKU (no inventory row yet)
     await assertCanSubmitListing(auth.id)
-    await validateCategoryPath(body)
+    await assertCategoryPath(body)
 
     try {
       const product = await prisma.product.create({
@@ -699,7 +335,7 @@ export class ProductService {
           seller: { connect: { id: auth.id } },
           category: { connect: { id: body.productTypeId } },
           sku,
-          slug: `${slugify(body.title.trim()) || 'product'}-${Date.now().toString(36)}`,
+          slug: uniqueProductSlug(body.title),
           inventory: {
             create: {
               currentStock: requested,
@@ -733,10 +369,7 @@ export class ProductService {
         },
       }
     } catch (err) {
-      if (err?.code === 'P2002') {
-        throw httpError('SKU already exists', 409, 'SkuExists')
-      }
-      throw err
+      rethrowSkuConflict(err)
     }
   }
 
@@ -814,7 +447,7 @@ export class ProductService {
     }
 
     const { sharedData, mediaCreates, featureRows, tierCreates } =
-      buildListingParts(body, files)
+      supplierListingParts(body, files)
 
     const nextStatus =
       product.approvalStatus === 'REJECTED'
@@ -929,7 +562,7 @@ export class ProductService {
     })
 
     const { sharedData, mediaCreates, featureRows, tierCreates } =
-      buildListingParts(body, files)
+      supplierListingParts(body, files)
 
     const updated = await prisma.product.update({
       where: { id: product.id },
@@ -973,9 +606,7 @@ export class ProductService {
   async list(auth, query, baseUrl) {
     this.assertSupplier(auth)
 
-    const page = Math.max(1, Number(query.page) || 1)
-    const limit = Math.min(50, Math.max(1, Number(query.limit) || 12))
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const tab = String(query.tab || 'all').toLowerCase()
     const search = query.search?.trim() || ''
 
@@ -1055,17 +686,7 @@ export class ProductService {
 
     // Category filter (root / subcategory / product-type id all work)
     if (categoryId) {
-      and.push({
-        OR: [
-          { categoryId },
-          { category: { parentCategoryId: categoryId } },
-          {
-            category: {
-              parentCategory: { parentCategoryId: categoryId },
-            },
-          },
-        ],
-      })
+      and.push({ OR: categoryFilter(categoryId) })
     }
 
     if (search) {
@@ -1083,7 +704,7 @@ export class ProductService {
       prisma.product.count({ where }),
       prisma.product.findMany({
         where,
-        include: productInclude,
+        include: supplierProductInclude,
         orderBy: { updatedAt: 'desc' },
         skip,
         take: limit,
@@ -1094,13 +715,8 @@ export class ProductService {
     return {
       status: 200,
       body: {
-        products: rows.map((p) => mapProduct(p, baseUrl)),
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / limit)),
-        },
+        products: rows.map((p) => mapSupplierProduct(p, baseUrl)),
+        pagination: paginationMeta({ page, limit, total }),
         counts,
         filters: {
           tab,
@@ -1114,22 +730,10 @@ export class ProductService {
   }
 
   async getTabCounts(sellerId, categoryId = null) {
-    const categoryFilter = categoryId
-      ? {
-          OR: [
-            { categoryId },
-            { category: { parentCategoryId: categoryId } },
-            {
-              category: {
-                parentCategory: { parentCategoryId: categoryId },
-              },
-            },
-          ],
-        }
-      : null
+    const categoryWhere = categoryId ? { OR: categoryFilter(categoryId) } : null
 
     const withCategory = (extra) => {
-      const parts = [{ sellerId }, ...(categoryFilter ? [categoryFilter] : [])]
+      const parts = [{ sellerId }, ...(categoryWhere ? [categoryWhere] : [])]
       if (extra) parts.push(extra)
       return { AND: parts }
     }
@@ -1354,9 +958,7 @@ export class ProductService {
 
   /** Admin: list products for moderation */
   async adminList(query, baseUrl) {
-    const page = Math.max(1, Number(query.page) || 1)
-    const limit = Math.min(50, Math.max(1, Number(query.limit) || 12))
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const status = query.status || 'PENDING_REVIEW'
 
     const where = {}
@@ -1367,7 +969,7 @@ export class ProductService {
       prisma.product.findMany({
         where,
         include: {
-          ...productInclude,
+          ...supplierProductInclude,
           seller: { select: { id: true, name: true, email: true } },
         },
         orderBy: { updatedAt: 'desc' },
@@ -1380,15 +982,10 @@ export class ProductService {
       status: 200,
       body: {
         products: rows.map((p) => ({
-          ...mapProduct(p, baseUrl),
+          ...mapSupplierProduct(p, baseUrl),
           seller: p.seller,
         })),
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / limit)),
-        },
+        pagination: paginationMeta({ page, limit, total }),
         message: 'Admin products fetched',
       },
     }

@@ -6,17 +6,11 @@
  * PAYMENT_PROVIDER=eupago → real split payments (needs API key + externKeys)
  */
 
-const DEFAULT_BASE = 'https://sandbox.eupago.pt/api'
-
-function money(n) {
-  return Number(Number(Math.max(0, n)).toFixed(2))
-}
+import { env } from '../../config/env.js'
+import { moneyNonNegative as money } from '../../shared/money.js'
 
 export function getPaymentProvider() {
-  const raw = String(process.env.PAYMENT_PROVIDER || 'mock')
-    .trim()
-    .toLowerCase()
-  return raw === 'eupago' ? 'eupago' : 'mock'
+  return env.payments.provider === 'eupago' ? 'eupago' : 'mock'
 }
 
 export function isMockPayments() {
@@ -24,14 +18,14 @@ export function isMockPayments() {
 }
 
 export function getAdminExternKey() {
-  const key = String(process.env.EUPAGO_ADMIN_EXTERN_KEY || '').trim()
+  const key = env.payments.eupago.adminExternKey
   if (key) return key
   if (isMockPayments()) return 'MOCK-ADMIN'
   return ''
 }
 
 export function getCommissionPercent() {
-  const n = Number(process.env.ADMIN_COMMISSION_PERCENT ?? 20)
+  const n = env.payments.adminCommissionPercent
   if (!Number.isFinite(n) || n < 0 || n > 100) return 20
   return n
 }
@@ -66,7 +60,7 @@ export async function createSplitPayment({
     return createMockSplitPayment({ amount, identifier })
   }
 
-  const apiKey = String(process.env.EUPAGO_API_KEY || '').trim()
+  const apiKey = env.payments.eupago.apiKey
   if (!apiKey) {
     const err = new Error('EuPago API key is not configured')
     err.code = 'EupagoNotConfigured'
@@ -74,17 +68,14 @@ export async function createSplitPayment({
     throw err
   }
 
-  const base = String(process.env.EUPAGO_BASE_URL || DEFAULT_BASE).replace(
-    /\/$/,
-    '',
-  )
+  const base = env.payments.eupago.baseUrl
   const method = String(paymentMethod || 'multibanco').toLowerCase()
   const url = `${base}/v1/split-payments/${method}`
 
   const body = {
     amount: money(amount),
     identifier: String(identifier),
-    lang: process.env.EUPAGO_LANG || 'PT',
+    lang: env.payments.eupago.lang,
     beneficiaries: (beneficiaries || []).map((b) => ({
       externKey: b.externKey,
       amount: money(b.amount),

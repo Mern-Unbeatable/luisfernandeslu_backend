@@ -1,3 +1,5 @@
+import { env } from '../config/env.js'
+
 /**
  * Resolve public API base URL from the incoming request.
  * Local → http://localhost:8080
@@ -18,10 +20,7 @@ export function resolveRequestBaseUrl(req) {
     return `${proto}://${host}`.replace(/\/$/, '')
   }
 
-  return String(process.env.BETTER_AUTH_URL || 'http://localhost:8080').replace(
-    /\/$/,
-    '',
-  )
+  return env.apiUrl
 }
 
 export function absolutizeUrl(pathOrUrl, baseUrl) {

@@ -1,11 +1,6 @@
 import prisma from '../../../../lib/prisma.js'
 import { AppError } from '../../../utils/AppError.js'
-
-function publicSlug(slug) {
-  if (!slug) return slug
-  const parts = String(slug).split('__')
-  return parts[parts.length - 1]
-}
+import { publicSlug } from '../../../shared/slug.js'
 
 function mapCategory(row, extra = {}) {
   return {

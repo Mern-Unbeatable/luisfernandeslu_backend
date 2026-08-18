@@ -2,6 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import PDFDocument from 'pdfkit'
+import { ordinalLabel } from '../ordinal.js'
+import { currencySymbol, money as moneyValue } from '../money.js'
+import { env } from '../../config/env.js'
 
 function findUnicodeFont() {
   const candidates = [
@@ -28,13 +31,12 @@ function findBoldFont() {
   return candidates.find((p) => fs.existsSync(p)) || null
 }
 
-function money(n, currency = 'EUR') {
-  const v = Number(Number(n || 0).toFixed(2))
-  const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : `${currency} `
-  return `${symbol}${v.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
+/** Thousands-separated amount with currency symbol, for PDF display only. */
+function money(n, currency = env.currency) {
+  return `${currencySymbol(currency) || `${currency} `}${moneyValue(n).toLocaleString(
+    'en-US',
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+  )}`
 }
 
 function fmtDate(d) {
@@ -53,22 +55,6 @@ function paymentLabel(method) {
   if (m === 'MBWAY') return 'MB WAY'
   if (m === 'CREDITCARD') return 'Credit Card'
   return method || 'Online Payment'
-}
-
-function ordinalInstallment(n) {
-  const num = Number(n) || 0
-  const mod100 = num % 100
-  if (mod100 >= 11 && mod100 <= 13) return `${num}th Installment`
-  switch (num % 10) {
-    case 1:
-      return `${num}st Installment`
-    case 2:
-      return `${num}nd Installment`
-    case 3:
-      return `${num}rd Installment`
-    default:
-      return `${num}th Installment`
-  }
 }
 
 /**
@@ -325,8 +311,7 @@ export async function buildSupplierInvoicePdf(data) {
           y = 48
         }
         const label =
-          inst.title ||
-          ordinalInstallment(inst.installmentNumber || idx + 1)
+          inst.title || ordinalLabel(inst.installmentNumber || idx + 1)
         doc.font(bodyFont).fontSize(10).fillColor(dark)
         doc.text(label, left + 8, y, { width: contentW * 0.34 })
         doc.text(fmtDate(inst.dueDate), left + contentW * 0.36, y, {

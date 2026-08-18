@@ -8,23 +8,17 @@ import {
   requiresEmailOtp,
   toUserRole,
 } from './roles.js'
+import { env } from '../config/env.js'
 
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-const baseURL = process.env.BETTER_AUTH_URL || 'http://localhost:8080'
+const frontendUrl = env.frontendUrl
+const baseURL = env.apiUrl
 
 const socialProviders = {}
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  socialProviders.google = {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  }
-}
-
-if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
-  socialProviders.facebook = {
-    clientId: process.env.FACEBOOK_CLIENT_ID,
-    clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+for (const provider of ['google', 'facebook']) {
+  const { clientId, clientSecret } = env.betterAuth[provider]
+  if (clientId && clientSecret) {
+    socialProviders[provider] = { clientId, clientSecret }
   }
 }
 
@@ -33,7 +27,7 @@ export const auth = betterAuth({
     provider: 'postgresql',
   }),
   baseURL,
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: env.betterAuth.secret,
   trustedOrigins: [frontendUrl],
   emailAndPassword: {
     enabled: true,

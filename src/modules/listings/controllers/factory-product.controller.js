@@ -1,11 +1,6 @@
 import factoryProductService from '../services/factory-product.service.js'
-import { sendSuccess } from '../../../utils/apiResponse.js'
+import { sendError, sendServiceResult } from '../../../utils/apiResponse.js'
 import { resolveRequestBaseUrl } from '../../../lib/requestUrl.js'
-
-function sendResult(res, result) {
-  const { message, ...data } = result.body || {}
-  return sendSuccess(res, result.status, data, message)
-}
 
 export class FactoryProductController {
   async list(req, res, next) {
@@ -15,7 +10,7 @@ export class FactoryProductController {
         req.query,
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -28,7 +23,7 @@ export class FactoryProductController {
         req.params.id,
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -37,7 +32,7 @@ export class FactoryProductController {
   async generateAi(req, res, next) {
     try {
       const result = await factoryProductService.generateAi(req.auth, req.body)
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -51,7 +46,7 @@ export class FactoryProductController {
         req.files || {},
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -66,7 +61,7 @@ export class FactoryProductController {
         req.files || {},
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -81,7 +76,7 @@ export class FactoryProductController {
         req.files || {},
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -93,7 +88,7 @@ export class FactoryProductController {
         req.auth,
         req.params.id,
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -105,7 +100,7 @@ export class FactoryProductController {
         req.auth,
         req.params.id,
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -144,18 +139,15 @@ export class FactoryProductController {
     try {
       const file = req.file
       if (!file?.buffer) {
-        return res.status(400).json({
-          success: false,
-          statusCode: 400,
+        return sendError(res, 400, 'Upload a CSV file in field "file"', {
           error: 'CsvRequired',
-          message: 'Upload a CSV file in field "file"',
         })
       }
       const result = await factoryProductService.importCsv(
         req.auth,
         file.buffer,
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }

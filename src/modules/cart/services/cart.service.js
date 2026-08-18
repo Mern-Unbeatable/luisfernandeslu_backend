@@ -1,17 +1,15 @@
 import prisma from '../../../../lib/prisma.js'
-import { AppError } from '../../../utils/AppError.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
+import { env } from '../../../config/env.js'
+import { httpError } from '../../../shared/errors.js'
+import { moneyNonNegative as money } from '../../../shared/money.js'
 
-function httpError(message, status = 400, code = 'Error', details) {
-  return new AppError(message, status, code, details)
-}
+const SHIPPING_FEE = env.shippingFee
+const VAT_FIXED = env.vatFixed
+const CURRENCY = env.currency
 
-const SHIPPING_FEE = Number(process.env.CART_SHIPPING_FEE || 20)
-const VAT_FIXED = Number(process.env.CART_VAT_FIXED || 4)
-const CURRENCY = process.env.CART_CURRENCY || 'EUR'
-
-function money(n) {
-  return Number(Number(Math.max(0, n)).toFixed(2))
+function moneyText(n) {
+  return money(n).toFixed(2)
 }
 
 function unitPriceForBuyer(product, role) {
@@ -35,10 +33,6 @@ function productCatalogIds(product) {
     ids.add(product.category.parentCategory.parentCategoryId)
   }
   return ids
-}
-
-function moneyText(n) {
-  return money(n).toFixed(2)
 }
 
 function mapCartItem(item, role, baseUrl, promoMeta = null) {

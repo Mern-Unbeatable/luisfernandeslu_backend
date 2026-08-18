@@ -1,5 +1,4 @@
 import prisma from '../../../../lib/prisma.js'
-import { AppError } from '../../../utils/AppError.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import cartService from '../../cart/services/cart.service.js'
 import {
@@ -9,14 +8,10 @@ import {
   getPaymentProvider,
   isMockPayments,
 } from '../../payments/eupago.client.js'
-
-function httpError(message, status = 400, code = 'Error', details) {
-  return new AppError(message, status, code, details)
-}
-
-function money(n) {
-  return Number(Number(Math.max(0, n)).toFixed(2))
-}
+import { httpError } from '../../../shared/errors.js'
+import { moneyNonNegative as money } from '../../../shared/money.js'
+import { mapAddress, formatAddressLine } from '../../../shared/address.js'
+import { checkoutNumber, orderNumber } from '../../../shared/numbering.js'
 
 function methodEnum(method) {
   const m = String(method || 'multibanco').toLowerCase()
@@ -37,38 +32,6 @@ function siteConditionsText(body) {
     parts.push(`Notes: ${body.additionalNotes}`)
   }
   return parts.length ? parts.join('\n') : null
-}
-
-function checkoutNumber() {
-  const t = Date.now().toString(36).toUpperCase()
-  const r = Math.random().toString(36).slice(2, 6).toUpperCase()
-  return `CHK-${t}-${r}`
-}
-
-function orderNumber(suffix) {
-  const t = Date.now().toString(36).toUpperCase()
-  const r = Math.random().toString(36).slice(2, 5).toUpperCase()
-  return `ORD-${t}-${r}${suffix != null ? `-${suffix}` : ''}`
-}
-
-function mapAddress(a) {
-  if (!a) return null
-  return {
-    id: a.id,
-    title: a.title,
-    streetAddress: a.streetAddress,
-    city: a.city,
-    state: a.state,
-    zipCode: a.zipCode,
-    country: a.country,
-  }
-}
-
-function formatAddressLine(a) {
-  if (!a) return null
-  return [a.streetAddress, a.city, a.state, a.zipCode, a.country]
-    .filter(Boolean)
-    .join(', ')
 }
 
 /**
@@ -583,9 +546,7 @@ class CheckoutService {
         amount: grandTotal,
         identifier: session.checkoutNumber,
         alias: body.mbwayPhone,
-        adminCallback:
-          process.env.EUPAGO_CALLBACK_URL ||
-          undefined,
+        adminCallback: env.payments.eupago.callbackUrl || undefined,
         beneficiaries: splits.map((s) => ({
           externKey: s.externKey,
           amount: s.amount,
@@ -774,7 +735,7 @@ class CheckoutService {
    * Accepts reference / identifier / checkoutNumber in body or query.
    */
   async handleEupagoWebhook(payload = {}, query = {}) {
-    const secret = String(process.env.EUPAGO_WEBHOOK_SECRET || '').trim()
+    const secret = env.payments.eupago.webhookSecret
     if (secret) {
       const provided =
         payload.secret ||

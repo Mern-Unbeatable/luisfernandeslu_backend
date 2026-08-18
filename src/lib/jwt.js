@@ -1,13 +1,11 @@
 import jwt from 'jsonwebtoken'
-
-const DEFAULT_EXPIRES = '7d'
+import { env } from '../config/env.js'
 
 function getSecret() {
-  const secret = process.env.JWT_SECRET || process.env.BETTER_AUTH_SECRET
-  if (!secret) {
+  if (!env.jwt.secret) {
     throw new Error('JWT_SECRET (or BETTER_AUTH_SECRET) is not configured')
   }
-  return secret
+  return env.jwt.secret
 }
 
 /**
@@ -27,7 +25,7 @@ export function signAccessToken(user, options = {}) {
   }
 
   return jwt.sign(payload, getSecret(), {
-    expiresIn: options.expiresIn || process.env.JWT_EXPIRES_IN || DEFAULT_EXPIRES,
+    expiresIn: options.expiresIn || env.jwt.expiresIn,
   })
 }
 
@@ -41,7 +39,7 @@ export function signPasswordResetToken(user) {
       role: 'password_reset',
       status: 'PASSWORD_RESET',
     },
-    { expiresIn: process.env.JWT_RESET_EXPIRES_IN || '10m' },
+    { expiresIn: env.jwt.resetExpiresIn },
   )
 }
 

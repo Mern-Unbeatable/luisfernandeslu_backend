@@ -1,15 +1,10 @@
 import promotionService from '../services/promotion.service.js'
-import { sendSuccess } from '../../../utils/apiResponse.js'
-
-function sendResult(res, result) {
-  const { message, ...data } = result.body || {}
-  return sendSuccess(res, result.status, data, message)
-}
+import { sendServiceResult } from '../../../utils/apiResponse.js'
 
 export class PromotionController {
   async listPlans(req, res, next) {
     try {
-      return sendResult(res, await promotionService.listActivePlans())
+      return sendServiceResult(res, await promotionService.listActivePlans())
     } catch (err) {
       next(err)
     }
@@ -22,7 +17,7 @@ export class PromotionController {
         req.params.id,
         req.body.planId,
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -36,7 +31,7 @@ export class PromotionController {
         req.params.promotionId,
         req.body.paymentRef,
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -44,7 +39,7 @@ export class PromotionController {
 
   async adminListPlans(req, res, next) {
     try {
-      return sendResult(res, await promotionService.adminListPlans())
+      return sendServiceResult(res, await promotionService.adminListPlans())
     } catch (err) {
       next(err)
     }
@@ -52,7 +47,7 @@ export class PromotionController {
 
   async upsertPlan(req, res, next) {
     try {
-      return sendResult(res, await promotionService.upsertPlan(req.body))
+      return sendServiceResult(res, await promotionService.upsertPlan(req.body))
     } catch (err) {
       next(err)
     }
@@ -60,7 +55,7 @@ export class PromotionController {
 
   async updatePlan(req, res, next) {
     try {
-      return sendResult(
+      return sendServiceResult(
         res,
         await promotionService.updatePlan(req.params.id, req.body),
       )
@@ -71,7 +66,7 @@ export class PromotionController {
 
   async adminList(req, res, next) {
     try {
-      return sendResult(res, await promotionService.adminList(req.query))
+      return sendServiceResult(res, await promotionService.adminList(req.query))
     } catch (err) {
       next(err)
     }
@@ -79,7 +74,7 @@ export class PromotionController {
 
   async approve(req, res, next) {
     try {
-      return sendResult(
+      return sendServiceResult(
         res,
         await promotionService.approvePromotion(req.params.id),
       )
@@ -90,7 +85,7 @@ export class PromotionController {
 
   async reject(req, res, next) {
     try {
-      return sendResult(
+      return sendServiceResult(
         res,
         await promotionService.rejectPromotion(
           req.params.id,

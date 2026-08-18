@@ -50,6 +50,10 @@ export const promotionIdParamSchema = z.object({
   id: uuid,
 })
 
+export const productIdParamSchema = z.object({
+  id: uuid,
+})
+
 export const productPromotionParamsSchema = z.object({
   id: uuid,
   promotionId: uuid,

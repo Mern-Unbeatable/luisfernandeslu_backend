@@ -12,7 +12,8 @@ import {
 } from '../upload.js'
 import { formatProfileForResponse } from '../../../lib/requestUrl.js'
 import { signAccessToken, signPasswordResetToken, extractBearerToken, verifyAccessToken } from '../../../lib/jwt.js'
-import { AppError } from '../../../utils/AppError.js'
+import { httpError } from '../../../shared/errors.js'
+import { env } from '../../../config/env.js'
 import otpService, { OTP_PURPOSE } from './otp.service.js'
 import { fromNodeHeaders } from 'better-auth/node'
 import { APIError } from 'better-auth/api'
@@ -88,10 +89,6 @@ function shouldCreateProfile(roleParam, profileData) {
   )
 }
 
-function httpError(message, status, code) {
-  return new AppError(message, status, code)
-}
-
 const userPublicSelect = {
   id: true,
   email: true,
@@ -117,9 +114,7 @@ export class AuthService {
     const refCode = body.referenceCode || body.affiliateCode
     const nodeHeaders = fromNodeHeaders(headers)
     const publicBase =
-      baseUrl ||
-      process.env.BETTER_AUTH_URL ||
-      'http://localhost:8080'
+      baseUrl || env.apiUrl
 
     let signup
     try {
@@ -299,9 +294,7 @@ export class AuthService {
   async loginByRole({ roleParam, body, headers, baseUrl }) {
     const expectedRole = toUserRole(roleParam)
     const publicBase =
-      baseUrl ||
-      process.env.BETTER_AUTH_URL ||
-      'http://localhost:8080'
+      baseUrl || env.apiUrl
 
     const existing = await prisma.user.findUnique({
       where: { email: body.email },
@@ -653,9 +646,7 @@ export class AuthService {
 
   async getMe(headers, baseUrl) {
     const publicBase =
-      baseUrl ||
-      process.env.BETTER_AUTH_URL ||
-      'http://localhost:8080'
+      baseUrl || env.apiUrl
 
     const token = extractBearerToken(headers)
     if (!token) {

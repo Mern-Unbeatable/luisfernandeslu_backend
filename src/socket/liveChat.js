@@ -3,7 +3,7 @@ import {
   CHAT_ROLES,
   normalizeRole,
   isAdmin,
-} from './chatRules.js'
+} from '../modules/chat/rules.js'
 import {
   markOnline,
   markOffline,
@@ -15,9 +15,9 @@ import {
   getThreadForUser,
   persistTextMessage,
   mapThreadSummary,
-} from './chatThreadService.js'
+} from '../modules/chat/threads.js'
+import { postQuoteTextMessage } from '../modules/chat/messages.js'
 import { chatRoom, quoteRoom, emitToChat } from './io.js'
-import quoteService from '../modules/quotes/services/quote.service.js'
 import prisma from '../../lib/prisma.js'
 
 function parseToken(socket) {
@@ -328,7 +328,7 @@ export function registerLiveChatSocket(io) {
           quoteRequestId: quoteId,
         })
 
-        const result = await quoteService.sendMessage(
+        const result = await postQuoteTextMessage(
           socket.user,
           quoteId,
           { message: String(message).trim() },

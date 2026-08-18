@@ -1,12 +1,8 @@
 import prisma from '../../../../lib/prisma.js'
 import { AppError } from '../../../utils/AppError.js'
 import { generateProductCopy } from '../../../lib/ai.js'
-import { absolutizeUrl } from '../../../lib/requestUrl.js'
-import {
-  productFilePublicUrl,
-  downloadRemoteProductImage,
-} from '../../products/upload.js'
-import { buildCategoryGuidePdf } from '../../products/services/catalog-guide-pdf.js'
+import { downloadRemoteProductImage } from '../../../shared/upload/product-upload.js'
+import { buildCategoryGuidePdf } from '../../../shared/pdf/catalog-guide-pdf.js'
 import {
   parseCsv,
   decodeCsvBuffer,
@@ -14,10 +10,20 @@ import {
   FACTORY_CSV_HEADERS,
 } from './factory-csv.js'
 import { factoryCreateBodySchema } from '../validations/factory-product.validation.js'
-
-function httpError(message, status = 400, code = 'Error', details) {
-  return new AppError(message, status, code, details)
-}
+import { httpError } from '../../../shared/errors.js'
+import { categoryFilter } from '../../../shared/catalog.js'
+import {
+  assertCategoryPath,
+  resolveCategoryPathByNames,
+} from '../../../shared/catalog.query.js'
+import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
+import {
+  factoryListingParts,
+  uniqueProductSlug,
+  rethrowSkuConflict,
+} from '../write.js'
+import { factoryProductInclude } from '../includes.js'
+import { mapFactoryProduct } from '../factory.mapper.js'
 
 const shortSelect = {
   id: true,
@@ -25,284 +31,6 @@ const shortSelect = {
   title: true,
   approvalStatus: true,
   rejectionReason: true,
-}
-
-function slugify(input) {
-  return String(input)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 80)
-}
-
-function publicSlug(slug) {
-  if (!slug) return slug
-  const parts = String(slug).split('__')
-  return parts[parts.length - 1]
-}
-
-function featureLines(text) {
-  return String(text || '')
-    .replace(/\\n/g, '\n')
-    .split(/\r?\n/)
-    .map((l) => l.replace(/^[-•*\d.)\s]+/, '').trim())
-    .filter(Boolean)
-}
-
-function mapCategoryNode(node) {
-  if (!node) return null
-  return {
-    id: node.id,
-    slug: publicSlug(node.slug),
-    name: node.name,
-  }
-}
-
-async function resolveCategoryPath(productTypeId) {
-  const productType = await prisma.category.findUnique({
-    where: { id: productTypeId },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      parentCategoryId: true,
-      parentCategory: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          parentCategoryId: true,
-          parentCategory: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              parentCategoryId: true,
-            },
-          },
-        },
-      },
-    },
-  })
-
-  if (!productType?.parentCategory?.parentCategory) return null
-  const subCategory = productType.parentCategory
-  const category = subCategory.parentCategory
-  if (category.parentCategoryId !== null) return null
-  return { category, subCategory, productType }
-}
-
-async function validateCategoryPath(body) {
-  const path = await resolveCategoryPath(body.productTypeId)
-  if (!path) throw httpError('Invalid product type', 400, 'InvalidProductType')
-  if (path.category.id !== body.categoryId) {
-    throw httpError(
-      'productTypeId does not belong to categoryId',
-      400,
-      'CategoryMismatch',
-    )
-  }
-  if (path.subCategory.id !== body.subCategoryId) {
-    throw httpError(
-      'productTypeId does not belong to subCategoryId',
-      400,
-      'SubCategoryMismatch',
-    )
-  }
-  return path
-}
-
-/**
- * Resolve catalog path from human-readable names (CSV).
- */
-async function resolveCategoryPathByNames({ category, subCategory, productType }) {
-  const categoryName = String(category || '').trim().normalize('NFC')
-  const subName = String(subCategory || '').trim().normalize('NFC')
-  const typeName = String(productType || '').trim().normalize('NFC')
-
-  if (!categoryName || !subName || !typeName) {
-    throw httpError(
-      'category, subCategory and productType names are required',
-      400,
-      'CategoryNamesRequired',
-    )
-  }
-
-  const root = await prisma.category.findFirst({
-    where: {
-      name: { equals: categoryName, mode: 'insensitive' },
-      parentCategoryId: null,
-    },
-    select: { id: true, name: true },
-  })
-  if (!root) {
-    throw httpError(`Category not found: "${categoryName}"`, 404, 'CategoryNotFound')
-  }
-
-  const sub = await prisma.category.findFirst({
-    where: {
-      name: { equals: subName, mode: 'insensitive' },
-      parentCategoryId: root.id,
-    },
-    select: { id: true, name: true },
-  })
-  if (!sub) {
-    throw httpError(
-      `Subcategory not found under "${root.name}": "${subName}"`,
-      404,
-      'SubCategoryNotFound',
-    )
-  }
-
-  const leaf = await prisma.category.findFirst({
-    where: {
-      name: { equals: typeName, mode: 'insensitive' },
-      parentCategoryId: sub.id,
-    },
-    select: { id: true, name: true },
-  })
-  if (!leaf) {
-    throw httpError(
-      `Product type not found under "${sub.name}": "${typeName}"`,
-      404,
-      'ProductTypeNotFound',
-    )
-  }
-
-  return {
-    categoryId: root.id,
-    subCategoryId: sub.id,
-    productTypeId: leaf.id,
-  }
-}
-
-function buildListingParts(body, files = {}, factoryName = null) {
-  const bannerFiles = files?.bannerImage || []
-  const otherFiles = files?.images || []
-  const mediaCreates = []
-  if (bannerFiles[0]) {
-    mediaCreates.push({
-      mediaUrl: productFilePublicUrl(bannerFiles[0]),
-      isBanner: true,
-      sortOrder: 0,
-    })
-  }
-  otherFiles.forEach((file, index) => {
-    mediaCreates.push({
-      mediaUrl: productFilePublicUrl(file),
-      isBanner: false,
-      sortOrder: index + 1,
-    })
-  })
-
-  const featureRows = featureLines(body.feature).map((featureText) => ({
-    featureText,
-  }))
-
-  const sharedData = {
-    title: body.title.trim(),
-    warehouseLocation: body.warehouseLocation.trim(),
-    factoryName: factoryName || null,
-    basePrice: body.basePrice,
-    b2bPrice: null,
-    minB2bQuantity: null,
-    weightKg: body.weightKg ?? 0,
-    unitOfMeasure: 'bag',
-    longDescription: body.description || null,
-    shortDescription: body.additionalInfo || null,
-    specifications: body.specifications || null,
-    marketplaceTier: 'RETAIL',
-    approvalStatus: 'PENDING_REVIEW',
-    rejectionReason: null,
-  }
-
-  return { sharedData, mediaCreates, featureRows }
-}
-
-function resolveUiStatus(approvalStatus) {
-  if (approvalStatus === 'PENDING_REVIEW') return 'pending'
-  if (approvalStatus === 'REJECTED') return 'rejected'
-  if (approvalStatus === 'DRAFT') return 'draft'
-  if (approvalStatus === 'APPROVED') return 'active'
-  return String(approvalStatus || '').toLowerCase()
-}
-
-const productInclude = {
-  features: true,
-  media: { orderBy: { sortOrder: 'asc' } },
-  category: {
-    include: {
-      parentCategory: {
-        include: { parentCategory: true },
-      },
-    },
-  },
-}
-
-function mapFactoryProduct(product, baseUrl) {
-  const path =
-    product.category?.parentCategory?.parentCategory
-      ? {
-          productType: product.category,
-          subCategory: product.category.parentCategory,
-          category: product.category.parentCategory.parentCategory,
-        }
-      : null
-
-  const bannerImage =
-    (product.media || [])
-      .filter((m) => m.isBanner)
-      .map((m) => ({
-        id: m.id,
-        url: absolutizeUrl(m.mediaUrl, baseUrl),
-      }))[0] || null
-
-  const images = (product.media || [])
-    .filter((m) => !m.isBanner)
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((m) => ({
-      id: m.id,
-      url: absolutizeUrl(m.mediaUrl, baseUrl),
-    }))
-
-  const gallery = [...(bannerImage ? [bannerImage] : []), ...images]
-  const uiStatus = resolveUiStatus(product.approvalStatus)
-
-  return {
-    id: product.id,
-    sku: product.sku,
-    title: product.title,
-    warehouseLocation: product.warehouseLocation,
-    factoryName: product.factoryName,
-    basePrice: product.basePrice,
-    weightKg: product.weightKg,
-    unitOfMeasure: product.unitOfMeasure || 'bag',
-    priceLabel: `$${Number(product.basePrice).toFixed(2)} Per ${
-      product.unitOfMeasure || 'bag'
-    }${product.weightKg ? ` ( ${product.weightKg}kg )` : ''}`,
-    description: product.longDescription,
-    additionalInfo: product.shortDescription,
-    specifications: product.specifications,
-    feature: (product.features || []).map((f) => f.featureText).join('\n'),
-    features: (product.features || []).map((f) => f.featureText),
-    bannerImage,
-    images,
-    gallery,
-    category: mapCategoryNode(path?.category),
-    subCategory: mapCategoryNode(path?.subCategory),
-    productType: mapCategoryNode(path?.productType || product.category),
-    approvalStatus: product.approvalStatus,
-    rejectionReason: product.rejectionReason || null,
-    status: uiStatus,
-    cardStatus: uiStatus,
-    hasInventory: false,
-    averageRating: Number(product.averageRating ?? 0),
-    reviewCount: Number(product.reviewCount ?? 0),
-    createdAt: product.createdAt,
-    updatedAt: product.updatedAt,
-  }
 }
 
 async function resolveFactoryName(userId) {
@@ -396,9 +124,9 @@ class FactoryProductService {
     this.assertFactory(auth)
 
     const sku = body.sku.trim()
-    await validateCategoryPath(body)
+    await assertCategoryPath(body)
     const factoryName = await resolveFactoryName(auth.id)
-    const { sharedData, mediaCreates, featureRows } = buildListingParts(
+    const { sharedData, mediaCreates, featureRows } = factoryListingParts(
       body,
       files,
       factoryName,
@@ -474,7 +202,7 @@ class FactoryProductService {
           seller: { connect: { id: auth.id } },
           category: { connect: { id: body.productTypeId } },
           sku,
-          slug: `${slugify(body.title.trim()) || 'product'}-${Date.now().toString(36)}`,
+          slug: uniqueProductSlug(body.title),
           features: featureRows.length ? { create: featureRows } : undefined,
           media: mediaCreates.length ? { create: mediaCreates } : undefined,
         },
@@ -489,10 +217,7 @@ class FactoryProductService {
         },
       }
     } catch (err) {
-      if (err?.code === 'P2002') {
-        throw httpError('SKU already exists', 409, 'SkuExists')
-      }
-      throw err
+      rethrowSkuConflict(err)
     }
   }
 
@@ -519,7 +244,7 @@ class FactoryProductService {
     }
 
     const factoryName = await resolveFactoryName(auth.id)
-    const { sharedData, mediaCreates, featureRows } = buildListingParts(
+    const { sharedData, mediaCreates, featureRows } = factoryListingParts(
       body,
       files,
       factoryName,
@@ -583,7 +308,7 @@ class FactoryProductService {
     }
 
     const factoryName = await resolveFactoryName(auth.id)
-    const { sharedData, mediaCreates, featureRows } = buildListingParts(
+    const { sharedData, mediaCreates, featureRows } = factoryListingParts(
       body,
       files,
       factoryName,
@@ -709,9 +434,7 @@ class FactoryProductService {
   async list(auth, query, baseUrl) {
     this.assertFactory(auth)
 
-    const page = Math.max(1, Number(query.page) || 1)
-    const limit = Math.min(50, Math.max(1, Number(query.limit) || 12))
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const tab = String(query.tab || 'all').toLowerCase()
     const search = query.search?.trim() || ''
 
@@ -759,17 +482,7 @@ class FactoryProductService {
     }
 
     if (categoryId) {
-      and.push({
-        OR: [
-          { categoryId },
-          { category: { parentCategoryId: categoryId } },
-          {
-            category: {
-              parentCategory: { parentCategoryId: categoryId },
-            },
-          },
-        ],
-      })
+      and.push({ OR: categoryFilter(categoryId) })
     }
 
     if (search) {
@@ -787,7 +500,7 @@ class FactoryProductService {
       prisma.product.count({ where }),
       prisma.product.findMany({
         where,
-        include: productInclude,
+        include: factoryProductInclude,
         orderBy: { updatedAt: 'desc' },
         skip,
         take: limit,
@@ -799,12 +512,7 @@ class FactoryProductService {
       status: 200,
       body: {
         products: rows.map((p) => mapFactoryProduct(p, baseUrl)),
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / limit)),
-        },
+        pagination: paginationMeta({ page, limit, total }),
         counts,
         filters: {
           tab,
@@ -818,25 +526,13 @@ class FactoryProductService {
   }
 
   async getTabCounts(sellerId, categoryId = null) {
-    const categoryFilter = categoryId
-      ? {
-          OR: [
-            { categoryId },
-            { category: { parentCategoryId: categoryId } },
-            {
-              category: {
-                parentCategory: { parentCategoryId: categoryId },
-              },
-            },
-          ],
-        }
-      : null
+    const categoryWhere = categoryId ? { OR: categoryFilter(categoryId) } : null
 
     const withCategory = (extra) => {
       const parts = [
         { sellerId },
         { inventory: { is: null } },
-        ...(categoryFilter ? [categoryFilter] : []),
+        ...(categoryWhere ? [categoryWhere] : []),
       ]
       if (extra) parts.push(extra)
       return { AND: parts }
@@ -873,7 +569,7 @@ class FactoryProductService {
         sellerId: auth.id,
         inventory: { is: null },
       },
-      include: productInclude,
+      include: factoryProductInclude,
     })
 
     if (!product) throw httpError('Product not found', 404, 'NotFound')
@@ -956,11 +652,14 @@ class FactoryProductService {
     for (const row of records) {
       const sku = row.sku || null
       try {
-        const pathIds = await resolveCategoryPathByNames({
-          category: row.category,
-          subCategory: row.subCategory,
-          productType: row.productType,
-        })
+        const pathIds = await resolveCategoryPathByNames(
+          {
+            category: row.category,
+            subCategory: row.subCategory,
+            productType: row.productType,
+          },
+          { notFoundStatus: 404 },
+        )
         const raw = mapCsvRowToBody(row, pathIds)
         const parsed = factoryCreateBodySchema.safeParse(raw)
         if (!parsed.success) {

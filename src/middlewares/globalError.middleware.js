@@ -1,6 +1,8 @@
 import { ZodError } from 'zod'
 import { AppError } from '../utils/AppError.js'
 import { sendError } from '../utils/apiResponse.js'
+import { isProduction, isDevelopment } from '../config/env.js'
+import { mapDatabaseError } from '../shared/errors.js'
 
 /**
  * Global error handler — register LAST in app.js:
@@ -33,6 +35,13 @@ export function globalErrorHandler(err, req, res, next) {
     })
   }
 
+  const dbError = mapDatabaseError(err)
+  if (dbError) {
+    return sendError(res, dbError.statusCode, dbError.message, {
+      error: dbError.code,
+    })
+  }
+
   // Multer / upload errors
   if (err?.name === 'MulterError' || err?.code === 'LIMIT_FILE_SIZE') {
     return sendError(res, 400, err.message || 'File upload error', {
@@ -51,12 +60,12 @@ export function globalErrorHandler(err, req, res, next) {
   return sendError(
     res,
     500,
-    process.env.NODE_ENV === 'production'
+    isProduction
       ? 'Internal Server Error'
       : err.message || 'Internal Server Error',
     {
       error: 'InternalServerError',
-      ...(process.env.NODE_ENV === 'development'
+      ...(isDevelopment
         ? { details: [{ path: 'stack', message: err.stack }] }
         : {}),
     },

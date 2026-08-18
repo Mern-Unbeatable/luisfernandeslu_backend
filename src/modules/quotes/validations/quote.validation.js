@@ -12,6 +12,11 @@ export const quoteIdParamSchema = z.object({
   id: uuid,
 })
 
+/** Marketplace product id used by POST /api/marketplace/products/:id/quote */
+export const productIdParamSchema = z.object({
+  id: uuid,
+})
+
 export const offerIdParamSchema = z.object({
   id: uuid,
   offerId: uuid,

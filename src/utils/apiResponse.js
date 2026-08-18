@@ -28,4 +28,10 @@ export function sendError(
   return res.status(statusCode).json(body)
 }
 
-export default { sendSuccess, sendError }
+/** Controllers: service methods return `{ status, body: { message, ...data } }`. */
+export function sendServiceResult(res, result) {
+  const { message, ...data } = result.body || {}
+  return sendSuccess(res, result.status, data, message)
+}
+
+export default { sendSuccess, sendError, sendServiceResult }

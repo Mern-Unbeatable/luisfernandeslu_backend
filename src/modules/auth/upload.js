@@ -1,10 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import multer from 'multer'
-import { fileURLToPath } from 'node:url'
+import { UPLOAD_ROOT } from '../../shared/storage.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-export const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads')
+export { UPLOAD_ROOT }
 
 const ALLOWED_MIME = new Set([
   'image/jpeg',

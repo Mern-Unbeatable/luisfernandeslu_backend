@@ -11,7 +11,7 @@ import {
   PRODUCT_FILE_FIELDS,
   productUpload,
   productCsvUpload,
-} from '../../products/upload.js'
+} from '../../../shared/upload/product-upload.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
   requireAccessToken,

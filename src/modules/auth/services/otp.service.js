@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import prisma from '../../../../lib/prisma.js'
 import { sendOtpEmail } from '../../../lib/mail.js'
+import { env } from '../../../config/env.js'
 
 export const OTP_PURPOSE = {
   EMAIL_VERIFY: 'EMAIL_VERIFY',
@@ -10,7 +11,7 @@ export const OTP_PURPOSE = {
 export const OTP_TTL_MS = 10 * 60 * 1000
 
 function hashOtp(otp) {
-  const secret = process.env.BETTER_AUTH_SECRET || 'otp-dev-secret'
+  const secret = env.otp.secret
   return crypto.createHmac('sha256', secret).update(String(otp)).digest('hex')
 }
 

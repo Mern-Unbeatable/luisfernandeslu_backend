@@ -1,11 +1,6 @@
 import productService from '../services/product.service.js'
-import { sendSuccess } from '../../../utils/apiResponse.js'
+import { sendError, sendServiceResult } from '../../../utils/apiResponse.js'
 import { resolveRequestBaseUrl } from '../../../lib/requestUrl.js'
-
-function sendResult(res, result) {
-  const { message, ...data } = result.body || {}
-  return sendSuccess(res, result.status, data, message)
-}
 
 export class ProductController {
   async lookupBySku(req, res, next) {
@@ -15,7 +10,7 @@ export class ProductController {
         req.query.sku,
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -28,7 +23,7 @@ export class ProductController {
         req.query,
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -41,7 +36,7 @@ export class ProductController {
         req.params.id,
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -50,7 +45,7 @@ export class ProductController {
   async generateAi(req, res, next) {
     try {
       const result = await productService.generateAi(req.auth, req.body)
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -64,7 +59,7 @@ export class ProductController {
         req.files || {},
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -79,7 +74,7 @@ export class ProductController {
         req.files || {},
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -94,7 +89,7 @@ export class ProductController {
         req.files || {},
         resolveRequestBaseUrl(req),
       )
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -103,7 +98,7 @@ export class ProductController {
   async cancelListing(req, res, next) {
     try {
       const result = await productService.cancelListing(req.auth, req.params.id)
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
     } catch (err) {
       next(err)
     }
@@ -142,15 +137,46 @@ export class ProductController {
     try {
       const file = req.file
       if (!file?.buffer) {
-        return res.status(400).json({
-          success: false,
-          statusCode: 400,
+        return sendError(res, 400, 'Upload a CSV file in field "file"', {
           error: 'CsvRequired',
-          message: 'Upload a CSV file in field "file"',
         })
       }
       const result = await productService.importCsv(req.auth, file.buffer)
-      return sendResult(res, result)
+      return sendServiceResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async adminList(req, res, next) {
+    try {
+      const result = await productService.adminList(
+        req.query,
+        resolveRequestBaseUrl(req),
+      )
+      return sendServiceResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async approveListing(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await productService.approveListing(req.params.id),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async rejectListing(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await productService.rejectListing(req.params.id, req.body.reason),
+      )
     } catch (err) {
       next(err)
     }

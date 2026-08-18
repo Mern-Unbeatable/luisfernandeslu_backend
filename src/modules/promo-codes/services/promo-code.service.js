@@ -1,10 +1,8 @@
 import prisma from '../../../../lib/prisma.js'
-import { AppError } from '../../../utils/AppError.js'
+import { httpError } from '../../../shared/errors.js'
+import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 
-function httpError(message, status = 400, code = 'Error') {
-  return new AppError(message, status, code)
-}
-
+/** Promo scopes expose the stored slug as-is, not the public (prefix-stripped) one. */
 function mapCategoryNode(node) {
   if (!node) return null
   return { id: node.id, name: node.name, slug: node.slug }
@@ -266,9 +264,10 @@ export class PromoCodeService {
   async list(auth, query) {
     this.assertSupplier(auth)
 
-    const page = Math.max(1, Number(query.page) || 1)
-    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20))
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(query, {
+      defaultLimit: 20,
+      maxLimit: 100,
+    })
     const status = String(query.status || 'all').toLowerCase()
     const scope = String(query.scope || 'all').toLowerCase()
     const search = query.search?.trim() || ''
@@ -320,12 +319,7 @@ export class PromoCodeService {
       status: 200,
       body: {
         promoCodes: rows.map(mapPromoCode),
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.max(1, Math.ceil(total / limit)),
-        },
+        pagination: paginationMeta({ page, limit, total }),
         filters: {
           status,
           scope: productId ? 'product' : scope,

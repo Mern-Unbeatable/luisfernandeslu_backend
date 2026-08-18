@@ -6,6 +6,7 @@
  * 2. OPENAI_API_KEY → https://api.openai.com
  * 3. otherwise → local template fallback
  */
+import { env, isProduction } from '../config/env.js'
 
 const AI_FIELDS = new Set([
   'description',
@@ -63,32 +64,29 @@ function templateFallback(title, field) {
 }
 
 function resolveProvider() {
-  const openRouterKey = String(process.env.OPENROUTER_API_KEY || '').trim()
+  const openRouterKey = env.ai.openRouter.apiKey
   if (openRouterKey) {
     return {
       name: 'openrouter',
       apiKey: openRouterKey,
       url: 'https://openrouter.ai/api/v1/chat/completions',
-      model:
-        process.env.OPENROUTER_MODEL ||
-        'meta-llama/llama-3.2-3b-instruct:free',
+      model: env.ai.openRouter.model,
       headers: {
         Authorization: `Bearer ${openRouterKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer':
-          process.env.BETTER_AUTH_URL || 'http://localhost:8080',
+        'HTTP-Referer': env.apiUrl,
         'X-Title': 'CONSTRUPRECO',
       },
     }
   }
 
-  const openAiKey = String(process.env.OPENAI_API_KEY || '').trim()
+  const openAiKey = env.ai.openAi.apiKey
   if (openAiKey) {
     return {
       name: 'openai',
       apiKey: openAiKey,
       url: 'https://api.openai.com/v1/chat/completions',
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: env.ai.openAi.model,
       headers: {
         Authorization: `Bearer ${openAiKey}`,
         'Content-Type': 'application/json',
@@ -166,7 +164,7 @@ export async function generateProductCopy({ title, field }) {
       return { field, content: fromAi.content, provider: fromAi.provider }
     }
   } catch (err) {
-    if (process.env.NODE_ENV === 'production' && configured) {
+    if (isProduction && configured) {
       throw err
     }
     console.error('[ai] fallback to template:', err.message)

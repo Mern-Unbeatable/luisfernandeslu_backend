@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { env, isProduction } from '../config/env.js'
 
 let transporter = null
 let transporterVerified = false
@@ -10,9 +11,7 @@ const PLACEHOLDER_HOSTS = new Set([
 ])
 
 export function smtpConfigured() {
-  const host = String(process.env.SMTP_HOST || '').trim()
-  const user = String(process.env.SMTP_USER || '').trim()
-  const pass = String(process.env.SMTP_PASS || '').trim()
+  const { host, user, pass } = env.smtp
   if (!host || !user || !pass) return false
   if (PLACEHOLDER_HOSTS.has(host.toLowerCase())) return false
   return true
@@ -22,18 +21,12 @@ function getTransporter() {
   if (transporter) return transporter
   if (!smtpConfigured()) return null
 
-  const host = String(process.env.SMTP_HOST).trim()
-  const user = String(process.env.SMTP_USER).trim()
-  // Gmail app passwords may be pasted with spaces
-  const pass = String(process.env.SMTP_PASS).replace(/\s+/g, '')
-  const port = Number(process.env.SMTP_PORT || 587)
-  const secure =
-    String(process.env.SMTP_SECURE || 'false') === 'true' || port === 465
+  const { host, user, pass, port, secure } = env.smtp
 
   transporter = nodemailer.createTransport({
     host,
     port,
-    secure,
+    secure: secure || port === 465,
     auth: { user, pass },
   })
 
@@ -45,10 +38,7 @@ function getTransporter() {
  * Errors are logged clearly so OTP failures are visible in the server log.
  */
 export async function sendMail({ to, subject, text, html }) {
-  const from =
-    process.env.SMTP_FROM ||
-    process.env.SMTP_USER ||
-    'no-reply@construpreco.local'
+  const from = env.smtp.from
   const mailer = getTransporter()
 
   if (!mailer) {
@@ -62,7 +52,7 @@ export async function sendMail({ to, subject, text, html }) {
     if (!transporterVerified) {
       await mailer.verify()
       transporterVerified = true
-      console.info(`[mail] SMTP ready (${process.env.SMTP_HOST})`)
+      console.info(`[mail] SMTP ready (${env.smtp.host})`)
     }
 
     const info = await mailer.sendMail({ from, to, subject, text, html })
@@ -71,7 +61,7 @@ export async function sendMail({ to, subject, text, html }) {
   } catch (err) {
     console.error('[mail] send failed:', err.message)
     // Still log OTP in dev so testing is not blocked
-    if (process.env.NODE_ENV !== 'production') {
+    if (!isProduction) {
       console.info(`[mail:fallback] OTP for ${to}:\n${text}`)
     }
     throw err

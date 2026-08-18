@@ -5,7 +5,7 @@ import {
   parseCsv,
   toCsv,
   decodeCsvBuffer,
-} from '../../products/services/product-csv.js'
+} from '../../../shared/csv.js'
 
 export { parseCsv, decodeCsvBuffer }
 
