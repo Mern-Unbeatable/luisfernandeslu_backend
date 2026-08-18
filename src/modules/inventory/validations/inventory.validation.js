@@ -15,14 +15,31 @@ export const listInventoryQuerySchema = z.object({
 
 export const createInventoryBodySchema = z.object({
   warehouseLocation: z.string().trim().min(1, 'Warehouse location is required'),
-  categoryId: uuid,
-  subCategoryId: uuid,
-  productTypeId: uuid,
+  categoryId: uuid.optional(),
+  subCategoryId: uuid.optional(),
+  productTypeId: uuid.optional(),
+  categoryName: z.string().trim().min(1).optional(),
+  subCategoryName: z.string().trim().min(1).optional(),
+  productTypeName: z.string().trim().min(1).optional(),
   name: z.string().trim().min(2, 'Product name is required'),
   sku: z.string().trim().min(1, 'SKU is required'),
   quantity: positiveNumber,
   price: positiveNumber,
   factoryName: z.string().trim().min(1, 'Factory name is required'),
+}).superRefine((data, ctx) => {
+  const hasIds = Boolean(data.categoryId && data.subCategoryId && data.productTypeId)
+  const hasNames = Boolean(
+    data.categoryName && data.subCategoryName && data.productTypeName,
+  )
+
+  if (!hasIds && !hasNames) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Provide either categoryId/subCategoryId/productTypeId or categoryName/subCategoryName/productTypeName',
+      path: ['categoryId'],
+    })
+  }
 })
 
 export const restockBodySchema = z.object({

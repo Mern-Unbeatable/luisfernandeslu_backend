@@ -79,6 +79,34 @@
       "value": ""
     },
     {
+      "key": "factoryThreadId",
+      "value": ""
+    },
+    {
+      "key": "factoryOrderId",
+      "value": ""
+    },
+    {
+      "key": "erpApiKeyId",
+      "value": ""
+    },
+    {
+      "key": "erpApiKey",
+      "value": ""
+    },
+    {
+      "key": "auctionId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "promotionPlanId",
+      "value": ""
+    },
+    {
       "key": "cartItemId",
       "value": ""
     },
@@ -4327,6 +4355,437 @@
                     "description": "Supplier view of factory offers they paid."
                   },
                   "response": []
+                },
+                {
+                  "name": "List Factory Chat Messages",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory-offers/threads/{{factoryThreadId}}/messages?limit=50",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "factory-offers",
+                        "threads",
+                        "{{factoryThreadId}}",
+                        "messages"
+                      ],
+                      "query": [
+                        { "key": "limit", "value": "50" },
+                        {
+                          "key": "after",
+                          "value": "",
+                          "disabled": true,
+                          "description": "ISO datetime — only messages after this time"
+                        }
+                      ]
+                    },
+                    "description": "Same endpoint as Factory → Offers. Login as Supplier. Needs factoryThreadId from Create Factory Offer Card."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Factory Orders",
+              "description": "Buy From Factory → Orders tab. Orders created when the supplier pays a factory offer. Transporter auction is not in this API yet.",
+              "item": [
+                {
+                  "name": "List Factory Filter Options",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/factory-orders/factories",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "factory-orders", "factories"]
+                    },
+                    "description": "Dropdown: All Company / factory name."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Factory Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.orders?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"factoryOrderId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/factory-orders?page=1&limit=10&status=all&search=&companyId=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "factory-orders"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all|new|in_production|produced|ready|assigned|cancel|completed"
+                        },
+                        { "key": "search", "value": "" },
+                        {
+                          "key": "companyId",
+                          "value": "",
+                          "description": "Factory user id from List Factory Filter Options"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Factory Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/factory-orders/{{factoryOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "factory-orders", "{{factoryOrderId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Factory Order",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/factory-orders/{{factoryOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "factory-orders", "{{factoryOrderId}}"]
+                    },
+                    "description": "Sets status to Cancelled. Blocked after Assigned / Completed."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "ERP Inventory",
+              "description": "Supplier ERP integration: create API key with supplier token, then call inventory endpoints using x-erp-api-key.",
+              "item": [
+                {
+                  "name": "Create ERP API Key",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.apiKeyId) pm.collectionVariables.set(\"erpApiKeyId\", json.apiKeyId);",
+                          "if (json.apiKey) pm.collectionVariables.set(\"erpApiKey\", json.apiKey);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Supplier ERP Key\",\n  \"permissions\": \"inventory:rw\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/api-keys",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "api-keys"
+                      ]
+                    },
+                    "description": "Requires supplier JWT. Saves erpApiKey and erpApiKeyId into collection variables."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List ERP API Keys",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/api-keys",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "api-keys"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "ERP List Inventory",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.products?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"inventoryProductId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "x-erp-api-key",
+                        "value": "{{erpApiKey}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/inventory?page=1&limit=20&search=",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "inventory"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "ERP Get Inventory Product",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "x-erp-api-key",
+                        "value": "{{erpApiKey}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/inventory/{{inventoryProductId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "inventory",
+                        "{{inventoryProductId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "ERP Create Inventory Product",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "x-erp-api-key",
+                        "value": "{{erpApiKey}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"warehouseLocation\": \"ERP Warehouse A\",\n  \"categoryName\": \"Cimentos, Argamassas & Betões\",\n  \"subCategoryName\": \"Cimentos\",\n  \"productTypeName\": \"Cimento Portland Comum (CEM I)\",\n  \"name\": \"ERP Imported Cement\",\n  \"sku\": \"ERP-CEM-001\",\n  \"quantity\": 50,\n  \"price\": 120.5,\n  \"factoryName\": \"ERP Factory Supplier\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/inventory",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "inventory"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "ERP Restock Inventory Product",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "x-erp-api-key",
+                        "value": "{{erpApiKey}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"quantity\": 25\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/inventory/{{inventoryProductId}}/restock",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "inventory",
+                        "{{inventoryProductId}}",
+                        "restock"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "ERP Delete Inventory Product",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "x-erp-api-key",
+                        "value": "{{erpApiKey}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/inventory/{{inventoryProductId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "inventory",
+                        "{{inventoryProductId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Revoke ERP API Key",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/erp/api-keys/{{erpApiKeyId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "erp",
+                        "api-keys",
+                        "{{erpApiKeyId}}"
+                      ]
+                    }
+                  },
+                  "response": []
                 }
               ]
             },
@@ -4750,6 +5209,448 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Shipment Auctions",
+              "item": [
+                {
+                  "name": "Get Order Info For Auction",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/order/{{supplierCompanyOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "order", "{{supplierCompanyOrderId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Shipment Auction",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.id) pm.collectionVariables.set(\"auctionId\", json.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"orderId\": \"{{supplierCompanyOrderId}}\",\n  \"requiredVehicleType\": \"HEAVY_TRUCK\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Active Auctions",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.auctions?.[0];",
+                          "if (row?.auctionId) pm.collectionVariables.set(\"auctionId\", row.auctionId);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/active?page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "active"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Active Auction Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/active/{{auctionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "active", "{{auctionId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Assigned Auctions",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/assigned?page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "assigned"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Assigned Auction Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/assigned/{{auctionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "assigned", "{{auctionId}}"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Transporter",
+          "description": "Transporter auction APIs.",
+          "item": [
+            {
+              "name": "Shipment Auctions",
+              "item": [
+                {
+                  "name": "List Open Auctions",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.auctions?.[0];",
+                          "if (row?.auctionId) pm.collectionVariables.set(\"auctionId\", row.auctionId);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/auctions?page=1&limit=20&filter=all",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "auctions"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" },
+                        {
+                          "key": "filter",
+                          "value": "all",
+                          "description": "all | ending_soon | nearest | ended"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Assigned Auction Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/auctions/{{auctionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "auctions", "{{auctionId}}"]
+                    },
+                    "description": "Assigned transporter only. Returns 403 NotAssigned while bidding is still open or if another transporter won."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Submit Auction Bid",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"bidAmount\": 35\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/auctions/{{auctionId}}/bids",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "auctions", "{{auctionId}}", "bids"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Assigned Deliveries",
+              "item": [
+                {
+                  "name": "List Assigned Deliveries",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries?page=1&limit=20&status=all",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" },
+                        { "key": "status", "value": "all" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Assigned Delivery Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries", "{{auctionId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Start Trip",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"action\": \"START_TRIP\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Mark Picked Up",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"action\": \"MARK_PICKED_UP\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Navigate To Delivery",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"action\": \"NAVIGATE_TO_DELIVERY\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Verify Delivery (Send OTP)",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"action\": \"VERIFY_DELIVERY\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Confirm Delivery OTP",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"otp\": \"1234\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/verify-otp",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "verify-otp"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         },
@@ -4770,7 +5671,8 @@
                         "type": "text/javascript",
                         "exec": [
                           "const json = pm.response.json();",
-                          "if (json.offer?.id) pm.collectionVariables.set(\"factoryOfferId\", json.offer.id);"
+                          "if (json.offer?.id) pm.collectionVariables.set(\"factoryOfferId\", json.offer.id);",
+                          "if (json.threadId) pm.collectionVariables.set(\"factoryThreadId\", json.threadId);"
                         ]
                       }
                     }
@@ -4801,6 +5703,41 @@
                   "response": []
                 },
                 {
+                  "name": "List Factory Chat Messages",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory-offers/threads/{{factoryThreadId}}/messages?limit=50",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "api",
+                        "factory-offers",
+                        "threads",
+                        "{{factoryThreadId}}",
+                        "messages"
+                      ],
+                      "query": [
+                        { "key": "limit", "value": "50" },
+                        {
+                          "key": "after",
+                          "value": "",
+                          "disabled": true,
+                          "description": "ISO datetime — only messages after this time"
+                        }
+                      ]
+                    },
+                    "description": "Factory or supplier. Poll FACTORY_SUPPLIER thread messages. Run Create Factory Offer Card first so factoryThreadId is set. Optional ?after=ISO for new messages only."
+                  },
+                  "response": []
+                },
+                {
                   "name": "List Factory Chat Orders",
                   "request": {
                     "method": "GET",
@@ -4820,6 +5757,177 @@
                         { "key": "limit", "value": "10" }
                       ]
                     }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Orders (from Supplier)",
+              "description": "Factory view of FACTORY_CONVERSION orders. Status flow: New → In Production → Produced → Ready. Transporter auction comes later.",
+              "item": [
+                {
+                  "name": "List Company Filter Options",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/orders/companies",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "orders", "companies"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Supplier Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.orders?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"factoryOrderId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/orders?page=1&limit=10&status=all&search=&companyId=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "orders"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "10" },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all|new|in_production|produced|ready|assigned|cancel|completed"
+                        },
+                        { "key": "search", "value": "" },
+                        { "key": "companyId", "value": "" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "orders", "{{factoryOrderId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Mark In Production",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"IN_PRODUCTION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
+                    },
+                    "description": "NEW → In Production"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Mark Produced",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"PRODUCED\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
+                    },
+                    "description": "In Production → Produced"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Mark Ready",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"READY\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
+                    },
+                    "description": "Produced → Ready. Transporter auction is not wired yet."
                   },
                   "response": []
                 }
@@ -5468,6 +6576,54 @@
           ]
         },
         {
+          "name": "Customer",
+          "description": "Buyer dashboard. Login as Customer or Company. deliveryOtp appears after transporter clicks Verify Delivery.",
+          "item": [
+            {
+              "name": "List My Orders",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/customer/orders?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "customer", "orders"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get My Order Details",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "customer", "orders", "{{orderId}}"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "Admin",
           "item": [
             {
@@ -5564,7 +6720,20 @@
               "response": []
             },
             {
-              "name": "List / Upsert Promotion Plans",
+              "name": "List Promotion Plans",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const plan = json.plans?.[0];",
+                      "if (plan?.id) pm.collectionVariables.set(\"promotionPlanId\", plan.id);"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
                 "header": [
@@ -5585,6 +6754,87 @@
                     "promotion-plans"
                   ]
                 }
+              },
+              "response": []
+            },
+            {
+              "name": "Create / Upsert Promotion Plan",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.plan?.id) pm.collectionVariables.set(\"promotionPlanId\", json.plan.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"7 days featured\",\n  \"durationDays\": 7,\n  \"price\": 29.90,\n  \"currency\": \"EUR\",\n  \"isActive\": true,\n  \"sortOrder\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/promotion-plans",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "promotion-plans"
+                  ]
+                },
+                "description": "Upserts by durationDays. Same duration updates the existing plan."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Promotion Plan",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"7 days featured\",\n  \"price\": 24.90,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/promotion-plans/{{promotionPlanId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "promotion-plans",
+                    "{{promotionPlanId}}"
+                  ]
+                },
+                "description": "Partial update by plan id. Run List or Create / Upsert first so promotionPlanId is set."
               },
               "response": []
             },

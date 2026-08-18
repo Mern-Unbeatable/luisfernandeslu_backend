@@ -87,4 +87,18 @@ export function sendOtpEmail(email, otp, purpose = 'verify') {
   return sendMail({ to: email, subject, text, html })
 }
 
-export default { sendMail, sendOtpEmail, smtpConfigured }
+export function sendDeliveryOtpEmail(email, otp, orderNumber) {
+  const subject = `Delivery verification code for ${orderNumber}`
+  const text = `Your 4-digit delivery verification code for order ${orderNumber} is ${otp}. Share it with the transporter to confirm delivery.`
+  const html = `
+    <div style="font-family:sans-serif;max-width:420px">
+      <h2>CONSTRUPRECO</h2>
+      <p>Delivery verification code for order <strong>${orderNumber}</strong>:</p>
+      <p style="font-size:28px;font-weight:bold;letter-spacing:4px">${otp}</p>
+      <p style="color:#666">Share this code with the transporter to confirm delivery. You can also see it in your dashboard.</p>
+    </div>
+  `
+  return sendMail({ to: email, subject, text, html })
+}
+
+export default { sendMail, sendOtpEmail, sendDeliveryOtpEmail, smtpConfigured }

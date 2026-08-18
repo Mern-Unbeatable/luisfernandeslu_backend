@@ -52,8 +52,10 @@ const ENDPOINTS = [
   { role: 'supplier', path: '/api/supplier/documents?page=1&limit=5' },
   { role: 'supplier', path: '/api/supplier/documents/eligible-orders' },
   { role: 'supplier', path: '/api/supplier/factory-products?page=1&limit=5' },
+  { role: 'supplier', path: '/api/supplier/factory-orders?page=1&limit=5' },
 
   { role: 'factory', path: '/api/factory/products?page=1&limit=5' },
+  { role: 'factory', path: '/api/factory/orders?page=1&limit=5' },
   { role: 'factory', path: '/api/factory-offers/orders?page=1&limit=5' },
 ]
 

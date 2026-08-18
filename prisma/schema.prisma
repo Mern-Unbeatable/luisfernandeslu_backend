@@ -72,7 +72,11 @@ enum OrderStatus {
   NEW
   PENDING
   PROCESSING
+  IN_PRODUCTION
+  PRODUCED
+  READY
   ASSIGNED
+  PICKED_UP
   IN_TRANSIT
   DELIVERED
   COMPLETED
@@ -271,9 +275,28 @@ model User {
   promoCodes         PromoCode[]             @relation("SellerPromoCodes")
   cart               Cart?
   checkoutSessions   CheckoutSession[]
+  erpApiKeys        SupplierErpApiKey[]
 
   @@index([role, status])
   @@map("user")
+}
+
+model SupplierErpApiKey {
+  id          String   @id @default(uuid())
+  supplierId  String
+  name        String
+  apiKey      String?  @unique
+  keyHash     String   @unique
+  permissions String?
+
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  expiresAt   DateTime?
+
+  supplier    User     @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId, revokedAt])
 }
 
 model Session {
@@ -1053,6 +1076,7 @@ model Shipment {
   pickupAddressText  String
   deliveryAddressText String
   distanceKm         Float?
+  tripStartedAt      DateTime?
   createdAt          DateTime          @default(now())
 
   order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)

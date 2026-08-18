@@ -3,6 +3,7 @@ export const ORDER_STATUSES = [
   'PENDING',
   'PROCESSING',
   'ASSIGNED',
+  'PICKED_UP',
   'IN_TRANSIT',
   'DELIVERED',
   'COMPLETED',
@@ -42,7 +43,7 @@ export function normalizeStatusFilter(raw) {
   if (s === 'new') return 'NEW'
   if (s === 'pending') return 'PENDING'
   if (s === 'processing') return 'PROCESSING'
-  if (s === 'assigned') return { in: ['ASSIGNED', 'IN_TRANSIT'] }
+  if (s === 'assigned') return { in: ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT'] }
   if (s === 'cancel' || s === 'cancelled') return 'CANCELLED'
   if (s === 'completed') return { in: ['COMPLETED', 'DELIVERED'] }
   const upper = String(raw).toUpperCase()
@@ -61,7 +62,9 @@ export function normalizeActionStatus(raw) {
 export function buildOrderActions(order, transporter) {
   const isNew = order.orderStatus === 'NEW'
   const isAssigned =
-    order.orderStatus === 'ASSIGNED' || order.orderStatus === 'IN_TRANSIT'
+    order.orderStatus === 'ASSIGNED' ||
+    order.orderStatus === 'PICKED_UP' ||
+    order.orderStatus === 'IN_TRANSIT'
   const isCancel = order.orderStatus === 'CANCELLED'
   const hasInvoice = Boolean(order.invoices?.[0] || order.hasInvoice)
 

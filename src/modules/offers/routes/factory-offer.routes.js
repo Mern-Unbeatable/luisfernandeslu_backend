@@ -4,9 +4,9 @@ import {
   createFactoryOfferBodySchema,
   offerIdParamSchema,
   threadIdParamSchema,
-  listOrdersQuerySchema,
   listMessagesQuerySchema,
 } from '../validations/factory-offer.validation.js'
+import { listFactoryOrdersQuerySchema } from '../../orders/validations/factory-order.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
   requireAccessToken,
@@ -24,7 +24,7 @@ class FactoryOfferRoutes {
 
     this.router.get(
       '/orders',
-      validate(listOrdersQuerySchema, 'query'),
+      validate(listFactoryOrdersQuerySchema, 'query'),
       (req, res, next) => factoryOfferController.listOrders(req, res, next),
     )
 

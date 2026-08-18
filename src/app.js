@@ -27,7 +27,15 @@ import supplierCustomerOrderRoutes from './modules/orders/routes/customer-order.
 import supplierCompanyOrderRoutes from './modules/orders/routes/company-order.routes.js'
 import supplierDocumentRoutes from './modules/invoicing/routes/document.routes.js'
 import supplierFactoryCatalogRoutes from './modules/listings/routes/factory-catalog.routes.js'
+import supplierFactoryOrderRoutes from './modules/orders/routes/supplier-factory-order.routes.js'
+import factoryOrderRoutes from './modules/orders/routes/factory-order.routes.js'
 import factoryOfferRoutes from './modules/offers/routes/factory-offer.routes.js'
+import erpApiKeysRoutes from './modules/supplier-erp/routes/api-keys.routes.js'
+import supplierErpInventoryRoutes from './modules/supplier-erp/routes/inventory-erp.routes.js'
+import supplierAuctionRoutes from './modules/auctions/routes/supplier-auction.routes.js'
+import transporterAuctionRoutes from './modules/auctions/routes/transporter-auction.routes.js'
+import transporterDeliveryRoutes from './modules/auctions/routes/transporter-delivery.routes.js'
+import buyerOrderRoutes from './modules/orders/routes/buyer-order.routes.js'
 import { UPLOAD_ROOT } from './shared/storage.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
@@ -97,6 +105,14 @@ app.use('/api/supplier/customer-orders', supplierCustomerOrderRoutes)
 app.use('/api/supplier/company-orders', supplierCompanyOrderRoutes)
 app.use('/api/supplier/documents', supplierDocumentRoutes)
 app.use('/api/supplier/factory-products', supplierFactoryCatalogRoutes)
+app.use('/api/supplier/factory-orders', supplierFactoryOrderRoutes)
+app.use('/api/factory/orders', factoryOrderRoutes)
+app.use('/api/supplier/erp/api-keys', erpApiKeysRoutes)
+app.use('/api/supplier/erp/inventory', supplierErpInventoryRoutes)
+app.use('/api/supplier/auctions', supplierAuctionRoutes)
+app.use('/api/transporter/auctions', transporterAuctionRoutes)
+app.use('/api/transporter/deliveries', transporterDeliveryRoutes)
+app.use('/api/customer/orders', buyerOrderRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
 app.use('/api/admin', productAdminRoutes)
 app.use('/api/admin', promotionAdminRoutes)

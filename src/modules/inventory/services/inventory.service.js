@@ -1,7 +1,10 @@
 import prisma from '../../../../lib/prisma.js'
 import { getListingQuota } from '../../../shared/listing-quota.js'
 import { httpError } from '../../../shared/errors.js'
-import { assertCategoryPath } from '../../../shared/catalog.query.js'
+import {
+  assertCategoryPath,
+  resolveCategoryPathByNames,
+} from '../../../shared/catalog.query.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import {
   uniqueProductSlug,
@@ -26,7 +29,7 @@ export class InventoryService {
 
     const sku = String(body.sku).trim()
     const slug = uniqueProductSlug(body.name)
-    await assertCategoryPath(body)
+    const categoryIds = await this.resolveCategoryIds(body)
 
     let product
     try {
@@ -35,7 +38,7 @@ export class InventoryService {
       product = await prisma.product.create({
         data: {
           sellerId: auth.id,
-          categoryId: body.productTypeId,
+          categoryId: categoryIds.productTypeId,
           sku,
           title: body.name.trim(),
           slug,
@@ -82,6 +85,29 @@ export class InventoryService {
     }
   }
 
+  async resolveCategoryIds(body) {
+    if (body.productTypeId && body.categoryId && body.subCategoryId) {
+      await assertCategoryPath(body)
+      return {
+        categoryId: body.categoryId,
+        subCategoryId: body.subCategoryId,
+        productTypeId: body.productTypeId,
+      }
+    }
+
+    const byName = await resolveCategoryPathByNames({
+      category: body.categoryName,
+      subCategory: body.subCategoryName,
+      productType: body.productTypeName,
+    })
+
+    return {
+      categoryId: byName.categoryId,
+      subCategoryId: byName.subCategoryId,
+      productTypeId: byName.productTypeId,
+    }
+  }
+
   async list(auth, query) {
     await this.assertSupplier(auth)
 
@@ -121,6 +147,29 @@ export class InventoryService {
         products: mapped,
         pagination: paginationMeta({ page, limit, total }),
         message: 'Inventory products fetched',
+      },
+    }
+  }
+
+  async getById(auth, inventoryProductId) {
+    await this.assertSupplier(auth)
+
+    const product = await prisma.product.findFirst({
+      where: { id: inventoryProductId, sellerId: auth.id },
+      include: inventoryListInclude,
+    })
+
+    if (!product) {
+      throw httpError('Inventory product not found', 404, 'NotFound')
+    }
+
+    return {
+      status: 200,
+      body: {
+        product: mapInventoryProduct(
+          attachInventoryCategoryPath(product),
+        ),
+        message: 'Inventory product fetched',
       },
     }
   }

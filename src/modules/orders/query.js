@@ -2,12 +2,46 @@ import prisma from '../../../lib/prisma.js'
 import { money } from '../../shared/money.js'
 import { parsePagination, paginationMeta } from '../../shared/pagination.js'
 import { normalizeStatusFilter } from './status.js'
+import { normalizeFactoryStatusFilter } from './factory-status-rules.js'
 
 export function sellerBuyerWhere(sellerId, buyerRole) {
   return {
     sellerId,
     customer: { role: buyerRole },
   }
+}
+
+export function buildFactoryListWhere(base, query, { companyParty = 'customer' } = {}) {
+  const search = String(query.search || '').trim()
+  const statusFilter = normalizeFactoryStatusFilter(query.status)
+  const companyId = String(query.companyId || query.factoryId || '').trim()
+  const partyKey = companyParty === 'seller' ? 'sellerId' : 'customerId'
+  const party = companyParty === 'seller' ? 'seller' : 'customer'
+
+  const where = {
+    ...base,
+    ...(statusFilter ? { orderStatus: statusFilter } : {}),
+    ...(companyId ? { [partyKey]: companyId } : {}),
+  }
+
+  if (search) {
+    where.AND = [
+      {
+        OR: [
+          { orderNumber: { contains: search, mode: 'insensitive' } },
+          { [party]: { name: { contains: search, mode: 'insensitive' } } },
+          { [party]: { email: { contains: search, mode: 'insensitive' } } },
+          {
+            [party]: {
+              profile: { companyName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        ],
+      },
+    ]
+  }
+
+  return where
 }
 
 export function buildListWhere(base, query, { searchCompanyName = false } = {}) {

@@ -71,6 +71,7 @@ class SupplierCompanyOrderService {
       'PENDING',
       'PROCESSING',
       'ASSIGNED',
+      'PICKED_UP',
       'IN_TRANSIT',
     ]
 

@@ -1,0 +1,117 @@
+# ERP Inventory API Integration (Supplier)
+
+Ei guide ta supplier-er ERP system theke inventory sync korar jonno.
+
+## 1) Prerequisites
+
+- Supplier account diye login kora lagbe.
+- ERP inventory create request-er jonno valid `categoryId`, `subCategoryId`, `productTypeId` lagbe.
+
+## 2) API Key Generate (one-time from supplier dashboard/API)
+
+Use supplier JWT token:
+
+- `POST /api/supplier/erp/api-keys`
+- Header: `Authorization: Bearer <supplierAccessToken>`
+- Body example:
+
+```json
+{
+  "name": "Supplier ERP Key",
+  "permissions": "inventory:rw"
+}
+```
+
+Response theke:
+- `apiKey` (plaintext) => ERP system e secure vault e save korte hobe.
+- `apiKeyId` => key revoke korte lagbe.
+
+Note: `GET /api/supplier/erp/api-keys` call-e o plaintext `apiKey` dekhte parben.
+Single key policy: ek shomoy ekti active API key thakbe. Notun key create korle previous active key auto-revoke hoye jabe.
+
+## 3) ERP Key diye Inventory Manage
+
+Nicher sob request-e header:
+
+- `x-erp-api-key: <apiKey>`
+
+Alternative:
+- `Authorization: ApiKey <apiKey>`
+
+### 3.1 Get all inventory products
+
+- `GET /api/supplier/erp/inventory?page=1&limit=20&search=`
+
+### 3.2 Get single inventory product
+
+- `GET /api/supplier/erp/inventory/:id`
+
+### 3.3 Add inventory product
+
+- `POST /api/supplier/erp/inventory`
+- Body:
+
+```json
+{
+  "warehouseLocation": "ERP Warehouse A",
+  "categoryName": "Cimentos, Argamassas & Betões",
+  "subCategoryName": "Cimentos",
+  "productTypeName": "Cimento Portland Comum (CEM I)",
+  "name": "ERP Imported Cement",
+  "sku": "ERP-CEM-001",
+  "quantity": 50,
+  "price": 120.5,
+  "factoryName": "ERP Factory Supplier"
+}
+```
+
+Alternative (system-to-system mode): ID diyeo pathate parben:
+- `categoryId`
+- `subCategoryId`
+- `productTypeId`
+
+### 3.4 Restock product
+
+- `PATCH /api/supplier/erp/inventory/:id/restock`
+- Body:
+
+```json
+{
+  "quantity": 25
+}
+```
+
+### 3.5 Delete inventory product
+
+- `DELETE /api/supplier/erp/inventory/:id`
+
+## 4) API Key Management
+
+Supplier JWT diye:
+
+- Get active key: `GET /api/supplier/erp/api-keys`
+- Revoke key: `DELETE /api/supplier/erp/api-keys/:id`
+
+Revoked key diya ERP call korle `401 Invalid ERP API key` paben.
+List/get response e revoked keys dekhabe na; active key ektai object hisebe ashbe.
+
+## 5) Recommended ERP Sync Flow
+
+1. Supplier manually API key create korbe.
+2. ERP secure store-e key save korbe.
+3. ERP periodic sync:
+   - GET inventory list
+   - New product hole POST create
+   - Stock update hole PATCH restock
+   - Discontinued hole DELETE
+4. Key compromise hole revoke + notun key rotate.
+
+## 6) Error Notes
+
+- `401 ERP API key required` => key header pathano hoy nai.
+- `401 Invalid ERP API key` => key wrong/revoked.
+- `401 ERP API key expired` => expiry set chilo and expire hoye geche.
+- `403 Only suppliers can manage inventory` => key supplier-er na.
+- `404 Inventory product not found` => id oi supplier-er inventory te nai.
+- `400 Invalid request data` => schema validation fail.
+

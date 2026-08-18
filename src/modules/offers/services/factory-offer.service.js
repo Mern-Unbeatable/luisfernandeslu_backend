@@ -1,11 +1,7 @@
 import prisma from '../../../../lib/prisma.js'
 import { emitToChat } from '../../../socket/io.js'
 import { openOrGetThread } from '../../chat/threads.js'
-import { env } from '../../../config/env.js'
 import { httpError } from '../../../shared/errors.js'
-import { money } from '../../../shared/money.js'
-import { partyName } from '../../../shared/party.js'
-import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import {
   mapMessage,
   mapOfferCard,
@@ -18,8 +14,7 @@ import {
   payConvertedOffer,
 } from '../offer-payment.js'
 import { factoryPayContext } from '../contexts/factory.context.js'
-
-const CURRENCY = env.currency
+import factoryOrderService from '../../orders/services/factory-order.service.js'
 
 class FactoryOfferService {
   role(auth) {
@@ -173,96 +168,7 @@ class FactoryOfferService {
   }
 
   async listOrders(auth, query) {
-    if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
-    const role = this.role(auth)
-    if (role !== 'factory' && role !== 'supplier') {
-      throw httpError('Forbidden', 403, 'Forbidden')
-    }
-
-    const { page, limit, skip } = parsePagination(query)
-    const where =
-      role === 'factory'
-        ? { sellerId: auth.id, orderSource: 'FACTORY_CONVERSION' }
-        : { customerId: auth.id, orderSource: 'FACTORY_CONVERSION' }
-
-    const [total, rows] = await Promise.all([
-      prisma.order.count({ where }),
-      prisma.order.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          orderNumber: true,
-          orderStatus: true,
-          grandTotal: true,
-          createdAt: true,
-          customerId: true,
-          sellerId: true,
-          customer: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profile: { select: { companyName: true } },
-            },
-          },
-          seller: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profile: { select: { companyName: true } },
-            },
-          },
-          paymentPlan: {
-            select: {
-              totalAmount: true,
-              downPayment: true,
-              remainingBalance: true,
-              termMonths: true,
-              installments: {
-                orderBy: { installmentNumber: 'asc' },
-                select: {
-                  installmentNumber: true,
-                  amount: true,
-                  status: true,
-                  dueDate: true,
-                  paidAt: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-    ])
-
-    return {
-      status: 200,
-      body: {
-        orders: rows.map((o) => ({
-          id: o.id,
-          orderNumber: o.orderNumber,
-          orderStatus: o.orderStatus,
-          orderSource: 'FACTORY_CONVERSION',
-          total: money(o.grandTotal || o.paymentPlan?.totalAmount),
-          currency: CURRENCY,
-          date: o.createdAt,
-          supplier: {
-            id: o.customer?.id,
-            name: partyName(o.customer),
-          },
-          factory: {
-            id: o.seller?.id,
-            name: partyName(o.seller),
-          },
-          paymentPlan: o.paymentPlan,
-        })),
-        pagination: paginationMeta({ page, limit, total }),
-        message: 'Factory chat orders fetched',
-      },
-    }
+    return factoryOrderService.list(auth, query)
   }
 
   async pay(auth, offerId, baseUrl) {
