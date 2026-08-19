@@ -511,7 +511,7 @@ class FactoryProductService {
     return {
       status: 200,
       body: {
-        products: rows.map((p) => mapFactoryProduct(p, baseUrl)),
+        products: rows.map((p) => mapFactoryProduct(p, baseUrl, { list: true })),
         pagination: paginationMeta({ page, limit, total }),
         counts,
         filters: {

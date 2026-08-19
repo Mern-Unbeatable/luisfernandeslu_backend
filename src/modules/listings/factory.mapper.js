@@ -14,13 +14,13 @@ function resolveUiStatus(approvalStatus) {
 }
 
 /** Factory owner view — no inventory, status is the approval pipeline. */
-export function mapFactoryProduct(product, baseUrl) {
+export function mapFactoryProduct(product, baseUrl, { list = false } = {}) {
   const path = categoryPathStrict(product)
-  const { bannerImage, images, gallery } = mapProductMedia(product, baseUrl)
+  const { bannerImage, gallery } = mapProductMedia(product, baseUrl)
   const features = featureTexts(product)
   const uiStatus = resolveUiStatus(product.approvalStatus)
 
-  return {
+  const mapped = {
     id: product.id,
     sku: product.sku,
     title: product.title,
@@ -33,10 +33,8 @@ export function mapFactoryProduct(product, baseUrl) {
     description: product.longDescription,
     additionalInfo: product.shortDescription,
     specifications: product.specifications,
-    feature: features.join('\n'),
     features,
     bannerImage,
-    images,
     gallery,
     category: mapCategoryNode(path?.category),
     subCategory: mapCategoryNode(path?.subCategory),
@@ -51,4 +49,18 @@ export function mapFactoryProduct(product, baseUrl) {
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   }
+
+  if (list) {
+    const {
+      description,
+      additionalInfo,
+      specifications,
+      features: _features,
+      gallery: _gallery,
+      ...rest
+    } = mapped
+    return rest
+  }
+
+  return mapped
 }

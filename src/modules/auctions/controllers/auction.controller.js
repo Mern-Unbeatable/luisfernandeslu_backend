@@ -100,6 +100,50 @@ class AuctionController {
       next(err)
     }
   }
+
+  async getFactoryCreateInfo(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.getFactoryCreateInfo(req.auth, req.params.orderId),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async createFactoryAuction(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.createFactoryAuction(req.auth, req.body),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async confirmFactoryAuctionPayment(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.confirmFactoryAuctionPayment(req.auth, req.params.id),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async declineFactoryAuctionPayment(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.declineFactoryAuctionPayment(req.auth, req.params.id),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new AuctionController()

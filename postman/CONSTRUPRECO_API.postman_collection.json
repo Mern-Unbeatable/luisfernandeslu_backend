@@ -99,6 +99,10 @@
       "value": ""
     },
     {
+      "key": "factoryOrderId",
+      "value": ""
+    },
+    {
       "key": "orderId",
       "value": ""
     },
@@ -5367,6 +5371,44 @@
                     }
                   },
                   "response": []
+                },
+                {
+                  "name": "Confirm Factory Auction Payment",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/factory/{{auctionId}}/pay",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "factory", "{{auctionId}}", "pay"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Decline Factory Auction Payment",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/auctions/factory/{{auctionId}}/decline",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "auctions", "factory", "{{auctionId}}", "decline"]
+                    }
+                  },
+                  "response": []
                 }
               ]
             }
@@ -5927,7 +5969,70 @@
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
                     },
-                    "description": "Produced → Ready. Transporter auction is not wired yet."
+                    "description": "Produced → Ready. Then create a factory shipment auction."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Shipment Auctions",
+              "item": [
+                {
+                  "name": "Get Factory Order Info For Auction",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/auctions/order/{{factoryOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "auctions", "order", "{{factoryOrderId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Factory Shipment Auction",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "if (json.id) pm.collectionVariables.set(\"auctionId\", json.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"orderId\": \"{{factoryOrderId}}\",\n  \"requiredVehicleType\": \"HEAVY_TRUCK\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/auctions",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "auctions"]
+                    }
                   },
                   "response": []
                 }

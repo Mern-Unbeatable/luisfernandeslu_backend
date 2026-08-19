@@ -84,7 +84,6 @@ function mapListRow(o, viewer) {
   const product = firstLine?.product
   return {
     id: o.id,
-    poNumber: o.orderNumber,
     orderNumber: o.orderNumber,
     orderStatus: o.orderStatus,
     status: factoryStatusLabel(o.orderStatus),

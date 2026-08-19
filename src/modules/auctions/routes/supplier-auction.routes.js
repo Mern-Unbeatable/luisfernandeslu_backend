@@ -54,6 +54,18 @@ class SupplierAuctionRoutes {
       validate(auctionIdParamSchema, 'params'),
       (req, res, next) => auctionController.getAssignedForSupplier(req, res, next),
     )
+
+    this.router.post(
+      '/factory/:id/pay',
+      validate(auctionIdParamSchema, 'params'),
+      (req, res, next) => auctionController.confirmFactoryAuctionPayment(req, res, next),
+    )
+
+    this.router.post(
+      '/factory/:id/decline',
+      validate(auctionIdParamSchema, 'params'),
+      (req, res, next) => auctionController.declineFactoryAuctionPayment(req, res, next),
+    )
   }
 
   getRoutes() {

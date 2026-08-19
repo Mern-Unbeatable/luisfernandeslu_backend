@@ -121,6 +121,7 @@ enum InstallmentStatus {
 
 enum AuctionStatus {
   PENDING_BIDS
+  PENDING_PAYMENT
   ASSIGNED
   EXPIRED
   CANCELLED
@@ -1091,6 +1092,8 @@ model ShipmentAuction {
   shipmentId          String           @unique
   requiredVehicleType VehicleType
   auctionStatus       AuctionStatus    @default(PENDING_BIDS)
+  isFactoryOrder      Boolean          @default(false)
+  bidStartPrice       Float?
   expiresAt           DateTime
   createdAt           DateTime         @default(now())
 

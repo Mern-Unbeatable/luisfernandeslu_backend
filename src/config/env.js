@@ -32,6 +32,7 @@ export const env = {
   vatFixed: num('CART_VAT_FIXED', 4),
   auctionDurationMinutes: Math.max(1, num('AUCTION_DURATION_MINUTES', 2)),
   auctionEndedVisibleMinutes: Math.max(1, num('AUCTION_ENDED_VISIBLE_MINUTES', 5)),
+  transportPricePerKm: num('TRANSPORT_PRICE_PER_KM', 2.5),
 
   jwt: {
     secret: str('JWT_SECRET') || str('BETTER_AUTH_SECRET'),
