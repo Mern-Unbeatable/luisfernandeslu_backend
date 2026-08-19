@@ -144,6 +144,50 @@ class AuctionController {
       next(err)
     }
   }
+
+  async listActiveForFactory(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.listForFactory(req.auth, 'active', req.query),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async listAssignedForFactory(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.listForFactory(req.auth, 'assigned', req.query),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async getActiveForFactory(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.getForFactory(req.auth, req.params.id, 'active'),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async getAssignedForFactory(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.getForFactory(req.auth, req.params.id, 'assigned'),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new AuctionController()

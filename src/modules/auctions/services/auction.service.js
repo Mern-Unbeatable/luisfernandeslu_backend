@@ -145,6 +145,8 @@ function mapAuctionCard(auction) {
     null
   const { pickupLocation, deliveryLocation } = pickLocations(order)
   const bidStartFrom = auction.bidStartPrice ? money(auction.bidStartPrice) : money(order.shippingFee)
+  const acceptedBid =
+    (auction.bids || []).find((b) => b.status === 'ACCEPTED') || null
   return {
     auctionId: auction.id,
     orderId: order.orderNumber,
@@ -159,10 +161,14 @@ function mapAuctionCard(auction) {
     expiresAt: auction.expiresAt,
     createdAt: auction.createdAt,
     customerName,
-    pickupLocation,
-    deliveryLocation,
+    pickupLocation: auction.shipment?.pickupAddressText || pickupLocation,
+    deliveryLocation: auction.shipment?.deliveryAddressText || deliveryLocation,
     productName: product?.title || null,
     totalBids: auction._count?.bids ?? auction.bids?.length ?? 0,
+    assignedTransporter: acceptedBid
+      ? companyDisplayName(acceptedBid.transporter) || partyName(acceptedBid.transporter)
+      : null,
+    bidPrice: acceptedBid ? money(acceptedBid.bidAmount) : null,
   }
 }
 
@@ -502,7 +508,83 @@ class AuctionService {
   }
 
   async listForSupplier(auth, mode, query) {
-    const supplierId = assertRole(auth, 'supplier', 'Only suppliers can list auctions')
+    return this.listForOwner(auth, 'supplier', mode, query)
+  }
+
+  async listForFactory(auth, mode, query) {
+    return this.listForOwner(auth, 'factory', mode, query)
+  }
+
+  ownerAuctionWhere(userId, role) {
+    if (role === 'factory') {
+      return {
+        isFactoryOrder: true,
+        shipment: {
+          order: { sellerId: userId, orderSource: 'FACTORY_CONVERSION' },
+        },
+      }
+    }
+    return {
+      shipment: {
+        order: {
+          OR: [
+            { sellerId: userId },
+            { customerId: userId, orderSource: 'FACTORY_CONVERSION' },
+          ],
+        },
+      },
+    }
+  }
+
+  auctionListInclude() {
+    return {
+      shipment: {
+        include: {
+          order: {
+            include: {
+              customer: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phoneNumber: true,
+                  profile: { select: { companyName: true } },
+                },
+              },
+              checkoutSession: { select: { firstName: true, lastName: true } },
+              shippingAddress: true,
+              project: { select: { projectName: true, location: true } },
+              orderLineItems: {
+                take: 1,
+                include: { product: { select: { title: true } } },
+              },
+            },
+          },
+        },
+      },
+      bids: {
+        where: { status: 'ACCEPTED' },
+        take: 1,
+        include: {
+          transporter: {
+            select: {
+              id: true,
+              name: true,
+              profile: { select: { companyName: true } },
+            },
+          },
+        },
+      },
+      _count: { select: { bids: true } },
+    }
+  }
+
+  async listForOwner(auth, role, mode, query) {
+    const message =
+      role === 'factory'
+        ? 'Only factories can list auctions'
+        : 'Only suppliers can list auctions'
+    const userId = assertRole(auth, role, message)
     const { page, limit, skip, take } = parsePagination(query, { defaultLimit: 20 })
     const statusFilter =
       mode === 'active'
@@ -511,45 +593,14 @@ class AuctionService {
 
     const where = {
       auctionStatus: statusFilter,
-      shipment: {
-        order: {
-          OR: [
-            { sellerId: supplierId },
-            { customerId: supplierId, orderSource: 'FACTORY_CONVERSION' },
-          ],
-        },
-      },
+      ...this.ownerAuctionWhere(userId, role),
     }
+
+    const include = this.auctionListInclude()
 
     const rows = await prisma.shipmentAuction.findMany({
       where,
-      include: {
-        shipment: {
-          include: {
-            order: {
-              include: {
-                customer: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    phoneNumber: true,
-                    profile: { select: { companyName: true } },
-                  },
-                },
-                checkoutSession: { select: { firstName: true, lastName: true } },
-                shippingAddress: true,
-                project: { select: { projectName: true, location: true } },
-                orderLineItems: {
-                  take: 1,
-                  include: { product: { select: { title: true } } },
-                },
-              },
-            },
-          },
-        },
-        _count: { select: { bids: true } },
-      },
+      include,
       orderBy: { createdAt: 'desc' },
       skip,
       take,
@@ -561,33 +612,7 @@ class AuctionService {
       prisma.shipmentAuction.count({ where }),
       prisma.shipmentAuction.findMany({
         where,
-        include: {
-          shipment: {
-            include: {
-              order: {
-                include: {
-                  customer: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true,
-                      phoneNumber: true,
-                      profile: { select: { companyName: true } },
-                    },
-                  },
-                  checkoutSession: { select: { firstName: true, lastName: true } },
-                  shippingAddress: true,
-                  project: { select: { projectName: true, location: true } },
-                  orderLineItems: {
-                    take: 1,
-                    include: { product: { select: { title: true } } },
-                  },
-                },
-              },
-            },
-          },
-          _count: { select: { bids: true } },
-        },
+        include,
         orderBy: { createdAt: 'desc' },
         skip,
         take,
@@ -606,7 +631,19 @@ class AuctionService {
   }
 
   async getForSupplier(auth, auctionId, mode) {
-    const supplierId = assertRole(auth, 'supplier', 'Only suppliers can view auctions')
+    return this.getForOwner(auth, 'supplier', auctionId, mode)
+  }
+
+  async getForFactory(auth, auctionId, mode) {
+    return this.getForOwner(auth, 'factory', auctionId, mode)
+  }
+
+  async getForOwner(auth, role, auctionId, mode) {
+    const message =
+      role === 'factory'
+        ? 'Only factories can view auctions'
+        : 'Only suppliers can view auctions'
+    const userId = assertRole(auth, role, message)
     await this.finalizeAuctionIfExpired(auctionId)
 
     const statusFilter =
@@ -617,14 +654,7 @@ class AuctionService {
       where: {
         id: auctionId,
         auctionStatus: statusFilter,
-        shipment: {
-          order: {
-            OR: [
-              { sellerId: supplierId },
-              { customerId: supplierId, orderSource: 'FACTORY_CONVERSION' },
-            ],
-          },
-        },
+        ...this.ownerAuctionWhere(userId, role),
       },
       include: {
         shipment: {

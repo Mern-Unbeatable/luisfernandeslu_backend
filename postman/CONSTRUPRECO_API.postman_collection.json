@@ -6035,6 +6035,103 @@
                     }
                   },
                   "response": []
+                },
+                {
+                  "name": "List Active Auctions",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.auctions?.[0];",
+                          "if (row?.auctionId) pm.collectionVariables.set(\"auctionId\", row.auctionId);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/auctions/active?page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "auctions", "active"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Active Auction Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/auctions/active/{{auctionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "auctions", "active", "{{auctionId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Assigned Auctions",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/auctions/assigned?page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "auctions", "assigned"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Assigned Auction Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/auctions/assigned/{{auctionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "auctions", "assigned", "{{auctionId}}"]
+                    }
+                  },
+                  "response": []
                 }
               ]
             },

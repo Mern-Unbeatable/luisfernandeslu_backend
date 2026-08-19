@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import auctionController from '../controllers/auction.controller.js'
 import {
+  auctionIdParamSchema,
   auctionOrderIdParamSchema,
   createAuctionBodySchema,
+  listAuctionsQuerySchema,
 } from '../validations/auction.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
@@ -27,6 +29,30 @@ class FactoryAuctionRoutes {
 
     this.router.post('/', validate(createAuctionBodySchema, 'body'), (req, res, next) =>
       auctionController.createFactoryAuction(req, res, next),
+    )
+
+    this.router.get(
+      '/active',
+      validate(listAuctionsQuerySchema, 'query'),
+      (req, res, next) => auctionController.listActiveForFactory(req, res, next),
+    )
+
+    this.router.get(
+      '/assigned',
+      validate(listAuctionsQuerySchema, 'query'),
+      (req, res, next) => auctionController.listAssignedForFactory(req, res, next),
+    )
+
+    this.router.get(
+      '/active/:id',
+      validate(auctionIdParamSchema, 'params'),
+      (req, res, next) => auctionController.getActiveForFactory(req, res, next),
+    )
+
+    this.router.get(
+      '/assigned/:id',
+      validate(auctionIdParamSchema, 'params'),
+      (req, res, next) => auctionController.getAssignedForFactory(req, res, next),
     )
   }
 
