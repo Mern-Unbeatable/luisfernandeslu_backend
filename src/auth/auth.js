@@ -8,9 +8,8 @@ import {
   requiresEmailOtp,
   toUserRole,
 } from './roles.js'
-import { env } from '../config/env.js'
+import { env, getCorsOrigins } from '../config/env.js'
 
-const frontendUrl = env.frontendUrl
 const baseURL = env.apiUrl
 
 const socialProviders = {}
@@ -28,7 +27,7 @@ export const auth = betterAuth({
   }),
   baseURL,
   secret: env.betterAuth.secret,
-  trustedOrigins: [frontendUrl],
+  trustedOrigins: getCorsOrigins(),
   emailAndPassword: {
     enabled: true,
     // Skip session create on sign-up — saves ~1–2 remote DB round-trips.

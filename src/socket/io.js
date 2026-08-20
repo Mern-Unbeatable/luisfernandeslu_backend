@@ -1,5 +1,5 @@
 import { Server } from 'socket.io'
-import { env } from '../config/env.js'
+import { env, getCorsOrigins } from '../config/env.js'
 
 /** @type {import('socket.io').Server | null} */
 let io = null
@@ -36,10 +36,9 @@ export function emitToChat(threadId, event, payload) {
  * Attach Socket.IO to the HTTP server.
  */
 export function initSocket(httpServer) {
-  const frontendUrl = env.frontendUrl
   const apiPort = env.port
   const allowedOrigins = new Set([
-    frontendUrl,
+    ...getCorsOrigins(),
     `http://localhost:${apiPort}`,
     `http://127.0.0.1:${apiPort}`,
   ])

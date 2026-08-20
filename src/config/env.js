@@ -25,6 +25,8 @@ export const env = {
   port: num('PORT', 8080),
 
   frontendUrl: trimTrailingSlash(str('FRONTEND_URL', 'http://localhost:5173')),
+  /** Extra allowed browser origins (comma-separated), e.g. staging frontend. */
+  frontendUrlExtra: str('FRONTEND_URL_EXTRA', ''),
   apiUrl: trimTrailingSlash(str('BETTER_AUTH_URL', 'http://localhost:8080')),
 
   currency: str('CART_CURRENCY', 'EUR'),
@@ -108,6 +110,28 @@ export function assertEnv() {
   if (missing.length) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`)
   }
+}
+
+/** Browser origins allowed for CORS / Better Auth / Socket.IO. */
+export function getCorsOrigins() {
+  return Array.from(
+    new Set(
+      [
+        env.frontendUrl,
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://dev.luisfernandeslu.maktechgroup.tech',
+        env.frontendUrlExtra,
+      ]
+        .filter(Boolean)
+        .flatMap((v) =>
+          String(v)
+            .split(',')
+            .map((s) => trimTrailingSlash(s.trim()))
+            .filter(Boolean),
+        ),
+    ),
+  )
 }
 
 export default env

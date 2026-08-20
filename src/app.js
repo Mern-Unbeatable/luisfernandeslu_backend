@@ -50,21 +50,9 @@ import { UPLOAD_ROOT } from './shared/storage.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
 import { sendSuccess } from './utils/apiResponse.js'
-import { env } from './config/env.js'
+import { env, getCorsOrigins } from './config/env.js'
 
-const frontendUrl = env.frontendUrl
-const corsOrigins = Array.from(
-  new Set(
-    [
-      frontendUrl,
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      process.env.FRONTEND_URL_EXTRA,
-    ]
-      .filter(Boolean)
-      .flatMap((v) => String(v).split(',').map((s) => s.trim()).filter(Boolean)),
-  ),
-)
+const corsOrigins = getCorsOrigins()
 const baHandler = toNodeHandler(auth)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
