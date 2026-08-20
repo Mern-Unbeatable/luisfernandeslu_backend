@@ -53,6 +53,18 @@ import { sendSuccess } from './utils/apiResponse.js'
 import { env } from './config/env.js'
 
 const frontendUrl = env.frontendUrl
+const corsOrigins = Array.from(
+  new Set(
+    [
+      frontendUrl,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      process.env.FRONTEND_URL_EXTRA,
+    ]
+      .filter(Boolean)
+      .flatMap((v) => String(v).split(',').map((s) => s.trim()).filter(Boolean)),
+  ),
+)
 const baHandler = toNodeHandler(auth)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -62,7 +74,11 @@ app.set('trust proxy', 1)
 
 app.use(
   cors({
-    origin: frontendUrl,
+    origin(origin, callback) {
+      if (!origin) return callback(null, true)
+      if (corsOrigins.includes(origin)) return callback(null, true)
+      return callback(new Error(`CORS blocked for origin: ${origin}`))
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
