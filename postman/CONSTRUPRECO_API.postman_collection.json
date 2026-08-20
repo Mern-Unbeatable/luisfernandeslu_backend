@@ -6829,6 +6829,186 @@
           "name": "Admin",
           "item": [
             {
+              "name": "User Management",
+              "item": [
+                {
+                  "name": "Get User Management Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users", "stats"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Users (Customer tab)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.users?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"userId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users?type=customer&status=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users"],
+                      "query": [
+                        { "key": "type", "value": "customer" },
+                        { "key": "status", "value": "all" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Users (Company tab)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users?type=company&status=all&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users"],
+                      "query": [
+                        { "key": "type", "value": "company" },
+                        { "key": "status", "value": "all" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get User Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users/{{userId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users", "{{userId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Suspend User",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"suspended\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users/{{userId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users", "{{userId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Activate User",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"active\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users/{{userId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users", "{{userId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete User",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users/{{userId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users", "{{userId}}"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "List Pending Products",
               "request": {
                 "method": "GET",

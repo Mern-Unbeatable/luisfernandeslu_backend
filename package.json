@@ -19,6 +19,8 @@
         "seed:admin": "tsx src/scripts/seed-admin.js",
         "seed:catalog": "tsx src/scripts/seed-catalog.js",
         "seed:promotion-plans": "tsx src/scripts/seed-promotion-plans.js",
+        "seed:demo": "tsx src/scripts/seed-demo.js",
+        "seed": "tsx src/scripts/seed-catalog.js && tsx src/scripts/seed-promotion-plans.js && tsx src/scripts/seed-demo.js",
         "test": "node --test tests/**/*.test.js",
         "check:imports": "tsx scripts/check-imports.mjs",
         "test:watch": "node --test --watch tests/**/*.test.js",
