@@ -15,18 +15,29 @@ export const adminPromotionListQuerySchema = z.object({
   status: z
     .enum([
       'all',
-      'AWAITING_PAYMENT',
-      'PENDING_REVIEW',
-      'APPROVED',
+      'pending',
+      'active',
+      'completed',
+      'rejected',
+      'ALL',
+      'PENDING',
+      'ACTIVE',
+      'COMPLETED',
       'REJECTED',
-      'EXPIRED',
     ])
     .optional()
-    .default('PENDING_REVIEW'),
+    .default('pending'),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(50).optional().default(12),
+  search: z.string().trim().optional(),
 })
 
+export const adminModeratePromotionBodySchema = z.object({
+  status: z.enum(['approved', 'rejected', 'APPROVED', 'REJECTED']),
+  reason: z.string().trim().min(2).max(2000).optional(),
+})
+
+/** @deprecated use adminModeratePromotionBodySchema */
 export const adminRejectPromotionBodySchema = z.object({
   reason: z.string().trim().min(2).max(2000).optional(),
 })

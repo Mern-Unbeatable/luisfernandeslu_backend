@@ -1,6 +1,7 @@
 import prisma from '../../../../lib/prisma.js'
 import { httpError, conflict } from '../../../shared/errors.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
+import { mapProductMedia } from '../../listings/read.js'
 
 function mapPlan(plan) {
   return {
@@ -14,8 +15,65 @@ function mapPlan(plan) {
   }
 }
 
-function mapPromotion(row) {
+/** Admin Marketing UI statuses (unpaid never appears here). */
+function resolveMarketingStatus(row, now = new Date()) {
+  if (row.approvalStatus === 'PENDING_REVIEW') return 'pending'
+  if (row.approvalStatus === 'REJECTED') return 'rejected'
+  if (row.approvalStatus === 'EXPIRED') return 'completed'
+  if (row.approvalStatus === 'APPROVED') {
+    if (row.endDate && new Date(row.endDate) <= now) return 'completed'
+    return 'active'
+  }
+  return 'pending'
+}
+
+function normalizeMarketingStatus(raw) {
+  const s = String(raw || 'pending').trim().toLowerCase()
+  if (s === 'active') return 'active'
+  if (s === 'completed') return 'completed'
+  if (s === 'rejected') return 'rejected'
+  if (s === 'all') return 'all'
+  return 'pending'
+}
+
+function marketingStatusWhere(status, now) {
+  // Unpaid promotions never enter Marketing Management
+  const paidOnly = {
+    paymentStatus: 'PAID',
+    approvalStatus: { not: 'AWAITING_PAYMENT' },
+  }
+
+  if (status === 'pending') {
+    return { ...paidOnly, approvalStatus: 'PENDING_REVIEW' }
+  }
+  if (status === 'rejected') {
+    return { ...paidOnly, approvalStatus: 'REJECTED' }
+  }
+  if (status === 'active') {
+    return {
+      ...paidOnly,
+      approvalStatus: 'APPROVED',
+      endDate: { gt: now },
+    }
+  }
+  if (status === 'completed') {
+    return {
+      ...paidOnly,
+      OR: [
+        { approvalStatus: 'EXPIRED' },
+        { approvalStatus: 'APPROVED', endDate: { lte: now } },
+      ],
+    }
+  }
+  // all — paid + reviewed pipeline only
   return {
+    ...paidOnly,
+    approvalStatus: { in: ['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED'] },
+  }
+}
+
+function mapPromotion(row, { forAdmin = false } = {}) {
+  const base = {
     id: row.id,
     productId: row.productId,
     planId: row.planId,
@@ -42,6 +100,29 @@ function mapPromotion(row) {
           sellerId: row.product.sellerId,
         }
       : undefined,
+  }
+  if (forAdmin) {
+    base.status = resolveMarketingStatus(row)
+  }
+  return base
+}
+
+/** Marketing Management card fields only (Accept / Reject grid). */
+function mapAdminMarketingCard(row, baseUrl) {
+  const product = row.product
+  const { bannerImage, images } = mapProductMedia(product || {}, baseUrl)
+  return {
+    id: row.id,
+    status: resolveMarketingStatus(row),
+    image: bannerImage?.url || images[0]?.url || null,
+    name: product?.title || null,
+    description: product?.shortDescription || null,
+    basePrice: product?.basePrice ?? null,
+    unitOfMeasure: product?.unitOfMeasure || 'bag',
+    weightKg: product?.weightKg || 0,
+    boostTier: Number(row.amountPaid ?? row.plan?.price ?? 0),
+    durationDays: row.durationDays,
+    currency: row.plan?.currency || 'USD',
   }
 }
 
@@ -246,29 +327,45 @@ export class PromotionService {
     }
   }
 
-  async adminList(query) {
+  async adminList(query, baseUrl) {
+    await this.expireDuePromotions()
+
     const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
-    const where =
-      query.status && query.status !== 'all'
-        ? { approvalStatus: query.status }
-        : {}
+    const status = normalizeMarketingStatus(query.status)
+    const search = query.search?.trim() || ''
+    const now = new Date()
+    const and = [marketingStatusWhere(status, now)]
+
+    if (search) {
+      and.push({
+        OR: [
+          { product: { title: { contains: search, mode: 'insensitive' } } },
+          { product: { sku: { contains: search, mode: 'insensitive' } } },
+        ],
+      })
+    }
+
+    const where = { AND: and }
 
     const [total, rows] = await Promise.all([
       prisma.productPromotion.count({ where }),
       prisma.productPromotion.findMany({
         where,
-        include: {
-          plan: true,
+        select: {
+          id: true,
+          amountPaid: true,
+          durationDays: true,
+          approvalStatus: true,
+          endDate: true,
+          plan: { select: { price: true, currency: true } },
           product: {
             select: {
-              id: true,
-              sku: true,
               title: true,
-              approvalStatus: true,
-              isFeatured: true,
-              isSponsored: true,
-              sellerId: true,
-              seller: { select: { id: true, name: true, email: true } },
+              shortDescription: true,
+              basePrice: true,
+              unitOfMeasure: true,
+              weightKg: true,
+              media: { orderBy: { sortOrder: 'asc' } },
             },
           },
         },
@@ -281,14 +378,18 @@ export class PromotionService {
     return {
       status: 200,
       body: {
-        promotions: rows.map((r) => ({
-          ...mapPromotion(r),
-          seller: r.product?.seller,
-        })),
+        promotions: rows.map((r) => mapAdminMarketingCard(r, baseUrl)),
         pagination: paginationMeta({ page, limit, total }),
+        filters: { status, search: search || null },
         message: 'Promotions fetched',
       },
     }
+  }
+
+  async adminModerate(promotionId, body) {
+    const next = String(body.status || '').toLowerCase()
+    if (next === 'approved') return this.approvePromotion(promotionId)
+    return this.rejectPromotion(promotionId, body.reason)
   }
 
   async approvePromotion(promotionId) {
@@ -322,7 +423,7 @@ export class PromotionService {
           reviewedAt: new Date(),
           rejectionReason: null,
         },
-        include: { plan: true, product: true },
+        select: { id: true },
       }),
       prisma.product.update({
         where: { id: promotion.productId },
@@ -333,8 +434,8 @@ export class PromotionService {
     return {
       status: 200,
       body: {
-        promotion: mapPromotion(updated),
-        message: 'Promotion approved. Product is now featured.',
+        id: updated.id,
+        message: 'Promotion approved. Product is now active/featured.',
       },
     }
   }
@@ -351,6 +452,9 @@ export class PromotionService {
         'InvalidStatus',
       )
     }
+    if (promotion.paymentStatus !== 'PAID') {
+      throw httpError('Promotion is not paid', 400, 'NotPaid')
+    }
 
     const updated = await prisma.productPromotion.update({
       where: { id: promotionId },
@@ -359,19 +463,19 @@ export class PromotionService {
         rejectionReason: reason?.trim() || null,
         reviewedAt: new Date(),
       },
-      include: { plan: true, product: true },
+      select: { id: true },
     })
 
     return {
       status: 200,
       body: {
-        promotion: mapPromotion(updated),
+        id: updated.id,
         message: 'Promotion rejected',
       },
     }
   }
 
-  /** Expire featured flags when endDate passed */
+  /** Expire featured flags when endDate passed → completed */
   async expireDuePromotions() {
     const now = new Date()
     const due = await prisma.productPromotion.findMany({

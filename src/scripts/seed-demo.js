@@ -254,12 +254,12 @@ async function ensureOrder(data) {
 async function main() {
   const category = await leafCategory()
 
-  await prisma.promotionPlan.upsert({
+  const plan7 = await prisma.promotionPlan.upsert({
     where: { durationDays: 7 },
     create: { label: 'For 7 days', durationDays: 7, price: 40, sortOrder: 1 },
     update: {},
   })
-  await prisma.promotionPlan.upsert({
+  const plan15 = await prisma.promotionPlan.upsert({
     where: { durationDays: 15 },
     create: { label: 'For 15 days', durationDays: 15, price: 60, sortOrder: 2 },
     update: {},
@@ -512,8 +512,161 @@ async function main() {
   })
 
   await prisma.productPromotion.deleteMany({
-    where: { productId: supplierProduct.id },
+    where: {
+      OR: [
+        { productId: supplierProduct.id },
+        { product: { sku: { startsWith: 'MKT-DEMO-' } } },
+      ],
+    },
   })
+
+  const marketingSpecs = [
+    {
+      sku: 'MKT-DEMO-001',
+      title: 'Sponsored Portland Cement',
+      slug: 'mkt-sponsored-portland-demo',
+      shortDescription: 'Featured cement for homepage carousel.',
+      status: 'pending',
+      plan: plan7,
+    },
+    {
+      sku: 'MKT-DEMO-002',
+      title: 'Bulk Aggregate Promo Pack',
+      slug: 'mkt-bulk-aggregate-demo',
+      shortDescription: 'Awaiting admin approve after payment.',
+      status: 'pending',
+      plan: plan15,
+    },
+    {
+      sku: 'MKT-DEMO-003',
+      title: 'Active Steel Mesh Bundle',
+      slug: 'mkt-active-steel-mesh-demo',
+      shortDescription: 'Currently live sponsored listing.',
+      status: 'active',
+      plan: plan30,
+    },
+    {
+      sku: 'MKT-DEMO-004',
+      title: 'Active Waterproofing Kit',
+      slug: 'mkt-active-waterproof-demo',
+      shortDescription: 'Sponsored for 15 days — still running.',
+      status: 'active',
+      plan: plan15,
+    },
+    {
+      sku: 'MKT-DEMO-005',
+      title: 'Completed Tile Adhesive Promo',
+      slug: 'mkt-completed-tile-demo',
+      shortDescription: 'Campaign finished — time ended.',
+      status: 'completed',
+      plan: plan7,
+    },
+    {
+      sku: 'MKT-DEMO-006',
+      title: 'Completed Scaffold Hire Promo',
+      slug: 'mkt-completed-scaffold-demo',
+      shortDescription: 'Expired sponsored campaign.',
+      status: 'completed',
+      plan: plan15,
+    },
+    {
+      sku: 'MKT-DEMO-007',
+      title: 'Rejected Paint Promo',
+      slug: 'mkt-rejected-paint-demo',
+      shortDescription: 'Paid but rejected by admin.',
+      status: 'rejected',
+      plan: plan7,
+    },
+    {
+      sku: 'MKT-DEMO-008',
+      title: 'Unpaid Draft Promo',
+      slug: 'mkt-unpaid-draft-demo',
+      shortDescription: 'Should NOT appear in Marketing Management.',
+      status: 'unpaid',
+      plan: plan7,
+    },
+  ]
+
+  const now = new Date()
+  for (let i = 0; i < marketingSpecs.length; i += 1) {
+    const spec = marketingSpecs[i]
+    const product = await ensureProduct({
+      sellerId: supplier.id,
+      categoryId: category.id,
+      sku: spec.sku,
+      title: spec.title,
+      slug: spec.slug,
+      shortDescription: spec.shortDescription,
+      longDescription: `${spec.title} — marketing seed product.`,
+      specifications: 'Demo marketing SKU',
+      factoryName: 'Cimento do Tejo',
+      basePrice: 10 + i,
+      b2bPrice: 9 + i,
+      minOrderQuantity: 5,
+      unitOfMeasure: 'bags',
+      weightKg: 25,
+      marketplaceTier: 'RETAIL',
+      approvalStatus: 'APPROVED',
+      warehouseLocation: 'Rua de Campolide 88, Lisbon, Portugal',
+      isFeatured: spec.status === 'active',
+    })
+    await ensureInventory(product.id, 200)
+    await ensureMedia(product.id, `/uploads/seed/mkt-${i + 1}.jpg`)
+
+    const isActive = spec.status === 'active'
+    const isCompleted = spec.status === 'completed'
+    const isPending = spec.status === 'pending'
+    const isRejected = spec.status === 'rejected'
+    const isUnpaid = spec.status === 'unpaid'
+
+    let startDate = null
+    let endDate = null
+    if (isActive) {
+      startDate = new Date(now.getTime() - 2 * 86400000)
+      endDate = new Date(now.getTime() + spec.plan.durationDays * 86400000)
+    } else if (isCompleted) {
+      startDate = new Date(now.getTime() - (spec.plan.durationDays + 3) * 86400000)
+      endDate = new Date(now.getTime() - 1 * 86400000)
+    }
+
+    await prisma.productPromotion.create({
+      data: {
+        productId: product.id,
+        planId: spec.plan.id,
+        amountPaid: spec.plan.price,
+        durationDays: spec.plan.durationDays,
+        paymentStatus: isUnpaid ? 'PENDING_PAYMENT' : 'PAID',
+        paymentRef: isUnpaid ? null : `SEED-MKT-${spec.sku}`,
+        approvalStatus: isUnpaid
+          ? 'AWAITING_PAYMENT'
+          : isPending
+            ? 'PENDING_REVIEW'
+            : isRejected
+              ? 'REJECTED'
+              : isCompleted
+                ? 'EXPIRED'
+                : 'APPROVED',
+        startDate,
+        endDate,
+        paidAt: isUnpaid ? null : new Date(now.getTime() - 5 * 86400000),
+        reviewedAt:
+          isPending || isUnpaid ? null : new Date(now.getTime() - 3 * 86400000),
+        rejectionReason: isRejected
+          ? 'Creative does not match brand guidelines'
+          : null,
+      },
+    })
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: {
+        isSponsored: isActive,
+        isFeatured: isActive,
+      },
+    })
+  }
+
+  // Keep main demo product featured/active as well
   await prisma.productPromotion.create({
     data: {
       productId: supplierProduct.id,
@@ -521,16 +674,17 @@ async function main() {
       amountPaid: 100,
       durationDays: 30,
       paymentStatus: 'PAID',
+      paymentRef: 'SEED-MKT-CEM-DEMO-001',
       approvalStatus: 'APPROVED',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 86400000),
-      paidAt: new Date(),
-      reviewedAt: new Date(),
+      startDate: now,
+      endDate: new Date(now.getTime() + 30 * 86400000),
+      paidAt: now,
+      reviewedAt: now,
     },
   })
   await prisma.product.update({
     where: { id: supplierProduct.id },
-    data: { isSponsored: true },
+    data: { isSponsored: true, isFeatured: true },
   })
 
   const promo = await prisma.promoCode.upsert({
@@ -875,6 +1029,8 @@ async function main() {
     status,
     expiresInMin,
     acceptBid,
+    withBid = true,
+    requiredVehicleType = 'HEAVY_TRUCK',
   }) {
     const shipment = await prisma.shipment.upsert({
       where: { orderId: order.id },
@@ -897,7 +1053,7 @@ async function main() {
       where: { shipmentId: shipment.id },
       create: {
         shipmentId: shipment.id,
-        requiredVehicleType: 'HEAVY_TRUCK',
+        requiredVehicleType,
         auctionStatus: status,
         isFactoryOrder,
         bidStartPrice,
@@ -908,18 +1064,21 @@ async function main() {
         isFactoryOrder,
         bidStartPrice,
         expiresAt,
+        requiredVehicleType,
       },
     })
     await prisma.transporterBid.deleteMany({ where: { auctionId: auction.id } })
-    await prisma.transporterBid.create({
-      data: {
-        auctionId: auction.id,
-        transporterId: transporter.id,
-        bidAmount: Math.max(1, (bidStartPrice || 20) - 3),
-        estimatedDeliveryTime: '',
-        status: acceptBid ? 'ACCEPTED' : 'SUBMITTED',
-      },
-    })
+    if (withBid) {
+      await prisma.transporterBid.create({
+        data: {
+          auctionId: auction.id,
+          transporterId: transporter.id,
+          bidAmount: Math.max(1, (bidStartPrice || 20) - 3),
+          estimatedDeliveryTime: '',
+          status: acceptBid ? 'ACCEPTED' : 'SUBMITTED',
+        },
+      })
+    }
     return auction
   }
 
@@ -970,6 +1129,163 @@ async function main() {
     expiresInMin: -15,
     acceptBid: true,
   })
+
+  // 10 open auctions for transporter board (PENDING_BIDS, not expired, no bid yet)
+  const openAuctionRoutes = [
+    {
+      pickup: 'Rua de Campolide 88, Lisbon, Portugal',
+      delivery: 'Rua de Santa Catarina 200, Porto, Portugal',
+      distanceKm: 313,
+      bidStartPrice: 95,
+      vehicle: 'HEAVY_TRUCK',
+      factory: false,
+      buyer: 'company',
+      expiresInMin: 180,
+    },
+    {
+      pickup: 'Avenida Dom José I 45, Amadora, Portugal',
+      delivery: 'Rua Augusta 150, Lisbon, Portugal',
+      distanceKm: 14.2,
+      bidStartPrice: 28,
+      vehicle: 'VAN',
+      factory: true,
+      buyer: 'supplier',
+      expiresInMin: 45,
+    },
+    {
+      pickup: 'Rua de Campolide 88, Lisbon, Portugal',
+      delivery: 'Avenida da Liberdade 100, Lisbon, Portugal',
+      distanceKm: 4.8,
+      bidStartPrice: 18,
+      vehicle: 'FLATBED',
+      factory: false,
+      buyer: 'customer',
+      expiresInMin: 90,
+    },
+    {
+      pickup: 'Zona Industrial de Alverca, Vila Franca de Xira, Portugal',
+      delivery: 'Rua de Santa Catarina 200, Porto, Portugal',
+      distanceKm: 295,
+      bidStartPrice: 110,
+      vehicle: 'TIPPER',
+      factory: false,
+      buyer: 'company',
+      expiresInMin: 240,
+    },
+    {
+      pickup: 'Avenida Dom José I 45, Amadora, Portugal',
+      delivery: 'Praça da República, Coimbra, Portugal',
+      distanceKm: 198,
+      bidStartPrice: 72,
+      vehicle: 'HEAVY_TRUCK',
+      factory: true,
+      buyer: 'supplier',
+      expiresInMin: 120,
+    },
+    {
+      pickup: 'Rua de Campolide 88, Lisbon, Portugal',
+      delivery: 'Faro Airport Industrial Park, Faro, Portugal',
+      distanceKm: 278,
+      bidStartPrice: 130,
+      vehicle: 'CRANE_TRUCK',
+      factory: false,
+      buyer: 'company',
+      expiresInMin: 300,
+    },
+    {
+      pickup: 'Porto Logistics Hub, Matosinhos, Portugal',
+      delivery: 'Rua Augusta 150, Lisbon, Portugal',
+      distanceKm: 305,
+      bidStartPrice: 88,
+      vehicle: 'HEAVY_TRUCK',
+      factory: false,
+      buyer: 'customer',
+      expiresInMin: 60,
+    },
+    {
+      pickup: 'Avenida Dom José I 45, Amadora, Portugal',
+      delivery: 'Braga Parque, Braga, Portugal',
+      distanceKm: 365,
+      bidStartPrice: 145,
+      vehicle: 'FLATBED',
+      factory: true,
+      buyer: 'supplier',
+      expiresInMin: 150,
+    },
+    {
+      pickup: 'Rua de Campolide 88, Lisbon, Portugal',
+      delivery: 'Évora Centro, Évora, Portugal',
+      distanceKm: 132,
+      bidStartPrice: 55,
+      vehicle: 'TIPPER',
+      factory: false,
+      buyer: 'company',
+      expiresInMin: 75,
+    },
+    {
+      pickup: 'Setúbal Port Terminal, Setúbal, Portugal',
+      delivery: 'Rua de Campolide 88, Lisbon, Portugal',
+      distanceKm: 48,
+      bidStartPrice: 35,
+      vehicle: 'VAN',
+      factory: false,
+      buyer: 'customer',
+      expiresInMin: 35,
+    },
+  ]
+
+  for (let i = 0; i < openAuctionRoutes.length; i += 1) {
+    const route = openAuctionRoutes[i]
+    const n = String(i + 1).padStart(2, '0')
+    let customerId = company.id
+    let shippingAddressId = companyShip.id
+    let sellerId = supplier.id
+    let product = supplierProduct
+    let source = 'DIRECT_CART'
+    let status = 'PROCESSING'
+    let projectId
+
+    if (route.buyer === 'customer') {
+      customerId = customer.id
+      shippingAddressId = customerShip.id
+    } else if (route.buyer === 'supplier') {
+      customerId = supplier.id
+      shippingAddressId = supplierWh.id
+      sellerId = factory.id
+      product = factoryProduct
+      source = 'FACTORY_CONVERSION'
+      status = 'READY'
+    } else {
+      projectId = project.id
+    }
+
+    const openOrder = await makeOrder({
+      orderNumber: `ORD-DEMO-TX-OPEN-${n}`,
+      customerId,
+      sellerId,
+      shippingAddressId,
+      billingAddressId: shippingAddressId,
+      status,
+      source,
+      product,
+      qty: 20 + i * 5,
+      shippingFee: route.bidStartPrice,
+      projectId,
+    })
+
+    await ensureAuction({
+      order: openOrder,
+      pickup: route.pickup,
+      delivery: route.delivery,
+      distanceKm: route.distanceKm,
+      isFactoryOrder: route.factory,
+      bidStartPrice: route.bidStartPrice,
+      status: 'PENDING_BIDS',
+      expiresInMin: route.expiresInMin,
+      withBid: false,
+      requiredVehicleType: route.vehicle,
+    })
+  }
 
   const ticket = await prisma.supportTicket.findFirst({
     where: { userId: customer.id, subject: 'Demo delivery question' },
@@ -1023,6 +1339,8 @@ async function main() {
   console.log('\nERP key: erp_demo_supplier_key_construpreco')
   console.log('Promo: DEMO10')
   console.log('Orders: ORD-DEMO-CUST-001, ORD-DEMO-CO-001/002, ORD-DEMO-FAC-001/002/003')
+  console.log('Open transporter auctions: ORD-DEMO-TX-OPEN-01 … 10')
+  console.log('Marketing: MKT-DEMO-001…008 (pending/active/completed/rejected + unpaid hidden)')
 }
 
 main()

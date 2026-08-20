@@ -1,5 +1,6 @@
 import promotionService from '../services/promotion.service.js'
 import { sendServiceResult } from '../../../utils/apiResponse.js'
+import { resolveRequestBaseUrl } from '../../../lib/requestUrl.js'
 
 export class PromotionController {
   async listPlans(req, res, next) {
@@ -66,31 +67,20 @@ export class PromotionController {
 
   async adminList(req, res, next) {
     try {
-      return sendServiceResult(res, await promotionService.adminList(req.query))
-    } catch (err) {
-      next(err)
-    }
-  }
-
-  async approve(req, res, next) {
-    try {
       return sendServiceResult(
         res,
-        await promotionService.approvePromotion(req.params.id),
+        await promotionService.adminList(req.query, resolveRequestBaseUrl(req)),
       )
     } catch (err) {
       next(err)
     }
   }
 
-  async reject(req, res, next) {
+  async adminModerate(req, res, next) {
     try {
       return sendServiceResult(
         res,
-        await promotionService.rejectPromotion(
-          req.params.id,
-          req.body?.reason,
-        ),
+        await promotionService.adminModerate(req.params.id, req.body),
       )
     } catch (err) {
       next(err)

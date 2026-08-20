@@ -2,7 +2,7 @@ import { Router } from 'express'
 import promotionController from '../controllers/promotion.controller.js'
 import {
   adminPromotionListQuerySchema,
-  adminRejectPromotionBodySchema,
+  adminModeratePromotionBodySchema,
   planIdParamSchema,
   promotionIdParamSchema,
   updatePlanBodySchema,
@@ -47,17 +47,11 @@ class PromotionAdminRoutes {
       (req, res, next) => promotionController.adminList(req, res, next),
     )
 
-    this.router.post(
-      '/promotions/:id/approve',
+    this.router.patch(
+      '/promotions/:id',
       validate(promotionIdParamSchema, 'params'),
-      (req, res, next) => promotionController.approve(req, res, next),
-    )
-
-    this.router.post(
-      '/promotions/:id/reject',
-      validate(promotionIdParamSchema, 'params'),
-      validate(adminRejectPromotionBodySchema, 'body'),
-      (req, res, next) => promotionController.reject(req, res, next),
+      validate(adminModeratePromotionBodySchema, 'body'),
+      (req, res, next) => promotionController.adminModerate(req, res, next),
     )
   }
 

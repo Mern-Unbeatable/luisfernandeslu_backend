@@ -7929,97 +7929,108 @@
               "response": []
             },
             {
-              "name": "List Pending Promotions",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/admin/promotions?status=PENDING_REVIEW",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "promotions"
-                  ],
-                  "query": [
+              "name": "Marketing Management",
+              "item": [
+                {
+                  "name": "List Promotions",
+                  "event": [
                     {
-                      "key": "status",
-                      "value": "PENDING_REVIEW"
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.promotions?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"promotionId\", row.id);"
+                        ]
+                      }
                     }
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Approve Promotion",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}/approve",
-                  "host": [
-                    "{{baseUrl}}"
                   ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "promotions",
-                    "{{promotionId}}",
-                    "approve"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Reject Promotion",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/promotions?status=pending&search=&page=1&limit=12",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "promotions"],
+                      "query": [
+                        {
+                          "key": "status",
+                          "value": "pending",
+                          "description": "pending | active | completed | rejected | all (unpaid never included)"
+                        },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "12" }
+                      ]
+                    },
+                    "description": "Card only: id, status, image, name, description, basePrice, unitOfMeasure, weightKg, boostTier, durationDays, currency. Unpaid never included."
                   },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"reason\": \"Not eligible for sponsorship\"\n}"
+                  "response": []
                 },
-                "url": {
-                  "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}/reject",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "promotions",
-                    "{{promotionId}}",
-                    "reject"
-                  ]
+                {
+                  "name": "Approve Promotion",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"approved\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "promotions", "{{promotionId}}"]
+                    },
+                    "description": "Same PATCH as reject — body.status=approved. Becomes active until endDate."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reject Promotion",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"rejected\",\n  \"reason\": \"Not eligible for sponsorship\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "promotions", "{{promotionId}}"]
+                    },
+                    "description": "Same PATCH as approve — body.status=rejected."
+                  },
+                  "response": []
                 }
-              },
-              "response": []
+              ]
             }
           ]
         }
