@@ -19,6 +19,8 @@ import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import productRoutes from './modules/products/routes/product.routes.js'
 import adminUserRoutes from './modules/admin/users/routes/user.routes.js'
 import adminSupplierRoutes from './modules/admin/suppliers/routes/supplier.routes.js'
+import adminFactoryRoutes from './modules/admin/factories/routes/factory.routes.js'
+import adminTransporterRoutes from './modules/admin/transporters/routes/transporter.routes.js'
 import productAdminRoutes from './modules/products/routes/admin.routes.js'
 import factoryProductRoutes from './modules/listings/routes/factory-product.routes.js'
 import promotionRoutes from './modules/promotions/routes/promotion.routes.js'
@@ -120,6 +122,8 @@ app.use('/api/customer/orders', buyerOrderRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
 app.use('/api/admin/users', adminUserRoutes)
 app.use('/api/admin/suppliers', adminSupplierRoutes)
+app.use('/api/admin/factories', adminFactoryRoutes)
+app.use('/api/admin/transporters', adminTransporterRoutes)
 app.use('/api/admin', productAdminRoutes)
 app.use('/api/admin', promotionAdminRoutes)
 

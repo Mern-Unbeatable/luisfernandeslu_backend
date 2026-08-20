@@ -7236,6 +7236,460 @@
               ]
             },
             {
+              "name": "Factory Management",
+              "item": [
+                {
+                  "name": "Get Factory Management Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "stats"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Factories (single API with tab)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.factories?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"factoryId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories?tab=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories"],
+                      "query": [
+                        { "key": "tab", "value": "all" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Factory Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Approve Pending Factory",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/approve",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}", "approve"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reject Pending Factory",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"Documents are unclear\",\n  \"invalidDocuments\": [\"companyCertificateUrl\", \"idDocumentUrl\"]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/reject",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}", "reject"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Suspend Factory",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"suspended\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Renew Factory",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"active\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Factory Commission",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"commissionPercent\": 20\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/commission",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}", "commission"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Suspended Factory",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "factories", "{{factoryId}}"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Transporter Management",
+              "item": [
+                {
+                  "name": "Get Transporter Management Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "stats"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Transporters (single API with tab)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.transporters?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"transporterId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters?tab=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters"],
+                      "query": [
+                        { "key": "tab", "value": "all" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Transporter Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Approve Pending Transporter",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/approve",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}", "approve"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reject Pending Transporter",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"Documents are unclear\",\n  \"invalidDocuments\": [\"companyCertificateUrl\", \"idDocumentUrl\"]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/reject",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}", "reject"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Suspend Transporter",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"suspended\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Renew Transporter",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"active\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Transporter Commission",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"commissionPercent\": 20\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/commission",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}", "commission"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Suspended Transporter",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "transporters", "{{transporterId}}"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "List Pending Products",
               "request": {
                 "method": "GET",

@@ -77,7 +77,6 @@ function mapListRow(user) {
     email: user.email,
     phone: user.phoneNumber || null,
     registeredDate: user.createdAt.toLocaleDateString('en-CA'),
-    commission: `${Number(user.vatRate || 0)}%`,
     commissionPercent: Number(user.vatRate || 0),
     status: statusLabel(user.status),
     statusCode: user.status,
