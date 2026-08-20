@@ -79,6 +79,17 @@ class AuctionController {
     }
   }
 
+  async listForAdmin(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await auctionService.listForAdmin(req.auth, req.query),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async getForTransporter(req, res, next) {
     try {
       return sendServiceResult(

@@ -5431,7 +5431,8 @@
                         "exec": [
                           "const json = pm.response.json();",
                           "const row = json.auctions?.[0];",
-                          "if (row?.auctionId) pm.collectionVariables.set(\"auctionId\", row.auctionId);"
+                          "if (row?.id) pm.collectionVariables.set(\"auctionId\", row.id);",
+                          "if (row?.auctionId) pm.collectionVariables.set(\"auctionCode\", row.auctionId);"
                         ]
                       }
                     }
@@ -8027,6 +8028,54 @@
                       "path": ["api", "admin", "promotions", "{{promotionId}}"]
                     },
                     "description": "Same PATCH as approve — body.status=rejected."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Auction Board",
+              "item": [
+                {
+                  "name": "List All Auctions",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.auctions?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"auctionId\", row.id);",
+                          "if (row?.auctionId) pm.collectionVariables.set(\"auctionCode\", row.auctionId);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/auctions?page=1&limit=20&filter=all",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "auctions"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" },
+                        {
+                          "key": "filter",
+                          "value": "all",
+                          "description": "all | ending_soon | nearest | ended"
+                        }
+                      ]
+                    },
+                    "description": "Same card shape as transporter board. auctionId = AUC-001 display code; id = UUID for detail/bid APIs."
                   },
                   "response": []
                 }

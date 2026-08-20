@@ -4,6 +4,7 @@ import { httpError } from '../../../shared/errors.js'
 import { formatAddressLine } from '../../../shared/address.js'
 import { calculateDistance, resolveCoordinates } from '../../../shared/distance.js'
 import { money } from '../../../shared/money.js'
+import { formatAuctionCode, parseAuctionCodeSeq } from '../../../shared/numbering.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import { companyDisplayName, partyName } from '../../../shared/party.js'
 
@@ -13,6 +14,56 @@ function assertRole(auth, role, message) {
     throw httpError(message, 403, 'Forbidden')
   }
   return auth.id
+}
+
+function assertAdmin(auth) {
+  if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
+  if (String(auth.role || '').toLowerCase() !== 'admin') {
+    throw httpError('Only admins can list all auctions', 403, 'Forbidden')
+  }
+  return auth.id
+}
+
+async function nextAuctionCode(db = prisma) {
+  const last = await db.shipmentAuction.findFirst({
+    where: { auctionCode: { not: null } },
+    orderBy: { createdAt: 'desc' },
+    select: { auctionCode: true },
+  })
+  // Prefer max numeric seq among recent codes (pad-3 lexicographic fails after 999)
+  const rows = await db.shipmentAuction.findMany({
+    where: { auctionCode: { not: null } },
+    select: { auctionCode: true },
+    take: 5000,
+  })
+  let max = parseAuctionCodeSeq(last?.auctionCode)
+  for (const row of rows) {
+    max = Math.max(max, parseAuctionCodeSeq(row.auctionCode))
+  }
+  return formatAuctionCode(max + 1)
+}
+
+async function ensureAuctionCode(auctionId) {
+  const row = await prisma.shipmentAuction.findUnique({
+    where: { id: auctionId },
+    select: { id: true, auctionCode: true },
+  })
+  if (!row) return null
+  if (row.auctionCode) return row.auctionCode
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = await nextAuctionCode()
+    try {
+      const updated = await prisma.shipmentAuction.update({
+        where: { id: auctionId },
+        data: { auctionCode: code },
+        select: { auctionCode: true },
+      })
+      return updated.auctionCode
+    } catch (err) {
+      if (err?.code !== 'P2002') throw err
+    }
+  }
+  return null
 }
 
 function pickPartyAddress(user, fallbackAddress) {
@@ -172,26 +223,36 @@ function mapAuctionCard(auction) {
   }
 }
 
-function mapTransporterAuctionCard(auction, transporterId) {
+function mapTransporterAuctionCard(auction, transporterId = null) {
   const shipment = auction.shipment
   const order = shipment.order
   const line = order.orderLineItems?.[0]
-  const bids = (auction.bids || []).map((b) => ({
-    bidId: b.id,
-    bidAmount: money(b.bidAmount),
-    createdAt: b.createdAt,
-    isMine: b.transporterId === transporterId,
-  }))
-  const myBid = bids.find((b) => b.isMine) || null
+  const bids = (auction.bids || []).map((b) => {
+    const transporterName =
+      companyDisplayName(b.transporter) || partyName(b.transporter) || null
+    return {
+      bidId: b.id,
+      transporterName,
+      bidAmount: money(b.bidAmount),
+      createdAt: b.createdAt,
+      isMine: transporterId ? b.transporterId === transporterId : false,
+      isWinner: b.status === 'ACCEPTED',
+    }
+  })
+  const myBid = transporterId ? bids.find((b) => b.isMine) || null : null
 
   return {
-    auctionId: auction.id,
+    id: auction.id,
+    auctionId: auction.auctionCode || null,
     productName: line?.product?.title || null,
     auctionStatus: auction.auctionStatus,
     isEnded: auction.auctionStatus !== 'PENDING_BIDS' || auction.expiresAt <= new Date(),
     canBid:
-      auction.auctionStatus === 'PENDING_BIDS' && auction.expiresAt > new Date(),
+      Boolean(transporterId) &&
+      auction.auctionStatus === 'PENDING_BIDS' &&
+      auction.expiresAt > new Date(),
     expiresAt: auction.expiresAt,
+    createdAt: auction.createdAt,
     quantity: quantityText(line),
     pickupLocation: shipment.pickupAddressText || pickLocations(order).pickupLocation,
     deliveryLocation:
@@ -409,7 +470,7 @@ class AuctionService {
 
     const existing = await prisma.shipmentAuction.findUnique({
       where: { shipmentId: shipment.id },
-      select: { id: true, auctionStatus: true, expiresAt: true },
+      select: { id: true, auctionStatus: true, expiresAt: true, auctionCode: true },
     })
 
     let auction
@@ -417,6 +478,7 @@ class AuctionService {
       auction = await prisma.shipmentAuction.create({
         data: {
           shipmentId: shipment.id,
+          auctionCode: await nextAuctionCode(),
           requiredVehicleType: body.requiredVehicleType,
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
@@ -435,12 +497,14 @@ class AuctionService {
       }
 
       await prisma.transporterBid.deleteMany({ where: { auctionId: existing.id } })
+      const code = existing.auctionCode || (await nextAuctionCode())
       auction = await prisma.shipmentAuction.update({
         where: { id: existing.id },
         data: {
           requiredVehicleType: body.requiredVehicleType,
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
+          auctionCode: code,
           createdAt: new Date(),
         },
       })
@@ -450,6 +514,7 @@ class AuctionService {
       status: 201,
       body: {
         id: auction.id,
+        auctionId: auction.auctionCode,
         message: 'Shipment auction created',
       },
     }
@@ -718,6 +783,63 @@ class AuctionService {
     }
   }
 
+  auctionBoardListInclude() {
+    return {
+      shipment: {
+        select: {
+          pickupAddressText: true,
+          deliveryAddressText: true,
+          distanceKm: true,
+          order: {
+            select: {
+              shippingFee: true,
+              shippingAddress: true,
+              project: { select: { projectName: true, location: true } },
+              orderLineItems: {
+                take: 1,
+                select: {
+                  quantity: true,
+                  product: {
+                    select: {
+                      title: true,
+                      unitOfMeasure: true,
+                      weightKg: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      bids: {
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          transporterId: true,
+          bidAmount: true,
+          createdAt: true,
+          status: true,
+          transporter: {
+            select: {
+              id: true,
+              name: true,
+              profile: { select: { companyName: true } },
+            },
+          },
+        },
+      },
+    }
+  }
+
+  async backfillMissingAuctionCodes(rows) {
+    for (const row of rows) {
+      if (!row.auctionCode) {
+        row.auctionCode = await ensureAuctionCode(row.id)
+      }
+    }
+  }
+
   async listForTransporter(auth, query) {
     const transporterId = assertRole(
       auth,
@@ -740,54 +862,20 @@ class AuctionService {
 
     const where = this.transporterAuctionBoardWhere(filter, now, lingerFrom)
     const orderBy = this.transporterAuctionBoardOrder(filter)
+    const include = this.auctionBoardListInclude()
 
     const [total, auctions] = await Promise.all([
       prisma.shipmentAuction.count({ where }),
       prisma.shipmentAuction.findMany({
         where,
-        include: {
-          shipment: {
-            select: {
-              pickupAddressText: true,
-              deliveryAddressText: true,
-              distanceKm: true,
-              order: {
-                select: {
-                  shippingFee: true,
-                  shippingAddress: true,
-                  project: { select: { projectName: true, location: true } },
-                  orderLineItems: {
-                    take: 1,
-                    select: {
-                      quantity: true,
-                      product: {
-                        select: {
-                          title: true,
-                          unitOfMeasure: true,
-                          weightKg: true,
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          bids: {
-            orderBy: { createdAt: 'desc' },
-            select: {
-              id: true,
-              transporterId: true,
-              bidAmount: true,
-              createdAt: true,
-            },
-          },
-        },
+        include,
         orderBy,
         skip,
         take,
       }),
     ])
+
+    await this.backfillMissingAuctionCodes(auctions)
 
     return {
       status: 200,
@@ -795,6 +883,55 @@ class AuctionService {
         auctions: auctions.map((row) =>
           mapTransporterAuctionCard(row, transporterId),
         ),
+        pagination: paginationMeta({ page, limit, total }),
+        filter,
+        message: 'Auctions fetched',
+      },
+    }
+  }
+
+  /** Admin Auction Board — same card shape as transporter, all auctions. */
+  async listForAdmin(auth, query) {
+    assertAdmin(auth)
+
+    const { page, limit, skip, take } = parsePagination(query, { defaultLimit: 20 })
+    const filter = this.normalizeTransporterAuctionFilter(query.filter)
+    const now = new Date()
+    const lingerMs = env.auctionEndedVisibleMinutes * 60 * 1000
+    const lingerFrom = new Date(now.getTime() - lingerMs)
+
+    const expiredOpen = await prisma.shipmentAuction.findMany({
+      where: { auctionStatus: 'PENDING_BIDS', expiresAt: { lte: now } },
+      select: { id: true },
+      take: 100,
+    })
+    await Promise.all(expiredOpen.map((r) => this.finalizeAuctionIfExpired(r.id)))
+
+    // Admin "all" = every auction (not only open + recent linger window)
+    const where =
+      filter === 'all'
+        ? {}
+        : this.transporterAuctionBoardWhere(filter, now, lingerFrom)
+    const orderBy = this.transporterAuctionBoardOrder(filter)
+    const include = this.auctionBoardListInclude()
+
+    const [total, auctions] = await Promise.all([
+      prisma.shipmentAuction.count({ where }),
+      prisma.shipmentAuction.findMany({
+        where,
+        include,
+        orderBy,
+        skip,
+        take,
+      }),
+    ])
+
+    await this.backfillMissingAuctionCodes(auctions)
+
+    return {
+      status: 200,
+      body: {
+        auctions: auctions.map((row) => mapTransporterAuctionCard(row, null)),
         pagination: paginationMeta({ page, limit, total }),
         filter,
         message: 'Auctions fetched',
@@ -1112,7 +1249,7 @@ class AuctionService {
 
     const existing = await prisma.shipmentAuction.findUnique({
       where: { shipmentId: shipment.id },
-      select: { id: true, auctionStatus: true, expiresAt: true },
+      select: { id: true, auctionStatus: true, expiresAt: true, auctionCode: true },
     })
 
     let auction
@@ -1120,6 +1257,7 @@ class AuctionService {
       auction = await prisma.shipmentAuction.create({
         data: {
           shipmentId: shipment.id,
+          auctionCode: await nextAuctionCode(),
           requiredVehicleType: body.requiredVehicleType,
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
@@ -1139,6 +1277,7 @@ class AuctionService {
       }
 
       await prisma.transporterBid.deleteMany({ where: { auctionId: existing.id } })
+      const code = existing.auctionCode || (await nextAuctionCode())
       auction = await prisma.shipmentAuction.update({
         where: { id: existing.id },
         data: {
@@ -1147,6 +1286,7 @@ class AuctionService {
           auctionStatus: 'PENDING_BIDS',
           isFactoryOrder: true,
           bidStartPrice,
+          auctionCode: code,
           createdAt: new Date(),
         },
       })
@@ -1156,6 +1296,7 @@ class AuctionService {
       status: 201,
       body: {
         id: auction.id,
+        auctionId: auction.auctionCode,
         message: 'Factory shipment auction created',
         distanceKm,
         bidStartPrice,

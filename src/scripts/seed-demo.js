@@ -18,7 +18,7 @@ import 'dotenv/config'
 import crypto from 'node:crypto'
 import { auth } from '../auth/auth.js'
 import prisma from '../../lib/prisma.js'
-import { invoiceNumber } from '../shared/numbering.js'
+import { invoiceNumber, formatAuctionCode } from '../shared/numbering.js'
 
 const PASSWORD = 'Password123!'
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@construpreco.local')
@@ -1019,6 +1019,7 @@ async function main() {
     },
   })
 
+  let auctionSeq = 0
   async function ensureAuction({
     order,
     pickup,
@@ -1049,10 +1050,18 @@ async function main() {
       },
     })
     const expiresAt = new Date(Date.now() + expiresInMin * 60 * 1000)
+    const existingAuction = await prisma.shipmentAuction.findUnique({
+      where: { shipmentId: shipment.id },
+      select: { id: true, auctionCode: true },
+    })
+    auctionSeq += 1
+    const auctionCode =
+      existingAuction?.auctionCode || formatAuctionCode(auctionSeq)
     const auction = await prisma.shipmentAuction.upsert({
       where: { shipmentId: shipment.id },
       create: {
         shipmentId: shipment.id,
+        auctionCode,
         requiredVehicleType,
         auctionStatus: status,
         isFactoryOrder,
@@ -1065,6 +1074,7 @@ async function main() {
         bidStartPrice,
         expiresAt,
         requiredVehicleType,
+        auctionCode,
       },
     })
     await prisma.transporterBid.deleteMany({ where: { auctionId: auction.id } })

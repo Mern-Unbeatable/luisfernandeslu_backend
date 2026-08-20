@@ -37,3 +37,15 @@ export function invoiceNumber(orderNo, { prefix = 'INV', audience } = {}) {
   if (audience) parts.push(audience === 'CUSTOMER' ? 'C' : 'S')
   return parts.join('-')
 }
+
+/** Display auction id — AUC-001, AUC-002, … */
+export function formatAuctionCode(seq) {
+  const n = Math.max(1, Number(seq) || 1)
+  return `AUC-${String(n).padStart(3, '0')}`
+}
+
+export function parseAuctionCodeSeq(code) {
+  const digits = String(code || '').replace(/\D/g, '')
+  return digits ? Number(digits) : 0
+}
+

@@ -1090,6 +1090,7 @@ model Shipment {
 model ShipmentAuction {
   id                  String           @id @default(uuid())
   shipmentId          String           @unique
+  auctionCode         String?          @unique
   requiredVehicleType VehicleType
   auctionStatus       AuctionStatus    @default(PENDING_BIDS)
   isFactoryOrder      Boolean          @default(false)
