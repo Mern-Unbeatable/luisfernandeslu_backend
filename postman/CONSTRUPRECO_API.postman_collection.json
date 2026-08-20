@@ -8080,6 +8080,126 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Order Management",
+              "item": [
+                {
+                  "name": "List Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.orders?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"orderId\", row.id);",
+                          "if (row?.orderId) pm.collectionVariables.set(\"orderNumber\", row.orderId);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/orders?tab=supplier&customerType=all&status=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "orders"],
+                      "query": [
+                        { "key": "tab", "value": "supplier", "description": "supplier | factory" },
+                        { "key": "customerType", "value": "all", "description": "supplier tab only: all | customer | company (ignored for factory)" },
+                        { "key": "status", "value": "all", "description": "supplier: new|pending|processing|assigned|completed|cancel — factory: in_production|produced|ready|assigned|completed|cancel" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    },
+                    "description": "Supplier tab: customer/company orders + customerType filter.\nFactory tab: no customerType. Statuses: In Production → Produced → Ready → Assigned → Completed (or Cancel by Admin)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Factory Orders",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/orders?tab=factory&status=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "orders"],
+                      "query": [
+                        { "key": "tab", "value": "factory" },
+                        { "key": "status", "value": "all", "description": "all | in_production | produced | ready | assigned | completed | cancel" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "orders", "{{orderId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Order Status",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"processing\",\n  \"_comment_supplier\": \"new | pending | processing | assigned | completed | cancel\",\n  \"_comment_factory\": \"in_production | produced | ready | assigned | completed | cancel\",\n  \"_comment_cancel\": \"{ \\\"status\\\": \\\"cancel\\\", \\\"reason\\\": \\\"optional note\\\" } → status shows Cancel by Admin\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "orders", "{{orderId}}", "status"]
+                    },
+                    "description": "Single API for all status changes (supplier or factory order detected automatically).\n\nSupplier: new | pending | processing | assigned | completed | cancel\nFactory: in_production | produced | ready | assigned | completed | cancel\n\nAdmin cancel → status label \"Cancel by Admin\".\n_comment_* fields are ignored."
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         }
