@@ -174,6 +174,34 @@ test('factory mapper: approved listing is active with no inventory', () => {
   assert.equal(mapped.priceLabel, '$12.00 Per bag')
 })
 
+test('factory mapper: list includes description', () => {
+  const mapped = mapFactoryProduct(
+    {
+      id: 'p1',
+      sku: 'SKU-1',
+      title: 'Cement',
+      warehouseLocation: 'Porto',
+      factoryName: 'Factory',
+      basePrice: 12,
+      weightKg: 0,
+      longDescription: 'Portland cement 42.5R',
+      shortDescription: 'Extra info',
+      specifications: 'Spec sheet',
+      approvalStatus: 'APPROVED',
+      media: [],
+      features: [{ featureText: 'Fast setting' }],
+      category: null,
+    },
+    'http://localhost:8080',
+    { list: true },
+  )
+  assert.equal(mapped.description, 'Portland cement 42.5R')
+  assert.equal(mapped.additionalInfo, undefined)
+  assert.equal(mapped.specifications, undefined)
+  assert.equal(mapped.features, undefined)
+  assert.equal(mapped.gallery, undefined)
+})
+
 test('marketplace list hides b2b from guests and shows it to companies', () => {
   const product = {
     id: 'p1',

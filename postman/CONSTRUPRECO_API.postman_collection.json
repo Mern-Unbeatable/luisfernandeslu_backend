@@ -7009,6 +7009,253 @@
               ]
             },
             {
+              "name": "Supplier Management",
+              "item": [
+                {
+                  "name": "Get Supplier Management Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "stats"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Suppliers (single API with tab)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.suppliers?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"supplierId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers?tab=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers"],
+                      "query": [
+                        { "key": "tab", "value": "all" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Supplier Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Approve Pending Supplier",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/approve",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "approve"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reject Pending Supplier",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"Documents are unclear\",\n  \"invalidDocuments\": [\"companyCertificateUrl\", \"idDocumentUrl\"]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/reject",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "reject"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Suspend Supplier",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"suspended\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Renew Supplier",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"active\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Supplier Commission",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"commissionPercent\": 20\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/commission",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "commission"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Suspended Supplier",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Open Live Chat Thread With Supplier",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/live-thread",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "live-thread"]
+                    },
+                    "description": "Use returned thread.id in socket events: chat:join + chat:message"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "List Pending Products",
               "request": {
                 "method": "GET",

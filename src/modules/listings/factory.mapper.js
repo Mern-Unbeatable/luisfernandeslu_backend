@@ -52,7 +52,6 @@ export function mapFactoryProduct(product, baseUrl, { list = false } = {}) {
 
   if (list) {
     const {
-      description,
       additionalInfo,
       specifications,
       features: _features,
