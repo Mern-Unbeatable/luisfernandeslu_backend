@@ -1,5 +1,4 @@
 import prisma from '../../../../../lib/prisma.js'
-import { openOrGetThread, mapThreadSummary } from '../../../chat/threads.js'
 import { formatAddressLine } from '../../../../shared/address.js'
 import { httpError } from '../../../../shared/errors.js'
 import { parsePagination, paginationMeta, searchFilter } from '../../../../shared/pagination.js'
@@ -60,7 +59,7 @@ function pendingFilter() {
       { status: 'PENDING_VERIFICATION' },
       {
         profile: {
-          is: { verificationStatus: { in: ['UNVERIFIED', 'PENDING_REVIEW', 'REJECTED'] } },
+          is: { verificationStatus: { in: ['UNVERIFIED', 'PENDING_REVIEW'] } },
         },
       },
     ],
@@ -200,7 +199,7 @@ class AdminSupplierService {
     await findSupplier(supplierId)
     const docs = (body.invalidDocuments || []).join(', ')
     const rejectionReason = docs ? `${body.reason} | Invalid documents: ${docs}` : body.reason
-    await prisma.user.update({ where: { id: supplierId }, data: { status: 'PENDING_VERIFICATION' } })
+    await prisma.user.update({ where: { id: supplierId }, data: { status: 'SUSPENDED' } })
     await prisma.businessProfile.updateMany({
       where: { userId: supplierId },
       data: { verificationStatus: 'REJECTED', rejectionReason },
@@ -252,14 +251,6 @@ class AdminSupplierService {
       throw err
     }
     return { status: 200, body: { id: supplierId, message: 'Supplier deleted' } }
-  }
-
-  async liveThread(auth, supplierId) {
-    const admin = assertAdmin(auth)
-    await findSupplier(supplierId)
-    const user = { id: admin.id, role: 'admin', name: admin.name || 'Admin' }
-    const thread = await openOrGetThread(user, { type: 'ADMIN_SUPPORT', peerUserId: supplierId })
-    return { status: 200, body: { thread: mapThreadSummary(thread), message: 'Live chat thread ready' } }
   }
 }
 

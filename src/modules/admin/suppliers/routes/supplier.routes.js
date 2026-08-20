@@ -71,12 +71,6 @@ class AdminSupplierRoutes {
       validate(adminSupplierIdParamSchema, 'params'),
       (req, res, next) => adminSupplierController.remove(req, res, next),
     )
-
-    this.router.post(
-      '/:id/live-thread',
-      validate(adminSupplierIdParamSchema, 'params'),
-      (req, res, next) => adminSupplierController.liveThread(req, res, next),
-    )
   }
 
   getRoutes() {

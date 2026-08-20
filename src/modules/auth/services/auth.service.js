@@ -100,6 +100,35 @@ const userPublicSelect = {
   emailVerified: true,
 }
 
+function emailAlreadyRegistered() {
+  return httpError(
+    'An account with this email already exists',
+    409,
+    'EmailExists',
+  )
+}
+
+/**
+ * Better Auth with autoSignIn:false returns a synthetic user (fake id) when
+ * the email already exists, instead of throwing. Confirm the row is real.
+ */
+async function resolveCreatedUser(email, returnedUser) {
+  const dbUser = await prisma.user.findUnique({
+    where: { email: String(email).trim().toLowerCase() },
+    select: userPublicSelect,
+  })
+
+  if (!dbUser) {
+    throw httpError('User was not created', 500, 'SignupFailed')
+  }
+
+  if (returnedUser?.id && returnedUser.id !== dbUser.id) {
+    throw emailAlreadyRegistered()
+  }
+
+  return dbUser
+}
+
 export class AuthService {
   /**
    * Role-based signup via Better Auth + BusinessProfile.
@@ -115,13 +144,20 @@ export class AuthService {
     const nodeHeaders = fromNodeHeaders(headers)
     const publicBase =
       baseUrl || env.apiUrl
+    const email = String(body.email).trim().toLowerCase()
+
+    const already = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    })
+    if (already) throw emailAlreadyRegistered()
 
     let signup
     try {
       // OTP path: skip returnHeaders (no session cookies to forward)
       signup = await auth.api.signUpEmail({
         body: {
-          email: body.email,
+          email,
           password: body.password,
           name,
           role,
@@ -132,6 +168,10 @@ export class AuthService {
       })
     } catch (err) {
       if (err instanceof APIError) {
+        const duplicate =
+          err.statusCode === 422 ||
+          /already exists|duplicate/i.test(String(err.message || ''))
+        if (duplicate) throw emailAlreadyRegistered()
         throw httpError(
           err.message || 'Signup failed',
           err.statusCode || 400,
@@ -142,12 +182,9 @@ export class AuthService {
     }
 
     const payload = signup?.response ?? signup
-    const user = payload?.user ?? payload
-    const userId = user?.id
-
-    if (!userId) {
-      throw httpError('User was not created', 500, 'SignupFailed')
-    }
+    const returnedUser = payload?.user ?? payload
+    const user = await resolveCreatedUser(email, returnedUser)
+    const userId = user.id
 
     const status = defaultStatusForRole(roleParam)
     const emailVerified = needsOtp ? false : true
@@ -209,11 +246,16 @@ export class AuthService {
 
     if (createProfile) {
       parallel.push(
-        prisma.businessProfile.upsert({
-          where: { userId },
-          create: { userId, ...profileData },
-          update: profileData,
-        }),
+        prisma.businessProfile
+          .upsert({
+            where: { userId },
+            create: { userId, ...profileData },
+            update: profileData,
+          })
+          .catch((err) => {
+            if (err?.code === 'P2003') throw emailAlreadyRegistered()
+            throw err
+          }),
       )
     }
 

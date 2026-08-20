@@ -83,17 +83,6 @@ class AdminSupplierController {
       next(err)
     }
   }
-
-  async liveThread(req, res, next) {
-    try {
-      return sendServiceResult(
-        res,
-        await adminSupplierService.liveThread(req.auth, req.params.id),
-      )
-    } catch (err) {
-      next(err)
-    }
-  }
 }
 
 export default new AdminSupplierController()

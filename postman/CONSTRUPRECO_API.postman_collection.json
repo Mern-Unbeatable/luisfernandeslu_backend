@@ -7232,26 +7232,6 @@
                     }
                   },
                   "response": []
-                },
-                {
-                  "name": "Open Live Chat Thread With Supplier",
-                  "request": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/live-thread",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "live-thread"]
-                    },
-                    "description": "Use returned thread.id in socket events: chat:join + chat:message"
-                  },
-                  "response": []
                 }
               ]
             },
