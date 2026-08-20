@@ -4,7 +4,7 @@ import { httpError } from '../../../shared/errors.js'
 import { formatAddressLine } from '../../../shared/address.js'
 import { calculateDistance, resolveCoordinates } from '../../../shared/distance.js'
 import { money } from '../../../shared/money.js'
-import { formatAuctionCode, parseAuctionCodeSeq } from '../../../shared/numbering.js'
+import { formatAuctionCode } from '../../../shared/numbering.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import { companyDisplayName, partyName } from '../../../shared/party.js'
 
@@ -25,21 +25,12 @@ function assertAdmin(auth) {
 }
 
 async function nextAuctionCode(db = prisma) {
-  const last = await db.shipmentAuction.findFirst({
-    where: { auctionCode: { not: null } },
-    orderBy: { createdAt: 'desc' },
-    select: { auctionCode: true },
-  })
-  // Prefer max numeric seq among recent codes (pad-3 lexicographic fails after 999)
-  const rows = await db.shipmentAuction.findMany({
-    where: { auctionCode: { not: null } },
-    select: { auctionCode: true },
-    take: 5000,
-  })
-  let max = parseAuctionCodeSeq(last?.auctionCode)
-  for (const row of rows) {
-    max = Math.max(max, parseAuctionCodeSeq(row.auctionCode))
-  }
+  const rows = await db.$queryRaw`
+    SELECT COALESCE(MAX(CAST(NULLIF(regexp_replace("auctionCode", '\\D', '', 'g'), '') AS INTEGER)), 0) AS max
+    FROM "ShipmentAuction"
+    WHERE "auctionCode" IS NOT NULL
+  `
+  const max = Number(rows?.[0]?.max || 0)
   return formatAuctionCode(max + 1)
 }
 
@@ -239,7 +230,6 @@ function mapTransporterAuctionCard(auction, transporterId = null) {
       isWinner: b.status === 'ACCEPTED',
     }
   })
-  const myBid = transporterId ? bids.find((b) => b.isMine) || null : null
 
   return {
     id: auction.id,
@@ -261,7 +251,6 @@ function mapTransporterAuctionCard(auction, transporterId = null) {
     bidStartFrom: auction.bidStartPrice ? money(auction.bidStartPrice) : money(order.shippingFee),
     isFactoryOrder: auction.isFactoryOrder || false,
     bids,
-    myBid,
   }
 }
 
@@ -793,8 +782,6 @@ class AuctionService {
           order: {
             select: {
               shippingFee: true,
-              shippingAddress: true,
-              project: { select: { projectName: true, location: true } },
               orderLineItems: {
                 take: 1,
                 select: {
@@ -814,6 +801,7 @@ class AuctionService {
       },
       bids: {
         orderBy: { createdAt: 'desc' },
+        take: 50,
         select: {
           id: true,
           transporterId: true,
@@ -833,10 +821,35 @@ class AuctionService {
   }
 
   async backfillMissingAuctionCodes(rows) {
-    for (const row of rows) {
-      if (!row.auctionCode) {
+    const missing = rows.filter((r) => !r.auctionCode)
+    if (!missing.length) return
+    await Promise.all(
+      missing.map(async (row) => {
         row.auctionCode = await ensureAuctionCode(row.id)
-      }
+      }),
+    )
+  }
+
+  /** Non-blocking expire sweep — list endpoints must stay fast on remote DB. */
+  scheduleExpireSweep() {
+    if (this._expireSweepRunning) return
+    this._expireSweepRunning = true
+    this.finalizeExpiredBatch()
+      .catch(() => {})
+      .finally(() => {
+        this._expireSweepRunning = false
+      })
+  }
+
+  async finalizeExpiredBatch() {
+    const now = new Date()
+    const expiredOpen = await prisma.shipmentAuction.findMany({
+      where: { auctionStatus: 'PENDING_BIDS', expiresAt: { lte: now } },
+      select: { id: true },
+      take: 20,
+    })
+    for (const row of expiredOpen) {
+      await this.finalizeAuctionIfExpired(row.id)
     }
   }
 
@@ -853,12 +866,7 @@ class AuctionService {
     const lingerMs = env.auctionEndedVisibleMinutes * 60 * 1000
     const lingerFrom = new Date(now.getTime() - lingerMs)
 
-    const expiredOpen = await prisma.shipmentAuction.findMany({
-      where: { auctionStatus: 'PENDING_BIDS', expiresAt: { lte: now } },
-      select: { id: true },
-      take: 100,
-    })
-    await Promise.all(expiredOpen.map((r) => this.finalizeAuctionIfExpired(r.id)))
+    this.scheduleExpireSweep()
 
     const where = this.transporterAuctionBoardWhere(filter, now, lingerFrom)
     const orderBy = this.transporterAuctionBoardOrder(filter)
@@ -900,12 +908,7 @@ class AuctionService {
     const lingerMs = env.auctionEndedVisibleMinutes * 60 * 1000
     const lingerFrom = new Date(now.getTime() - lingerMs)
 
-    const expiredOpen = await prisma.shipmentAuction.findMany({
-      where: { auctionStatus: 'PENDING_BIDS', expiresAt: { lte: now } },
-      select: { id: true },
-      take: 100,
-    })
-    await Promise.all(expiredOpen.map((r) => this.finalizeAuctionIfExpired(r.id)))
+    this.scheduleExpireSweep()
 
     // Admin "all" = every auction (not only open + recent linger window)
     const where =
@@ -1091,25 +1094,23 @@ class AuctionService {
       )
     }
 
-    const bid = await prisma.transporterBid.upsert({
-      where: { auctionId_transporterId: { auctionId, transporterId } },
-      update: {
-        bidAmount: Number(body.bidAmount),
-        status: 'SUBMITTED',
-      },
-      create: {
+    const bid = await prisma.transporterBid.create({
+      data: {
         auctionId,
         transporterId,
         bidAmount: Number(body.bidAmount),
         estimatedDeliveryTime: '',
+        status: 'SUBMITTED',
       },
-      select: { id: true },
+      select: { id: true, bidAmount: true, createdAt: true },
     })
 
     return {
       status: 201,
       body: {
         id: bid.id,
+        bidAmount: money(bid.bidAmount),
+        createdAt: bid.createdAt,
         message: 'Bid submitted',
       },
     }

@@ -1115,7 +1115,8 @@ model TransporterBid {
   auction               ShipmentAuction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
   transporter           User            @relation(fields: [transporterId], references: [id], onDelete: Cascade)
 
-  @@unique([auctionId, transporterId])
+  @@index([auctionId, transporterId])
+  @@index([auctionId, createdAt])
 }
 
 model TrackingEvent {
