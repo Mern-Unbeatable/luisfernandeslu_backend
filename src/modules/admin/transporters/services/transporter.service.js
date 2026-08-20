@@ -12,7 +12,7 @@ function assertAdmin(auth) {
   return auth
 }
 
-function normalizeTab(raw) {
+function normalizeStatus(raw) {
   const s = String(raw || 'all').trim().toLowerCase()
   if (s === 'pending') return 'pending'
   if (s === 'suspended') return 'suspended'
@@ -135,12 +135,12 @@ class AdminTransporterService {
 
   async list(auth, query) {
     assertAdmin(auth)
-    const tab = normalizeTab(query.tab)
+    const status = normalizeStatus(query.status)
     const { page, limit, skip, take } = parsePagination(query, { defaultLimit: 20, maxLimit: 100 })
 
     const and = [{ role: 'TRANSPORTER' }]
-    if (tab === 'pending') and.push(pendingFilter())
-    if (tab === 'suspended') and.push(suspendedFilter())
+    if (status === 'pending') and.push(pendingFilter())
+    if (status === 'suspended') and.push(suspendedFilter())
     const searchOr = searchFilter(query.search, ['name', 'email', 'phoneNumber'])
     if (searchOr?.length) and.push({ OR: searchOr })
     const where = { AND: and }
@@ -169,7 +169,7 @@ class AdminTransporterService {
       body: {
         transporters: rows.map(mapListRow),
         pagination: paginationMeta({ page, limit, total }),
-        filters: { tab, search: query.search || null },
+        filters: { status, search: query.search || null },
         message: 'Transporters fetched',
       },
     }

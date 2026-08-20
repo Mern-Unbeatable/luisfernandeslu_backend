@@ -7031,7 +7031,7 @@
                   "response": []
                 },
                 {
-                  "name": "List Suppliers (single API with tab)",
+                  "name": "List Suppliers (single API with status)",
                   "event": [
                     {
                       "listen": "test",
@@ -7055,11 +7055,11 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/api/admin/suppliers?tab=all&search=&page=1&limit=20",
+                      "raw": "{{baseUrl}}/api/admin/suppliers?status=all&search=&page=1&limit=20",
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "admin", "suppliers"],
                       "query": [
-                        { "key": "tab", "value": "all" },
+                        { "key": "status", "value": "all" },
                         { "key": "search", "value": "" },
                         { "key": "page", "value": "1" },
                         { "key": "limit", "value": "20" }
@@ -7258,7 +7258,7 @@
                   "response": []
                 },
                 {
-                  "name": "List Factories (single API with tab)",
+                  "name": "List Factories (single API with status)",
                   "event": [
                     {
                       "listen": "test",
@@ -7282,11 +7282,11 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/api/admin/factories?tab=all&search=&page=1&limit=20",
+                      "raw": "{{baseUrl}}/api/admin/factories?status=all&search=&page=1&limit=20",
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "admin", "factories"],
                       "query": [
-                        { "key": "tab", "value": "all" },
+                        { "key": "status", "value": "all" },
                         { "key": "search", "value": "" },
                         { "key": "page", "value": "1" },
                         { "key": "limit", "value": "20" }
@@ -7485,7 +7485,7 @@
                   "response": []
                 },
                 {
-                  "name": "List Transporters (single API with tab)",
+                  "name": "List Transporters (single API with status)",
                   "event": [
                     {
                       "listen": "test",
@@ -7509,11 +7509,11 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/api/admin/transporters?tab=all&search=&page=1&limit=20",
+                      "raw": "{{baseUrl}}/api/admin/transporters?status=all&search=&page=1&limit=20",
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "admin", "transporters"],
                       "query": [
-                        { "key": "tab", "value": "all" },
+                        { "key": "status", "value": "all" },
                         { "key": "search", "value": "" },
                         { "key": "page", "value": "1" },
                         { "key": "limit", "value": "20" }
@@ -7690,97 +7690,124 @@
               ]
             },
             {
-              "name": "List Pending Products",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/admin/products?status=PENDING_REVIEW",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "products"
-                  ],
-                  "query": [
+              "name": "Product Moderation",
+              "item": [
+                {
+                  "name": "List Products (cards)",
+                  "event": [
                     {
-                      "key": "status",
-                      "value": "PENDING_REVIEW"
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.products?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"productId\", row.id);"
+                        ]
+                      }
                     }
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Approve Product",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/admin/products/{{productId}}/approve",
-                  "host": [
-                    "{{baseUrl}}"
                   ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "products",
-                    "{{productId}}",
-                    "approve"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Reject Product",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products?status=PENDING_REVIEW&categoryId=&search=&page=1&limit=12",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "products"],
+                      "query": [
+                        { "key": "status", "value": "PENDING_REVIEW" },
+                        { "key": "categoryId", "value": "", "description": "Optional root/sub/product-type UUID" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "12" }
+                      ]
+                    },
+                    "description": "Card grid only: status, image, name, description, basePrice, unitOfMeasure, weightKg. Filter by status + categoryId/category."
                   },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"reason\": \"Images are unclear. Please upload better photos.\"\n}"
+                  "response": []
                 },
-                "url": {
-                  "raw": "{{baseUrl}}/api/admin/products/{{productId}}/reject",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "products",
-                    "{{productId}}",
-                    "reject"
-                  ]
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "products", "{{productId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Approve Product",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"approved\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "products", "{{productId}}"]
+                    },
+                    "description": "Same PATCH endpoint as reject — only body.status changes."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reject Product",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"rejected\",\n  \"reason\": \"Images are unclear. Please upload better photos.\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "products", "{{productId}}"]
+                    },
+                    "description": "Same PATCH endpoint as approve — body.status=rejected + reason required."
+                  },
+                  "response": []
                 }
-              },
-              "response": []
+              ]
             },
             {
               "name": "List Promotion Plans",

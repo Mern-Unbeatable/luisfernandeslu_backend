@@ -5,7 +5,7 @@ export const adminSupplierIdParamSchema = z.object({
 })
 
 export const listAdminSuppliersQuerySchema = z.object({
-  tab: z
+  status: z
     .enum(['all', 'pending', 'suspended', 'ALL', 'PENDING', 'SUSPENDED'])
     .optional()
     .default('all'),

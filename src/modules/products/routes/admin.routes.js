@@ -2,7 +2,7 @@ import { Router } from 'express'
 import productController from '../controllers/product.controller.js'
 import {
   adminListProductsQuerySchema,
-  adminRejectBodySchema,
+  adminModerateProductBodySchema,
 } from '../validations/product-list.validation.js'
 import { productIdParamSchema } from '../validations/product.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
@@ -27,17 +27,17 @@ class ProductAdminRoutes {
       (req, res, next) => productController.adminList(req, res, next),
     )
 
-    this.router.post(
-      '/products/:id/approve',
+    this.router.get(
+      '/products/:id',
       validate(productIdParamSchema, 'params'),
-      (req, res, next) => productController.approveListing(req, res, next),
+      (req, res, next) => productController.adminGetById(req, res, next),
     )
 
-    this.router.post(
-      '/products/:id/reject',
+    this.router.patch(
+      '/products/:id',
       validate(productIdParamSchema, 'params'),
-      validate(adminRejectBodySchema, 'body'),
-      (req, res, next) => productController.rejectListing(req, res, next),
+      validate(adminModerateProductBodySchema, 'body'),
+      (req, res, next) => productController.adminModerate(req, res, next),
     )
   }
 

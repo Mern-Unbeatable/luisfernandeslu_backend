@@ -28,6 +28,7 @@ import {
   uniqueProductSlug,
   rethrowSkuConflict,
 } from '../../listings/write.js'
+import { mapProductMedia } from '../../listings/read.js'
 import { supplierProductInclude } from '../../listings/includes.js'
 import { mapSupplierProduct } from '../../listings/supplier.mapper.js'
 
@@ -36,6 +37,55 @@ const shortSelect = {
   sku: true,
   title: true,
   approvalStatus: true,
+}
+
+function moderationStatusLabel(approvalStatus) {
+  if (approvalStatus === 'PENDING_REVIEW') return 'Pending'
+  if (approvalStatus === 'APPROVED') return 'Approved'
+  if (approvalStatus === 'REJECTED') return 'Rejected'
+  if (approvalStatus === 'DRAFT') return 'Draft'
+  return approvalStatus
+}
+
+/** Product Moderation card fields only (Accept / Reject / Details grid). */
+function mapAdminProductCard(product, baseUrl) {
+  const { bannerImage, images } = mapProductMedia(product, baseUrl)
+  return {
+    id: product.id,
+    status: moderationStatusLabel(product.approvalStatus),
+    image: bannerImage?.url || images[0]?.url || null,
+    name: product.title,
+    description: product.shortDescription || null,
+    basePrice: product.basePrice,
+    unitOfMeasure: product.unitOfMeasure || 'bag',
+    weightKg: product.weightKg || 0,
+  }
+}
+
+async function resolveAdminCategoryFilter(query) {
+  let categoryId = query.categoryId || null
+  let categoryName = query.category?.trim() || null
+
+  if (!categoryId && categoryName) {
+    const cat = await prisma.category.findFirst({
+      where: { name: { equals: categoryName, mode: 'insensitive' } },
+      select: { id: true, name: true },
+    })
+    if (!cat) {
+      throw httpError(`Category not found: "${categoryName}"`, 404, 'CategoryNotFound')
+    }
+    categoryId = cat.id
+    categoryName = cat.name
+  } else if (categoryId) {
+    const cat = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true, name: true },
+    })
+    if (!cat) throw httpError('Category not found', 404, 'CategoryNotFound')
+    categoryName = cat.name
+  }
+
+  return { categoryId, categoryName }
 }
 
 function mapCsvRowToBody(row, pathIds) {
@@ -956,21 +1006,46 @@ export class ProductService {
     }
   }
 
-  /** Admin: list products for moderation */
+  /** Admin Product Moderation — single PATCH approve/reject via body.status */
+  async adminModerate(productId, body) {
+    const next = String(body.status || '').toLowerCase()
+    if (next === 'approved') return this.approveListing(productId)
+    return this.rejectListing(productId, body.reason)
+  }
+
+  /** Admin Product Moderation — card grid (slim payload + category filter). */
   async adminList(query, baseUrl) {
     const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const status = query.status || 'PENDING_REVIEW'
+    const search = query.search?.trim() || ''
+    const { categoryId, categoryName } = await resolveAdminCategoryFilter(query)
 
-    const where = {}
-    if (status !== 'all') where.approvalStatus = status
+    const and = []
+    if (status !== 'all') and.push({ approvalStatus: status })
+    if (categoryId) and.push({ OR: categoryFilter(categoryId) })
+    if (search) {
+      and.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+        ],
+      })
+    }
+    const where = and.length ? { AND: and } : {}
 
     const [total, rows] = await Promise.all([
       prisma.product.count({ where }),
       prisma.product.findMany({
         where,
-        include: {
-          ...supplierProductInclude,
-          seller: { select: { id: true, name: true, email: true } },
+        select: {
+          id: true,
+          title: true,
+          shortDescription: true,
+          basePrice: true,
+          unitOfMeasure: true,
+          weightKg: true,
+          approvalStatus: true,
+          media: { orderBy: { sortOrder: 'asc' } },
         },
         orderBy: { updatedAt: 'desc' },
         skip,
@@ -981,12 +1056,55 @@ export class ProductService {
     return {
       status: 200,
       body: {
-        products: rows.map((p) => ({
-          ...mapSupplierProduct(p, baseUrl),
-          seller: p.seller,
-        })),
+        products: rows.map((p) => mapAdminProductCard(p, baseUrl)),
         pagination: paginationMeta({ page, limit, total }),
+        filters: {
+          status,
+          categoryId: categoryId || null,
+          category: categoryName || null,
+          search: search || null,
+        },
         message: 'Admin products fetched',
+      },
+    }
+  }
+
+  /** Admin Product Moderation — full product details. */
+  async adminGetById(productId, baseUrl) {
+    const product = await prisma.product.findFirst({
+      where: { id: productId },
+      include: {
+        ...supplierProductInclude,
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            phoneNumber: true,
+          },
+        },
+        reviews: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          include: {
+            author: { select: { id: true, name: true } },
+          },
+        },
+      },
+    })
+
+    if (!product) throw httpError('Product not found', 404, 'NotFound')
+
+    return {
+      status: 200,
+      body: {
+        product: {
+          ...mapSupplierProduct(product, baseUrl),
+          status: moderationStatusLabel(product.approvalStatus),
+          seller: product.seller,
+        },
+        message: 'Product details fetched',
       },
     }
   }

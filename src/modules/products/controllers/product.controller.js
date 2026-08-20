@@ -160,22 +160,22 @@ export class ProductController {
     }
   }
 
-  async approveListing(req, res, next) {
+  async adminGetById(req, res, next) {
     try {
       return sendServiceResult(
         res,
-        await productService.approveListing(req.params.id),
+        await productService.adminGetById(req.params.id, resolveRequestBaseUrl(req)),
       )
     } catch (err) {
       next(err)
     }
   }
 
-  async rejectListing(req, res, next) {
+  async adminModerate(req, res, next) {
     try {
       return sendServiceResult(
         res,
-        await productService.rejectListing(req.params.id, req.body.reason),
+        await productService.adminModerate(req.params.id, req.body),
       )
     } catch (err) {
       next(err)

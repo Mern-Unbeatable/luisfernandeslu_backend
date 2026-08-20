@@ -5,7 +5,7 @@ export const adminTransporterIdParamSchema = z.object({
 })
 
 export const listAdminTransportersQuerySchema = z.object({
-  tab: z
+  status: z
     .enum(['all', 'pending', 'suspended', 'ALL', 'PENDING', 'SUSPENDED'])
     .optional()
     .default('all'),
