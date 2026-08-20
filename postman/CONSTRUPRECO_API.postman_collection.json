@@ -8200,6 +8200,74 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Delivery & Logistics",
+              "item": [
+                {
+                  "name": "List Logistics",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.deliveries?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"logisticsId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/logistics?status=all&search=&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "logistics"],
+                      "query": [
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all | assigned | picked_up | in_transit | delivered"
+                        },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    },
+                    "description": "All assigned deliveries. Card: productName, auctionId, price, distanceKm, status, steps, pickup/delivery."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Logistics Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/logistics/{{logisticsId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "logistics", "{{logisticsId}}"]
+                    },
+                    "description": "Details: summary, customer, transporter, shipping, product, steps."
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         }

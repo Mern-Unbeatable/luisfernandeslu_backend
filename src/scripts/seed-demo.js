@@ -172,6 +172,7 @@ async function ensureProduct(data) {
         basePrice: data.basePrice,
         b2bPrice: data.b2bPrice,
         minOrderQuantity: data.minOrderQuantity,
+        minB2bQuantity: data.minB2bQuantity,
         unitOfMeasure: data.unitOfMeasure,
         weightKg: data.weightKg,
         marketplaceTier: data.marketplaceTier,
@@ -423,16 +424,24 @@ async function main() {
     sku: 'CEM-DEMO-002',
     title: 'Masonry Mortar Mix',
     slug: 'masonry-mortar-mix-demo',
-    shortDescription: 'Ready mortar mix.',
-    longDescription: 'Pre-blended masonry mortar.',
-    specifications: '25kg bags',
+    shortDescription:
+      'Ready-to-use masonry mortar mix for bricklaying, blockwork, and general pointing.',
+    longDescription:
+      'Pre-blended masonry mortar designed for consistent strength and workability on site. Suitable for clay bricks, concrete blocks, and stonework. Mix with clean water only — no extra sand or cement required. Ideal for residential and light commercial projects in Portugal.',
+    specifications:
+      'Bag: 25kg | Type: General purpose masonry mortar | Class: M5 | EN 998-2 | Colour: Grey | Shelf life: 12 months dry storage | Coverage: ~0.5 m² per bag (10mm joint)',
+    factoryName: 'Cimento do Tejo',
     basePrice: 6.1,
+    b2bPrice: 5.2,
     minOrderQuantity: 20,
+    minB2bQuantity: 100,
     unitOfMeasure: 'bags',
     weightKg: 25,
     marketplaceTier: 'WHOLESALE',
     approvalStatus: 'PENDING_REVIEW',
     warehouseLocation: 'Rua de Campolide 88, Lisbon, Portugal',
+    averageRating: 4.4,
+    reviewCount: 2,
   })
   await ensureProduct({
     sellerId: supplier.id,
@@ -493,11 +502,20 @@ async function main() {
   await ensureMedia(supplierProduct.id, '/uploads/seed/cement-banner.jpg', [
     '/uploads/seed/cement-1.jpg',
   ])
-  await ensureMedia(supplierPending.id, '/uploads/seed/mortar-banner.jpg')
+  await ensureMedia(supplierPending.id, '/uploads/seed/mortar-banner.jpg', [
+    '/uploads/seed/cement-1.jpg',
+    '/uploads/seed/cement-banner.jpg',
+  ])
   await ensureMedia(factoryProduct.id, '/uploads/seed/factory-cement.jpg')
   await ensureFeatures(supplierProduct.id, [
     'High early strength',
     'Smooth workability',
+  ])
+  await ensureFeatures(supplierPending.id, [
+    'Pre-blended — consistent batch quality',
+    'Good adhesion on brick and block',
+    'Easy trowel workability',
+    'Suitable for indoor and outdoor masonry',
   ])
   await ensureFeatures(factoryProduct.id, ['Bulk pallets', 'Factory sealed'])
   await ensureInventory(supplierProduct.id, 480)
@@ -508,6 +526,14 @@ async function main() {
     data: [
       { productId: supplierProduct.id, minQuantity: 10, maxQuantity: 49, tierPrice: 8.5 },
       { productId: supplierProduct.id, minQuantity: 50, maxQuantity: null, tierPrice: 7.2 },
+    ],
+  })
+  await prisma.pricingTier.deleteMany({ where: { productId: supplierPending.id } })
+  await prisma.pricingTier.createMany({
+    data: [
+      { productId: supplierPending.id, minQuantity: 20, maxQuantity: 99, tierPrice: 6.1 },
+      { productId: supplierPending.id, minQuantity: 100, maxQuantity: 499, tierPrice: 5.5 },
+      { productId: supplierPending.id, minQuantity: 500, maxQuantity: null, tierPrice: 5.0 },
     ],
   })
 
@@ -1017,6 +1043,23 @@ async function main() {
       rating: 5,
       comment: 'Arrived on time, good quality.',
     },
+  })
+  await prisma.review.deleteMany({ where: { productId: supplierPending.id } })
+  await prisma.review.createMany({
+    data: [
+      {
+        authorId: customer.id,
+        productId: supplierPending.id,
+        rating: 5,
+        comment: 'Smooth mix and strong joints. Delivered on time.',
+      },
+      {
+        authorId: customer.id,
+        productId: supplierPending.id,
+        rating: 4,
+        comment: 'Good value for blockwork. Bags arrived sealed and dry.',
+      },
+    ],
   })
 
   let auctionSeq = 0
