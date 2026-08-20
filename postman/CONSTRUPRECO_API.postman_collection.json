@@ -2101,8 +2101,13 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/addresses",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "addresses"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "addresses"
+                  ]
                 }
               },
               "response": [],
@@ -2143,8 +2148,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/addresses",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "addresses"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "addresses"
+                  ]
                 }
               },
               "response": [],
@@ -2182,8 +2192,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "addresses", "{{addressId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
                 }
               },
               "response": []
@@ -2201,8 +2217,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/addresses/{{addressId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "addresses", "{{addressId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
                 }
               },
               "response": []
@@ -2234,8 +2256,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "checkout"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
                 },
                 "description": "Creates CheckoutSession + per-seller Orders, calls EuPago split-payments/multibanco. Returns entity/reference for payment."
               },
@@ -2277,8 +2304,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "checkout"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout"
+                  ]
                 },
                 "description": "Uses inline address for this order only (optional saveBillingAddress)."
               },
@@ -2297,8 +2329,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout/{{checkoutId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "checkout", "{{checkoutId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout",
+                    "{{checkoutId}}"
+                  ]
                 }
               },
               "response": []
@@ -2316,8 +2354,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout/{{checkoutId}}/pay",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "checkout", "{{checkoutId}}", "pay"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout",
+                    "{{checkoutId}}",
+                    "pay"
+                  ]
                 },
                 "description": "Returns only Order Confirmed page fields: page, orderNumber, date, email, itemCount, shippingAddress, shippingMethod, items[], subtotal, shipping, vat, total, currency, paymentMethod."
               },
@@ -2339,8 +2384,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout/webhook/eupago",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "checkout", "webhook", "eupago"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "checkout",
+                    "webhook",
+                    "eupago"
+                  ]
                 },
                 "description": "Public callback. Marks checkout PAID, orders PENDING, removes paid cart items. If EUPAGO_WEBHOOK_SECRET is set, pass secret in body/query."
               },
@@ -3528,8 +3580,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "customer-orders", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders",
+                        "stats"
+                      ]
                     },
                     "description": "Returns totalOrders, pending, processing, completed counts."
                   },
@@ -3561,11 +3620,23 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders?page=1&limit=10&status=all&search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "customer-orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "customer-orders"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        },
                         {
                           "key": "status",
                           "value": "all",
@@ -3594,7 +3665,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3619,7 +3692,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/invoice",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3653,7 +3728,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3686,7 +3763,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3719,7 +3798,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/customer-orders/{{supplierOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3750,8 +3831,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/stats?type=direct",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "company-orders", "stats"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "stats"
+                      ],
                       "query": [
                         {
                           "key": "type",
@@ -3776,9 +3864,21 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/stats?type=chat",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "company-orders", "stats"],
-                      "query": [{ "key": "type", "value": "chat" }]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "stats"
+                      ],
+                      "query": [
+                        {
+                          "key": "type",
+                          "value": "chat"
+                        }
+                      ]
                     }
                   },
                   "response": []
@@ -3796,8 +3896,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/companies",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "company-orders", "companies"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "companies"
+                      ]
                     }
                   },
                   "response": []
@@ -3828,13 +3935,32 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/direct?page=1&limit=10&status=all&search=&companyId=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "company-orders", "direct"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "direct"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" },
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
                         {
                           "key": "companyId",
                           "value": "",
@@ -3871,14 +3997,36 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/chat?page=1&limit=10&status=all&search=&companyId=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "company-orders", "chat"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "company-orders",
+                        "chat"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" },
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
-                        { "key": "companyId", "value": "" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "companyId",
+                          "value": ""
+                        }
                       ]
                     },
                     "description": "Returns installmentAmount + installmentNumber (current installment)."
@@ -3898,7 +4046,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3923,7 +4073,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/invoice",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3956,7 +4108,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -3989,7 +4143,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -4022,7 +4178,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/company-orders/{{supplierCompanyOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -4053,8 +4211,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "documents", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents",
+                        "stats"
+                      ]
                     }
                   },
                   "response": []
@@ -4072,8 +4237,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents/eligible-orders?search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "documents", "eligible-orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents",
+                        "eligible-orders"
+                      ],
                       "query": [
                         {
                           "key": "search",
@@ -4111,12 +4283,27 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents?page=1&limit=10&search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "documents"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" },
-                        { "key": "search", "value": "" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        }
                       ]
                     }
                   },
@@ -4155,8 +4342,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "documents"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "documents"
+                      ]
                     },
                     "description": "orderId can be UUID or orderNumber. Order must be DELIVERED or COMPLETED."
                   },
@@ -4175,7 +4368,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents/{{fiscalDocumentId}}",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -4199,7 +4394,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents/{{fiscalDocumentId}}/pdf",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -4225,7 +4422,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/documents/{{fiscalDocumentId}}/pdf?audience=CUSTOMER",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -4276,12 +4475,27 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/factory-products?page=1&limit=12&search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "factory-products"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "factory-products"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "12" },
-                        { "key": "search", "value": "" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
                         {
                           "key": "factoryId",
                           "value": "",
@@ -4305,7 +4519,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/factory-products/{{factoryProductId}}",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "supplier",
@@ -4329,8 +4545,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory-offers/{{factoryOfferId}}/pay",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory-offers", "{{factoryOfferId}}", "pay"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory-offers",
+                        "{{factoryOfferId}}",
+                        "pay"
+                      ]
                     },
                     "description": "Supplier demo-pays a factory offer card. No quote. Creates FACTORY_CONVERSION order. Login as Supplier."
                   },
@@ -4349,11 +4572,23 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory-offers/orders?page=1&limit=10",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory-offers", "orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory-offers",
+                        "orders"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        }
                       ]
                     },
                     "description": "Supplier view of factory offers they paid."
@@ -4373,7 +4608,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory-offers/threads/{{factoryThreadId}}/messages?limit=50",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "factory-offers",
@@ -4382,7 +4619,10 @@
                         "messages"
                       ],
                       "query": [
-                        { "key": "limit", "value": "50" },
+                        {
+                          "key": "limit",
+                          "value": "50"
+                        },
                         {
                           "key": "after",
                           "value": "",
@@ -4414,8 +4654,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/factory-orders/factories",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "factory-orders", "factories"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "factory-orders",
+                        "factories"
+                      ]
                     },
                     "description": "Dropdown: All Company / factory name."
                   },
@@ -4447,17 +4694,32 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/factory-orders?page=1&limit=10&status=all&search=&companyId=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "factory-orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "factory-orders"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        },
                         {
                           "key": "status",
                           "value": "all",
                           "description": "all|new|in_production|produced|ready|assigned|cancel|completed"
                         },
-                        { "key": "search", "value": "" },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
                         {
                           "key": "companyId",
                           "value": "",
@@ -4481,8 +4743,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/factory-orders/{{factoryOrderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "factory-orders", "{{factoryOrderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "factory-orders",
+                        "{{factoryOrderId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -4500,8 +4769,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/factory-orders/{{factoryOrderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "factory-orders", "{{factoryOrderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "factory-orders",
+                        "{{factoryOrderId}}"
+                      ]
                     },
                     "description": "Sets status to Cancelled. Blocked after Assigned / Completed."
                   },
@@ -5230,8 +5506,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/order/{{supplierCompanyOrderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "order", "{{supplierCompanyOrderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "order",
+                        "{{supplierCompanyOrderId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -5269,8 +5553,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions"
+                      ]
                     }
                   },
                   "response": []
@@ -5301,11 +5591,24 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/active?page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "active"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "active"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -5324,8 +5627,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/active/{{auctionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "active", "{{auctionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "active",
+                        "{{auctionId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -5343,11 +5654,24 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/assigned?page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "assigned"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "assigned"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -5366,8 +5690,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/assigned/{{auctionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "assigned", "{{auctionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "assigned",
+                        "{{auctionId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -5385,8 +5717,17 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/factory/{{auctionId}}/pay",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "factory", "{{auctionId}}", "pay"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "factory",
+                        "{{auctionId}}",
+                        "pay"
+                      ]
                     }
                   },
                   "response": []
@@ -5404,8 +5745,17 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/auctions/factory/{{auctionId}}/decline",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "auctions", "factory", "{{auctionId}}", "decline"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "auctions",
+                        "factory",
+                        "{{auctionId}}",
+                        "decline"
+                      ]
                     }
                   },
                   "response": []
@@ -5448,11 +5798,23 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/auctions?page=1&limit=20&filter=all",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "auctions"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "auctions"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
                         {
                           "key": "filter",
                           "value": "all",
@@ -5476,8 +5838,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/auctions/{{auctionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "auctions", "{{auctionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "auctions",
+                        "{{auctionId}}"
+                      ]
                     },
                     "description": "Assigned transporter only. Returns 403 NotAssigned while bidding is still open or if another transporter won."
                   },
@@ -5504,8 +5873,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/auctions/{{auctionId}}/bids",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "auctions", "{{auctionId}}", "bids"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "auctions",
+                        "{{auctionId}}",
+                        "bids"
+                      ]
                     }
                   },
                   "response": []
@@ -5528,12 +5905,27 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries?page=1&limit=20&status=all",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" },
-                        { "key": "status", "value": "all" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all"
+                        }
                       ]
                     }
                   },
@@ -5552,8 +5944,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries", "{{auctionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "{{auctionId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -5579,8 +5978,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "{{auctionId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -5606,8 +6013,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "{{auctionId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -5633,8 +6048,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "{{auctionId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -5660,8 +6083,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "{{auctionId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -5687,8 +6118,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/verify-otp",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "deliveries", "{{auctionId}}", "verify-otp"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "{{auctionId}}",
+                        "verify-otp"
+                      ]
                     }
                   },
                   "response": []
@@ -5739,8 +6178,13 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory-offers",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory-offers"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory-offers"
+                      ]
                     }
                   },
                   "response": []
@@ -5758,7 +6202,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory-offers/threads/{{factoryThreadId}}/messages?limit=50",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "api",
                         "factory-offers",
@@ -5767,7 +6213,10 @@
                         "messages"
                       ],
                       "query": [
-                        { "key": "limit", "value": "50" },
+                        {
+                          "key": "limit",
+                          "value": "50"
+                        },
                         {
                           "key": "after",
                           "value": "",
@@ -5793,11 +6242,23 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory-offers/orders?page=1&limit=10",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory-offers", "orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory-offers",
+                        "orders"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        }
                       ]
                     }
                   },
@@ -5822,8 +6283,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/orders/companies",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "orders", "companies"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "orders",
+                        "companies"
+                      ]
                     }
                   },
                   "response": []
@@ -5854,18 +6322,36 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/orders?page=1&limit=10&status=all&search=&companyId=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "orders"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "10" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        },
                         {
                           "key": "status",
                           "value": "all",
                           "description": "all|new|in_production|produced|ready|assigned|cancel|completed"
                         },
-                        { "key": "search", "value": "" },
-                        { "key": "companyId", "value": "" }
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "companyId",
+                          "value": ""
+                        }
                       ]
                     }
                   },
@@ -5884,8 +6370,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "orders", "{{factoryOrderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "orders",
+                        "{{factoryOrderId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -5911,8 +6404,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "orders",
+                        "{{factoryOrderId}}",
+                        "status"
+                      ]
                     },
                     "description": "NEW → In Production"
                   },
@@ -5939,8 +6440,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "orders",
+                        "{{factoryOrderId}}",
+                        "status"
+                      ]
                     },
                     "description": "In Production → Produced"
                   },
@@ -5967,8 +6476,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/orders/{{factoryOrderId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "orders", "{{factoryOrderId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "orders",
+                        "{{factoryOrderId}}",
+                        "status"
+                      ]
                     },
                     "description": "Produced → Ready. Then create a factory shipment auction."
                   },
@@ -5992,8 +6509,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/auctions/order/{{factoryOrderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "auctions", "order", "{{factoryOrderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "auctions",
+                        "order",
+                        "{{factoryOrderId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -6031,8 +6556,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/auctions",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "auctions"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "auctions"
+                      ]
                     }
                   },
                   "response": []
@@ -6063,11 +6594,24 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/auctions/active?page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "auctions", "active"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "auctions",
+                        "active"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -6086,8 +6630,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/auctions/active/{{auctionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "auctions", "active", "{{auctionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "auctions",
+                        "active",
+                        "{{auctionId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -6105,11 +6657,24 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/auctions/assigned?page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "auctions", "assigned"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "auctions",
+                        "assigned"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -6128,8 +6693,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/auctions/assigned/{{auctionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "auctions", "assigned", "{{auctionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "auctions",
+                        "assigned",
+                        "{{auctionId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -6779,6 +7352,411 @@
           ]
         },
         {
+          "name": "Affiliate",
+          "description": "Affiliate dashboard (page-wise). Login: affiliate@test.local / Password123!. Code: AFF-DEMO-1. Commission = tier% of admin merchandise share. Clients expire after 2 months.",
+          "item": [
+            {
+              "name": "Overview Dashboard",
+              "description": "Summary cards, tier progress, monthly earning analytics chart.",
+              "item": [
+                {
+                  "name": "Get Overview",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/overview?year=2026",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "overview"
+                      ],
+                      "query": [
+                        {
+                          "key": "year",
+                          "value": "2026"
+                        }
+                      ]
+                    },
+                    "description": "Stats: totalReferredClients, activeClients, pending/paid/total earnings + tier progress + Jan–Dec earningAnalytics."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Referral Channels",
+              "description": "Primary referral code + direct share link.",
+              "item": [
+                {
+                  "name": "Get Referral Channel",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/referral",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "referral"
+                      ]
+                    },
+                    "description": "referralCode + shareLink (PRIMARY CHANNEL / ACTIVE)."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Referred Clients",
+              "description": "Users who registered with affiliate code; active until +2 months.",
+              "item": [
+                {
+                  "name": "List Referred Clients",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/clients?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "clients"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    },
+                    "description": "name, registeredDate, revenue, commission, commissionExpiry, status active|expired."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Commissions",
+              "description": "Earnings & Payment page + withdraw funds modal.",
+              "item": [
+                {
+                  "name": "Get Earnings & Payments",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/earnings?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "earnings"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    },
+                    "description": "This month / available / pending / lifetime + payment history (withdrawals)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Request Withdrawal",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/withdrawals",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "withdrawals"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"amount\": 40,\n  \"businessName\": \"Pedro Affiliates\",\n  \"accountNumber\": \"PT50000600000000000000006\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "description": "Withdraw from available balance (IBAN / accountNumber)."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Affiliate Levels",
+              "description": "Tier cards + progress to next level.",
+              "item": [
+                {
+                  "name": "Get Affiliate Levels",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/levels",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "levels"
+                      ]
+                    },
+                    "description": "Current/next tier, activeClients, all tier cards with commission %."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Settings",
+              "description": "My Profile — account info, password, IBAN.",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/profile",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "profile"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Profile",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/profile",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "profile"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Pedro Affiliates\",\n  \"phoneNumber\": \"912000006\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "password"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"Password123!\",\n  \"confirmNewPassword\": \"Password123!\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get IBAN",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/iban",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "iban"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/affiliate/iban",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "affiliate",
+                        "iban"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"ibanNumber\": \"PT50000600000000000000006\",\n  \"linkedPhoneNumber\": \"912000006\",\n  \"businessName\": \"Pedro Affiliates\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "Customer",
           "description": "Buyer dashboard. Login as Customer or Company. deliveryOtp appears after transporter clicks Verify Delivery.",
           "item": [
@@ -6795,11 +7773,23 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/customer/orders?page=1&limit=20",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "customer", "orders"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "customer",
+                    "orders"
+                  ],
                   "query": [
-                    { "key": "page", "value": "1" },
-                    { "key": "limit", "value": "20" }
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
                   ]
                 }
               },
@@ -6817,9 +7807,16 @@
                   }
                 ],
                 "url": {
-                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "customer", "orders", "{{orderId}}"]
+                  "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "customer",
+                    "orders",
+                    "{{orderId}}"
+                  ]
                 }
               },
               "response": []
@@ -6845,8 +7842,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        "stats"
+                      ]
                     }
                   },
                   "response": []
@@ -6877,14 +7881,35 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users?type=customer&status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users"
+                      ],
                       "query": [
-                        { "key": "type", "value": "customer" },
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "type",
+                          "value": "customer"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -6903,13 +7928,31 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users?type=company&status=all&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users"
+                      ],
                       "query": [
-                        { "key": "type", "value": "company" },
-                        { "key": "status", "value": "all" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "type",
+                          "value": "company"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -6928,8 +7971,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users/{{userId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users", "{{userId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        "{{userId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -6955,8 +8005,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users/{{userId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users", "{{userId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        "{{userId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -6982,8 +8040,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users/{{userId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users", "{{userId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        "{{userId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7001,8 +8067,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/users/{{userId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "users", "{{userId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        "{{userId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7025,8 +8098,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "stats"
+                      ]
                     }
                   },
                   "response": []
@@ -7057,13 +8137,31 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers?status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -7082,8 +8180,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7101,8 +8206,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/approve",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "approve"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}",
+                        "approve"
+                      ]
                     }
                   },
                   "response": []
@@ -7128,8 +8241,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/reject",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "reject"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}",
+                        "reject"
+                      ]
                     }
                   },
                   "response": []
@@ -7155,8 +8276,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7182,8 +8311,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7209,8 +8346,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}/commission",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}", "commission"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}",
+                        "commission"
+                      ]
                     }
                   },
                   "response": []
@@ -7228,8 +8373,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/suppliers/{{supplierId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "suppliers", "{{supplierId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "suppliers",
+                        "{{supplierId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7252,8 +8404,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "stats"
+                      ]
                     }
                   },
                   "response": []
@@ -7284,13 +8443,31 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories?status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -7309,8 +8486,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7328,8 +8512,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/approve",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}", "approve"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}",
+                        "approve"
+                      ]
                     }
                   },
                   "response": []
@@ -7355,8 +8547,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/reject",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}", "reject"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}",
+                        "reject"
+                      ]
                     }
                   },
                   "response": []
@@ -7382,8 +8582,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7409,8 +8617,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7436,8 +8652,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}/commission",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}", "commission"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}",
+                        "commission"
+                      ]
                     }
                   },
                   "response": []
@@ -7455,8 +8679,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/factories/{{factoryId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "factories", "{{factoryId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "factories",
+                        "{{factoryId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7479,8 +8710,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "stats"
+                      ]
                     }
                   },
                   "response": []
@@ -7511,13 +8749,31 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters?status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -7536,8 +8792,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7555,8 +8818,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/approve",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}", "approve"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "approve"
+                      ]
                     }
                   },
                   "response": []
@@ -7582,8 +8853,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/reject",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}", "reject"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "reject"
+                      ]
                     }
                   },
                   "response": []
@@ -7609,8 +8888,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7636,8 +8923,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -7663,8 +8958,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/commission",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}", "commission"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "commission"
+                      ]
                     }
                   },
                   "response": []
@@ -7682,8 +8985,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "transporters", "{{transporterId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7719,14 +9029,36 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/products?status=PENDING_REVIEW&categoryId=&search=&page=1&limit=12",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "products"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "products"
+                      ],
                       "query": [
-                        { "key": "status", "value": "PENDING_REVIEW" },
-                        { "key": "categoryId", "value": "", "description": "Optional root/sub/product-type UUID" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "12" }
+                        {
+                          "key": "status",
+                          "value": "PENDING_REVIEW"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "",
+                          "description": "Optional root/sub/product-type UUID"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
                       ]
                     },
                     "description": "Card grid only: status, image, name, description, basePrice, unitOfMeasure, weightKg. Filter by status + categoryId/category."
@@ -7746,8 +9078,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "products", "{{productId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "products",
+                        "{{productId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7773,8 +9112,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "products", "{{productId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "products",
+                        "{{productId}}"
+                      ]
                     },
                     "description": "Same PATCH endpoint as reject — only body.status changes."
                   },
@@ -7801,8 +9147,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "products", "{{productId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "products",
+                        "{{productId}}"
+                      ]
                     },
                     "description": "Same PATCH endpoint as approve — body.status=rejected + reason required."
                   },
@@ -7958,17 +9311,32 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/promotions?status=pending&search=&page=1&limit=12",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "promotions"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "promotions"
+                      ],
                       "query": [
                         {
                           "key": "status",
                           "value": "pending",
                           "description": "pending | active | completed | rejected | all (unpaid never included)"
                         },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "12" }
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
                       ]
                     },
                     "description": "Card only: id, status, image, name, description, basePrice, unitOfMeasure, weightKg, boostTier, durationDays, currency. Unpaid never included."
@@ -7996,8 +9364,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "promotions", "{{promotionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "promotions",
+                        "{{promotionId}}"
+                      ]
                     },
                     "description": "Same PATCH as reject — body.status=approved. Becomes active until endDate."
                   },
@@ -8024,8 +9399,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/promotions/{{promotionId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "promotions", "{{promotionId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "promotions",
+                        "{{promotionId}}"
+                      ]
                     },
                     "description": "Same PATCH as approve — body.status=rejected."
                   },
@@ -8063,11 +9445,23 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/auctions?page=1&limit=20&filter=all",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "auctions"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "auctions"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
                         {
                           "key": "filter",
                           "value": "all",
@@ -8111,15 +9505,42 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/orders?tab=supplier&customerType=all&status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "orders"
+                      ],
                       "query": [
-                        { "key": "tab", "value": "supplier", "description": "supplier | factory" },
-                        { "key": "customerType", "value": "all", "description": "supplier tab only: all | customer | company (ignored for factory)" },
-                        { "key": "status", "value": "all", "description": "supplier: new|pending|processing|assigned|completed|cancel — factory: in_production|produced|ready|assigned|completed|cancel" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "tab",
+                          "value": "supplier",
+                          "description": "supplier | factory"
+                        },
+                        {
+                          "key": "customerType",
+                          "value": "all",
+                          "description": "supplier tab only: all | customer | company (ignored for factory)"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "supplier: new|pending|processing|assigned|completed|cancel — factory: in_production|produced|ready|assigned|completed|cancel"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     },
                     "description": "Supplier tab: customer/company orders + customerType filter.\nFactory tab: no customerType. Statuses: In Production → Produced → Ready → Assigned → Completed (or Cancel by Admin)."
@@ -8139,14 +9560,36 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/orders?tab=factory&status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "orders"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "orders"
+                      ],
                       "query": [
-                        { "key": "tab", "value": "factory" },
-                        { "key": "status", "value": "all", "description": "all | in_production | produced | ready | assigned | completed | cancel" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "tab",
+                          "value": "factory"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all | in_production | produced | ready | assigned | completed | cancel"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     }
                   },
@@ -8165,8 +9608,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "orders", "{{orderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "orders",
+                        "{{orderId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -8192,8 +9642,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "orders", "{{orderId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "orders",
+                        "{{orderId}}",
+                        "status"
+                      ]
                     },
                     "description": "Single API for all status changes (supplier or factory order detected automatically).\n\nSupplier: new | pending | processing | assigned | completed | cancel\nFactory: in_production | produced | ready | assigned | completed | cancel\n\nAdmin cancel → status label \"Cancel by Admin\".\n_comment_* fields are ignored."
                   },
@@ -8230,17 +9688,32 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/logistics?status=all&search=&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "logistics"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "logistics"
+                      ],
                       "query": [
                         {
                           "key": "status",
                           "value": "all",
                           "description": "all | assigned | picked_up | in_transit | delivered"
                         },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "20" }
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
                       ]
                     },
                     "description": "All assigned deliveries. Card: productName, auctionId, price, distanceKm, status, steps, pickup/delivery."
@@ -8260,10 +9733,153 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/logistics/{{logisticsId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "logistics", "{{logisticsId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "logistics",
+                        "{{logisticsId}}"
+                      ]
                     },
                     "description": "Details: summary, customer, transporter, shipping, product, steps."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Affiliate Tiers",
+              "description": "Admin manages affiliate commission tiers (min active referred clients → % of admin share).",
+              "item": [
+                {
+                  "name": "List Affiliate Tiers",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliate-tiers",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliate-tiers"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Affiliate Tier",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliate-tiers",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliate-tiers"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Growth Level\",\n  \"minActiveClients\": 10,\n  \"commissionPercent\": 7.5,\n  \"sortOrder\": 0\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Affiliate Tier",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliate-tiers/{{affiliateTierId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliate-tiers",
+                        "%7B%7BaffiliateTierId%7D%7D"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"commissionPercent\": 8,\n  \"isActive\": true\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Affiliate Tier",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliate-tiers/{{affiliateTierId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliate-tiers",
+                        "%7B%7BaffiliateTierId%7D%7D"
+                      ]
+                    }
                   },
                   "response": []
                 }

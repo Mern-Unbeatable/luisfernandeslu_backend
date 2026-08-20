@@ -141,6 +141,8 @@ export const customerRegisterSchema = withPasswordConfirm(
     fullName: z.string().trim().min(2, 'Full name is required'),
     email: emailField,
     password: passwordField,
+    referenceCode: optionalString,
+    affiliateCode: optionalString,
   }),
 )
 

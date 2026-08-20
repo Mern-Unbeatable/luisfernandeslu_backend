@@ -18,6 +18,11 @@ import otpService, { OTP_PURPOSE } from './otp.service.js'
 import { fromNodeHeaders } from 'better-auth/node'
 import { APIError } from 'better-auth/api'
 import { hashPassword } from 'better-auth/crypto'
+import {
+  generateReferralCode,
+  generateTrackingCode,
+  buildShareLink,
+} from '../../affiliates/helpers.js'
 
 function groupFiles(files = []) {
   const byField = {}
@@ -274,6 +279,40 @@ export class AuthService {
     // If profile upsert didn't run but we built data, still format from memory
     if (!profile && createProfile) {
       profile = { userId, ...profileData }
+    }
+
+    // Affiliate: allocate unique referral code + primary share link
+    if (roleParam === 'affiliate') {
+      let referralCode = null
+      for (let i = 0; i < 8; i += 1) {
+        const code = generateReferralCode()
+        try {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { referralCode: code },
+          })
+          referralCode = code
+          break
+        } catch (err) {
+          if (err?.code !== 'P2002') throw err
+        }
+      }
+      if (referralCode) {
+        const existingLink = await prisma.affiliateLink.findFirst({
+          where: { affiliateId: userId },
+          select: { id: true },
+        })
+        if (!existingLink) {
+          await prisma.affiliateLink.create({
+            data: {
+              affiliateId: userId,
+              campaignName: 'PRIMARY CHANNEL',
+              targetUrl: buildShareLink(referralCode),
+              trackingCode: generateTrackingCode(),
+            },
+          })
+        }
+      }
     }
 
     const profileResponse = formatProfileForResponse(

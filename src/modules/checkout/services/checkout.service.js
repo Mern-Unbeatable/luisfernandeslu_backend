@@ -8,6 +8,7 @@ import {
   getPaymentProvider,
   isMockPayments,
 } from '../../payments/eupago.client.js'
+import { recordAffiliateCommissionsForCheckout } from '../../affiliates/services/commission.service.js'
 import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
 import { mapAddress, formatAddressLine } from '../../../shared/address.js'
@@ -660,6 +661,8 @@ class CheckoutService {
           },
         })
       }
+
+      await recordAffiliateCommissionsForCheckout(session.id, tx)
     })
 
     return { alreadyPaid: false }

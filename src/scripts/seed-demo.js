@@ -19,6 +19,7 @@ import crypto from 'node:crypto'
 import { auth } from '../auth/auth.js'
 import prisma from '../../lib/prisma.js'
 import { invoiceNumber, formatAuctionCode } from '../shared/numbering.js'
+import { seedAdminFilterProducts } from './seed-admin-products.js'
 
 const PASSWORD = 'Password123!'
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@construpreco.local')
@@ -325,6 +326,40 @@ async function main() {
     where: { id: affiliate.id },
     data: { referralCode: affiliate.referralCode || 'AFF-DEMO-1' },
   })
+  await prisma.user.update({
+    where: { id: customer.id },
+    data: { referredById: affiliate.id },
+  })
+  await prisma.user.update({
+    where: { id: company.id },
+    data: { referredById: affiliate.id },
+  })
+
+  const defaultTiers = [
+    { name: 'Starter Level', minActiveClients: 0, commissionPercent: 5, sortOrder: 0 },
+    { name: 'Bronze Level', minActiveClients: 100, commissionPercent: 10, sortOrder: 1 },
+    { name: 'Silver Level', minActiveClients: 200, commissionPercent: 15, sortOrder: 2 },
+    { name: 'Gold Level', minActiveClients: 300, commissionPercent: 20, sortOrder: 3 },
+    { name: 'Premium Level', minActiveClients: 500, commissionPercent: 25, sortOrder: 4 },
+  ]
+  for (const tier of defaultTiers) {
+    const existing = await prisma.affiliateTier.findFirst({
+      where: { minActiveClients: tier.minActiveClients },
+    })
+    if (existing) {
+      await prisma.affiliateTier.update({
+        where: { id: existing.id },
+        data: {
+          name: tier.name,
+          commissionPercent: tier.commissionPercent,
+          sortOrder: tier.sortOrder,
+          isActive: true,
+        },
+      })
+    } else {
+      await prisma.affiliateTier.create({ data: tier })
+    }
+  }
 
   await ensureProfile(company.id, {
     companyName: 'Acme Construction Lda',
@@ -350,6 +385,7 @@ async function main() {
   })
   await ensureProfile(affiliate.id, {
     companyName: 'Pedro Affiliates',
+    ibanNumber: 'PT50000600000000000000006',
     verificationStatus: 'APPROVED',
   })
 
@@ -520,6 +556,7 @@ async function main() {
   await ensureFeatures(factoryProduct.id, ['Bulk pallets', 'Factory sealed'])
   await ensureInventory(supplierProduct.id, 480)
   await ensureInventory(supplierPending.id, 120)
+  await seedAdminFilterProducts(supplier.id)
 
   await prisma.pricingTier.deleteMany({ where: { productId: supplierProduct.id } })
   await prisma.pricingTier.createMany({
@@ -1371,13 +1408,16 @@ async function main() {
     where: { trackingCode: 'DEMO-AFF-HOME' },
     create: {
       affiliateId: affiliate.id,
-      campaignName: 'Homepage cement',
-      targetUrl: 'https://construpreco.local/products/portland-cement-quick-set-demo',
+      campaignName: 'PRIMARY CHANNEL',
+      targetUrl: 'http://localhost:5173/ref?code=AFF-DEMO-1',
       trackingCode: 'DEMO-AFF-HOME',
       totalClicks: 42,
       totalConversions: 1,
     },
-    update: {},
+    update: {
+      campaignName: 'PRIMARY CHANNEL',
+      targetUrl: 'http://localhost:5173/ref?code=AFF-DEMO-1',
+    },
   })
 
   console.log('\nDemo seed complete.\n')
@@ -1391,6 +1431,7 @@ async function main() {
   console.log(`  ${ADMIN_EMAIL}  (password: ${ADMIN_PASSWORD})`)
   console.log('\nERP key: erp_demo_supplier_key_construpreco')
   console.log('Promo: DEMO10')
+  console.log('Affiliate referral code: AFF-DEMO-1')
   console.log('Orders: ORD-DEMO-CUST-001, ORD-DEMO-CO-001/002, ORD-DEMO-FAC-001/002/003')
   console.log('Open transporter auctions: ORD-DEMO-TX-OPEN-01 … 10')
   console.log('Marketing: MKT-DEMO-001…008 (pending/active/completed/rejected + unpaid hidden)')

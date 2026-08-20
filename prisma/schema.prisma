@@ -1215,6 +1215,21 @@ model Review {
 // 10. AFFILIATE & MARKETING
 // ==========================================
 
+/// Admin-managed commission tiers (active referred clients → % of admin share).
+model AffiliateTier {
+  id                String   @id @default(uuid())
+  name              String
+  minActiveClients  Int
+  commissionPercent Float
+  sortOrder         Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([minActiveClients])
+  @@index([isActive, minActiveClients])
+}
+
 model AffiliateLink {
   id               String   @id @default(uuid())
   affiliateId      String
@@ -1226,6 +1241,8 @@ model AffiliateLink {
   createdAt        DateTime @default(now())
 
   affiliate        User     @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
 }
 
 model CommissionTransaction {
