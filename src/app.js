@@ -35,6 +35,8 @@ import promoCodeRoutes from './modules/promo-codes/routes/promo-code.routes.js'
 import supplierCustomerOrderRoutes from './modules/orders/routes/customer-order.routes.js'
 import supplierCompanyOrderRoutes from './modules/orders/routes/company-order.routes.js'
 import supplierDocumentRoutes from './modules/invoicing/routes/document.routes.js'
+import supplierAnalyticsRoutes from './modules/analytics/routes/supplier-analytics.routes.js'
+import supplierReviewsRoutes from './modules/reviews/routes/supplier-reviews.routes.js'
 import supplierFactoryCatalogRoutes from './modules/listings/routes/factory-catalog.routes.js'
 import supplierFactoryOrderRoutes from './modules/orders/routes/supplier-factory-order.routes.js'
 import factoryOrderRoutes from './modules/orders/routes/factory-order.routes.js'
@@ -118,6 +120,8 @@ app.use('/api/promo-codes', promoCodeRoutes)
 app.use('/api/supplier/customer-orders', supplierCustomerOrderRoutes)
 app.use('/api/supplier/company-orders', supplierCompanyOrderRoutes)
 app.use('/api/supplier/documents', supplierDocumentRoutes)
+app.use('/api/supplier/analytics', supplierAnalyticsRoutes)
+app.use('/api/supplier/reviews', supplierReviewsRoutes)
 app.use('/api/supplier/factory-products', supplierFactoryCatalogRoutes)
 app.use('/api/supplier/factory-orders', supplierFactoryOrderRoutes)
 app.use('/api/factory/orders', factoryOrderRoutes)
