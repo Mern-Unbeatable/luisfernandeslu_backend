@@ -4462,6 +4462,56 @@
               ]
             },
             {
+              "name": "Commission Invoices",
+              "description": "Logged-in supplier. Admin-set % on this seller × order total.\nGET / — table\nGET /:invoiceId — view\nGET /:invoiceId/pdf — download",
+              "item": [
+                {
+                  "name": "List Commission Invoices",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/commission-invoices?page=1&limit=7&search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "commission-invoices"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" },
+                        { "key": "search", "value": "" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Commission Invoice",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/commission-invoices/{{commissionInvoiceId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "commission-invoices", "{{commissionInvoiceId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Commission Invoice PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/commission-invoices/{{commissionInvoiceId}}/pdf",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "commission-invoices", "{{commissionInvoiceId}}", "pdf"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Analytics",
               "description": "Supplier analytics dashboard (static mock matching frontend DEMO_SUPPLIER_ANALYTICS).\n\nGET / — stats cards, revenue/expenses/profit series, revenue breakdown, sales by customer type, insight",
               "item": [
@@ -6406,6 +6456,56 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Commission Invoices",
+              "description": "Logged-in transporter. Admin-set % × accepted bid amount.",
+              "item": [
+                {
+                  "name": "List Commission Invoices",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/commission-invoices?page=1&limit=7&search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "commission-invoices"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" },
+                        { "key": "search", "value": "" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Commission Invoice",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/commission-invoices/{{commissionInvoiceId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "commission-invoices", "{{commissionInvoiceId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Commission Invoice PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/commission-invoices/{{commissionInvoiceId}}/pdf",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "commission-invoices", "{{commissionInvoiceId}}", "pdf"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         },
@@ -6413,6 +6513,56 @@
           "name": "Factory",
           "description": "Factory dashboard APIs. Login as Factory first.",
           "item": [
+            {
+              "name": "Commission Invoices",
+              "description": "Logged-in factory. Admin-set % × order total.",
+              "item": [
+                {
+                  "name": "List Commission Invoices",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/commission-invoices?page=1&limit=7&search=",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "commission-invoices"],
+                      "query": [
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" },
+                        { "key": "search", "value": "" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Commission Invoice",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/commission-invoices/{{commissionInvoiceId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "commission-invoices", "{{commissionInvoiceId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Commission Invoice PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/commission-invoices/{{commissionInvoiceId}}/pdf",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "commission-invoices", "{{commissionInvoiceId}}", "pdf"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
             {
               "name": "Offers (to Supplier)",
               "description": "No quote. Factory sends the same offer-card body as supplier→company. Supplier pays via POST /api/factory-offers/:offerId/pay.",

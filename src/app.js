@@ -25,6 +25,7 @@ import adminAuctionRoutes from './modules/admin/auctions/routes/auction.routes.j
 import adminOrderRoutes from './modules/admin/orders/routes/order.routes.js'
 import adminLogisticsRoutes from './modules/admin/logistics/routes/logistics.routes.js'
 import adminAffiliateTierRoutes from './modules/admin/affiliate-tiers/routes/tier.routes.js'
+import { partyCommissionInvoiceRoutes } from './modules/commission-invoices/party.routes.js'
 import productAdminRoutes from './modules/products/routes/admin.routes.js'
 import affiliateRoutes from './modules/affiliates/routes/affiliate.routes.js'
 import factoryProductRoutes from './modules/listings/routes/factory-product.routes.js'
@@ -145,6 +146,9 @@ app.use('/api/transporter/deliveries', transporterDeliveryRoutes)
 app.use('/api/customer/orders', buyerOrderRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
 app.use('/api/admin/users', adminUserRoutes)
+app.use('/api/supplier/commission-invoices', partyCommissionInvoiceRoutes('supplier'))
+app.use('/api/factory/commission-invoices', partyCommissionInvoiceRoutes('factory'))
+app.use('/api/transporter/commission-invoices', partyCommissionInvoiceRoutes('transporter'))
 app.use('/api/admin/suppliers', adminSupplierRoutes)
 app.use('/api/admin/factories', adminFactoryRoutes)
 app.use('/api/admin/transporters', adminTransporterRoutes)
