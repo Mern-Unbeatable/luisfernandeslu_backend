@@ -4512,6 +4512,30 @@
               ]
             },
             {
+              "name": "Overview",
+              "description": "Supplier Business Overview dashboard.\nGET /?period=2026&page=1&limit=7 — period is the calendar year (2026, 2025, 2024). Default: current year.",
+              "item": [
+                {
+                  "name": "Get Business Overview",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/overview?period=2026&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "overview"],
+                      "query": [
+                        { "key": "period", "value": "2026" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Analytics",
               "description": "Supplier analytics dashboard (static mock matching frontend DEMO_SUPPLIER_ANALYTICS).\n\nGET / — stats cards, revenue/expenses/profit series, revenue breakdown, sales by customer type, insight",
               "item": [
