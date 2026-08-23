@@ -39,6 +39,9 @@ import supplierAnalyticsRoutes from './modules/analytics/routes/supplier-analyti
 import supplierReviewsRoutes from './modules/reviews/routes/supplier-reviews.routes.js'
 import supplierReturnRoutes from './modules/returns/routes/supplier-returns.routes.js'
 import buyerReturnRoutes from './modules/returns/routes/buyer-returns.routes.js'
+import buyerDisputesRoutes from './modules/disputes/routes/buyer-disputes.routes.js'
+import supplierDisputesRoutes from './modules/disputes/routes/supplier-disputes.routes.js'
+import adminDisputesRoutes from './modules/disputes/routes/admin-disputes.routes.js'
 import supplierFactoryCatalogRoutes from './modules/listings/routes/factory-catalog.routes.js'
 import supplierFactoryOrderRoutes from './modules/orders/routes/supplier-factory-order.routes.js'
 import factoryOrderRoutes from './modules/orders/routes/factory-order.routes.js'
@@ -127,6 +130,9 @@ app.use('/api/supplier/reviews', supplierReviewsRoutes)
 app.use('/api/supplier/return-requests', supplierReturnRoutes)
 app.use('/api/customer/returns', buyerReturnRoutes)
 app.use('/api/company/returns', buyerReturnRoutes)
+app.use('/api/customer/disputes', buyerDisputesRoutes)
+app.use('/api/company/disputes', buyerDisputesRoutes)
+app.use('/api/supplier/disputes', supplierDisputesRoutes)
 app.use('/api/supplier/factory-products', supplierFactoryCatalogRoutes)
 app.use('/api/supplier/factory-orders', supplierFactoryOrderRoutes)
 app.use('/api/factory/orders', factoryOrderRoutes)
@@ -144,6 +150,7 @@ app.use('/api/admin/factories', adminFactoryRoutes)
 app.use('/api/admin/transporters', adminTransporterRoutes)
 app.use('/api/admin/auctions', adminAuctionRoutes)
 app.use('/api/admin/orders', adminOrderRoutes)
+app.use('/api/admin/disputes', adminDisputesRoutes)
 app.use('/api/admin/logistics', adminLogisticsRoutes)
 app.use('/api/admin/affiliate-tiers', adminAffiliateTierRoutes)
 app.use('/api/admin', productAdminRoutes)

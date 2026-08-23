@@ -1,5 +1,7 @@
 import buyerReturnsService from '../services/buyer-returns.service.js'
 import { sendServiceResult } from '../../../utils/apiResponse.js'
+import { resolveRequestBaseUrl } from '../../../lib/requestUrl.js'
+import { mergeEvidence } from '../../../shared/upload/evidence-upload.js'
 
 export class BuyerReturnsController {
   async listOrders(req, res, next) {
@@ -44,7 +46,10 @@ export class BuyerReturnsController {
     try {
       return sendServiceResult(
         res,
-        await buyerReturnsService.createRequest(req.auth, req.body),
+        await buyerReturnsService.createRequest(
+          req.auth,
+          mergeEvidence(req.body, req.files, resolveRequestBaseUrl(req)),
+        ),
       )
     } catch (err) {
       next(err)

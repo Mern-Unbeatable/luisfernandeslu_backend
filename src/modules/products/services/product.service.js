@@ -695,44 +695,9 @@ export class ProductService {
       { inventory: { isNot: null } },
     ]
 
-    // Tab filters
-    if (tab === 'pending') {
-      and.push({ approvalStatus: 'PENDING_REVIEW' })
-    } else if (tab === 'rejected') {
-      and.push({ approvalStatus: 'REJECTED' })
-    } else if (tab === 'regular') {
-      and.push({
-        approvalStatus: 'APPROVED',
-        marketplaceTier: 'RETAIL',
-        isFeatured: false,
-        isSponsored: false,
-        inventory: { listedQuantity: { gt: 0 } },
-      })
-    } else if (tab === 'bulk') {
-      and.push({
-        approvalStatus: 'APPROVED',
-        marketplaceTier: 'WHOLESALE',
-        isFeatured: false,
-        isSponsored: false,
-        inventory: { listedQuantity: { gt: 0 } },
-      })
-    } else if (tab === 'featured') {
-      and.push({
-        approvalStatus: 'APPROVED',
-        OR: [{ isFeatured: true }, { isSponsored: true }],
-      })
-    } else {
-      // all — listed pipeline only (exclude pure inventory stock)
-      and.push({
-        OR: [
-          { approvalStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'DRAFT'] } },
-          {
-            approvalStatus: 'APPROVED',
-            inventory: { listedQuantity: { gt: 0 } },
-          },
-        ],
-      })
-    }
+    // Tab filters (must stay in sync with getTabCounts)
+    const tabFilter = this.supplierTabFilter(tab)
+    if (tabFilter) and.push(tabFilter)
 
     // Category filter (root / subcategory / product-type id all work)
     if (categoryId) {
@@ -779,69 +744,77 @@ export class ProductService {
     }
   }
 
+  /**
+   * Shared tab predicate for list + counts.
+   * Always combined with sellerId + inventory isNot null by the caller.
+   */
+  supplierTabFilter(tab) {
+    const key = String(tab || 'all').toLowerCase()
+    if (key === 'pending') {
+      return { approvalStatus: 'PENDING_REVIEW' }
+    }
+    if (key === 'rejected') {
+      return { approvalStatus: 'REJECTED' }
+    }
+    if (key === 'regular') {
+      return {
+        approvalStatus: 'APPROVED',
+        marketplaceTier: 'RETAIL',
+        isFeatured: false,
+        isSponsored: false,
+        inventory: { listedQuantity: { gt: 0 } },
+      }
+    }
+    if (key === 'bulk') {
+      return {
+        approvalStatus: 'APPROVED',
+        marketplaceTier: 'WHOLESALE',
+        isFeatured: false,
+        isSponsored: false,
+        inventory: { listedQuantity: { gt: 0 } },
+      }
+    }
+    if (key === 'featured') {
+      return {
+        approvalStatus: 'APPROVED',
+        inventory: { listedQuantity: { gt: 0 } },
+        OR: [{ isFeatured: true }, { isSponsored: true }],
+      }
+    }
+    // all — listed pipeline only (exclude pure warehouse stock with no listing)
+    return {
+      OR: [
+        { approvalStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'DRAFT'] } },
+        {
+          approvalStatus: 'APPROVED',
+          inventory: { listedQuantity: { gt: 0 } },
+        },
+      ],
+    }
+  }
+
   async getTabCounts(sellerId, categoryId = null) {
     const categoryWhere = categoryId ? { OR: categoryFilter(categoryId) } : null
 
-    const withCategory = (extra) => {
-      const parts = [{ sellerId }, ...(categoryWhere ? [categoryWhere] : [])]
-      if (extra) parts.push(extra)
+    const whereForTab = (tab) => {
+      const parts = [
+        { sellerId },
+        { inventory: { isNot: null } },
+        this.supplierTabFilter(tab),
+      ]
+      if (categoryWhere) parts.push(categoryWhere)
       return { AND: parts }
     }
 
-    const listedApprovedExtra = {
-      approvalStatus: 'APPROVED',
-      inventory: { listedQuantity: { gt: 0 } },
-    }
-
-    const [
-      all,
-      pending,
-      rejected,
-      regular,
-      bulk,
-      featured,
-    ] = await Promise.all([
-      prisma.product.count({
-        where: withCategory({
-          inventory: { isNot: null },
-          OR: [
-            { approvalStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'DRAFT'] } },
-            {
-              approvalStatus: 'APPROVED',
-              inventory: { listedQuantity: { gt: 0 } },
-            },
-          ],
-        }),
-      }),
-      prisma.product.count({
-        where: withCategory({ approvalStatus: 'PENDING_REVIEW' }),
-      }),
-      prisma.product.count({
-        where: withCategory({ approvalStatus: 'REJECTED' }),
-      }),
-      prisma.product.count({
-        where: withCategory({
-          ...listedApprovedExtra,
-          marketplaceTier: 'RETAIL',
-          isFeatured: false,
-          isSponsored: false,
-        }),
-      }),
-      prisma.product.count({
-        where: withCategory({
-          ...listedApprovedExtra,
-          marketplaceTier: 'WHOLESALE',
-          isFeatured: false,
-          isSponsored: false,
-        }),
-      }),
-      prisma.product.count({
-        where: withCategory({
-          approvalStatus: 'APPROVED',
-          OR: [{ isFeatured: true }, { isSponsored: true }],
-        }),
-      }),
-    ])
+    const [all, pending, rejected, regular, bulk, featured] =
+      await Promise.all([
+        prisma.product.count({ where: whereForTab('all') }),
+        prisma.product.count({ where: whereForTab('pending') }),
+        prisma.product.count({ where: whereForTab('rejected') }),
+        prisma.product.count({ where: whereForTab('regular') }),
+        prisma.product.count({ where: whereForTab('bulk') }),
+        prisma.product.count({ where: whereForTab('featured') }),
+      ])
 
     return { all, pending, rejected, regular, bulk, featured }
   }

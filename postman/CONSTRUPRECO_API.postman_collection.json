@@ -147,6 +147,10 @@
       "value": "ret-2024-001"
     },
     {
+      "key": "disputeId",
+      "value": "disp-001"
+    },
+    {
       "key": "eupagoReference",
       "value": ""
     }
@@ -4666,6 +4670,55 @@
               ]
             },
             {
+              "name": "Disputes",
+              "description": "Supplier disputes table + detail. Chat is live socket, not REST.\n\nGET / — table rows\nGET /:disputeId — detail + chat payload\nPATCH /:disputeId/status — pending | under_review | resolved\n\nLive chat:\n  chat:open { type: \"DISPUTE\", disputeId }\n  chat:join { threadId }\n  chat:message { threadId, message }",
+              "item": [
+                {
+                  "name": "List Disputes",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/disputes",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "disputes"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Dispute Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/disputes/{{disputeId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "disputes", "{{disputeId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Dispute Status",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": { "mode": "raw", "raw": "{\n  \"status\": \"under_review\"\n}" },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/disputes/{{disputeId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "disputes", "{{disputeId}}", "status"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Buy from Factory",
               "description": "Supplier catalog of admin-approved factory products.\n\nGET / — list\nGET /:id — details (includes chat payload)\n\nMessage factory via existing live chat (no extra REST):\n  chat:open { type: \"FACTORY_SUPPLIER\", productId }\n  chat:join { threadId }\n  chat:message { threadId, message }",
               "item": [
@@ -8043,7 +8096,7 @@
             },
             {
               "name": "Returns",
-              "description": "My Order / Return tabs. Customer and Company use the same endpoints (company: /api/company/returns/*).\n\nGET /orders — order cards\nGET /orders/:orderId — order items + return/refund\nPOST /requests — submit return\nGET /requests — my returns list\nGET /requests/:returnId — return details",
+              "description": "My Order / Return tabs. Customer and Company use the same endpoints (company: /api/company/returns/*).\n\nGET /orders — order cards\nGET /orders/:orderId — order items + return/refund\nPOST /requests — multipart form (evidence files: JPEG/PNG/WEBP/PDF/DOC/DOCX, max 10, 8MB each)\nGET /requests — my returns list\nGET /requests/:returnId — return details",
               "item": [
                 {
                   "name": "List Return Orders",
@@ -8130,20 +8183,96 @@
                         "key": "Authorization",
                         "value": "Bearer {{accessToken}}",
                         "type": "text"
-                      },
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
                       }
                     ],
                     "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"orderId\": \"ord-101\",\n  \"itemId\": \"li-2\",\n  \"reason\": \"Damaged\",\n  \"description\": \"Item arrived with visible damage.\",\n  \"damagedCount\": \"1\",\n  \"refundAccount\": \"123456789012\",\n  \"evidence\": []\n}"
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "orderId", "value": "ord-101", "type": "text" },
+                        { "key": "itemId", "value": "li-2", "type": "text" },
+                        { "key": "reason", "value": "Damaged", "type": "text" },
+                        { "key": "description", "value": "Item arrived with visible damage.", "type": "text" },
+                        { "key": "damagedCount", "value": "1", "type": "text" },
+                        { "key": "refundAccount", "value": "123456789012", "type": "text" },
+                        { "key": "evidence", "type": "file", "src": [], "description": "JPEG/PNG/WEBP/PDF/DOC/DOCX — repeat key for more files" }
+                      ]
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/returns/requests",
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "customer", "returns", "requests"]
+                    },
+                    "description": "multipart/form-data. Field `evidence` accepts image, PDF, or Word docs (max 10 files, 8MB each). Company: /api/company/returns/requests."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Disputes",
+              "description": "Buyer (customer/company) disputes. Company uses /api/company/disputes.\n\nGET /orders — logged-in buyer orders from DB (orderNumber, productName, image, seller)\nGET / — stats + cards\nPOST / — multipart form (evidence images: JPEG/PNG/WEBP, max 10, 8MB each)\nGET /:disputeId — detail + chat payload\n\nLive chat (buyer + supplier + admin):\n  chat:open { type: \"DISPUTE\", disputeId }\n  chat:join { threadId }\n  chat:message { threadId, message }",
+              "item": [
+                {
+                  "name": "List Dispute Orders",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/disputes/orders",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "disputes", "orders"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Disputes",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/disputes",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "disputes"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Dispute",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "orderNumber", "value": "ORD-101", "type": "text" },
+                        { "key": "itemIds", "value": "", "type": "text", "description": "Optional. Repeat key for multiple order line item UUIDs from GET /orders. Empty = all items on the order." },
+                        { "key": "issueType", "value": "Damaged", "type": "text" },
+                        { "key": "description", "value": "Item arrived with visible damage.", "type": "text" },
+                        { "key": "evidence", "type": "file", "src": [], "description": "JPEG/PNG/WEBP — repeat key for more files" }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/disputes",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "disputes"]
+                    },
+                    "description": "multipart/form-data. Field `evidence` accepts images only (max 10, 8MB each). Company: /api/company/disputes."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Dispute Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/disputes/{{disputeId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "disputes", "{{disputeId}}"]
                     }
                   },
                   "response": []
@@ -8155,6 +8284,55 @@
         {
           "name": "Admin",
           "item": [
+            {
+              "name": "Disputes",
+              "description": "Admin disputes table + detail. Chat is live socket.\n\nGET / — table rows\nGET /:disputeId — detail + chat payload\nPATCH /:disputeId/status — pending | under_review | resolved\n\nLive chat:\n  chat:open { type: \"DISPUTE\", disputeId }",
+              "item": [
+                {
+                  "name": "List Disputes",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/disputes",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "disputes"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Dispute Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/disputes/{{disputeId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "disputes", "{{disputeId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Dispute Status",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": { "mode": "raw", "raw": "{\n  \"status\": \"resolved\"\n}" },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/disputes/{{disputeId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "disputes", "{{disputeId}}", "status"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
             {
               "name": "User Management",
               "item": [

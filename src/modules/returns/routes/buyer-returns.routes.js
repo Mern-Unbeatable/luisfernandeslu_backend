@@ -10,6 +10,10 @@ import {
   requireAccessToken,
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
+import {
+  returnEvidenceUpload,
+  EVIDENCE_FILE_FIELDS,
+} from '../../../shared/upload/evidence-upload.js'
 
 class BuyerReturnsRoutes {
   constructor() {
@@ -36,6 +40,7 @@ class BuyerReturnsRoutes {
 
     this.router.post(
       '/requests',
+      returnEvidenceUpload.fields(EVIDENCE_FILE_FIELDS),
       validate(createBuyerReturnBodySchema, 'body'),
       (req, res, next) => buyerReturnsController.createRequest(req, res, next),
     )
