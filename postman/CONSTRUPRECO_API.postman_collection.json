@@ -4512,6 +4512,105 @@
               ]
             },
             {
+              "name": "Profile",
+              "description": "Supplier My Profile.\nGET / — displayName, displayEmail, name, email, phone, avatarUrl, warehouses[{id,label,address}], iban, ibanPhone\nPATCH / — { name, email, phone }\nPUT /warehouses — { warehouses: [{ id?, label?, address }] }\nPOST /password — { currentPassword, newPassword, confirmPassword }\nPUT /iban — { iban, ibanPhone }",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Profile",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"John Industries\",\n  \"email\": \"supplier@test.local\",\n  \"phone\": \"+351910000001\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Warehouses",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"warehouses\": [\n    { \"address\": \"4140 Parker Rd. Allentown, New Mexico 31134\" }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/profile/warehouses",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "profile", "warehouses"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"Password1234!\",\n  \"confirmPassword\": \"Password1234!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/profile/password",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "profile", "password"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"iban\": \"PT50 0002 0123 1234 5678 9013 4\",\n  \"ibanPhone\": \"+351910000001\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/profile/iban",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "profile", "iban"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Overview",
               "description": "Supplier Business Overview dashboard.\nGET /?period=2026&page=1&limit=7 — period is the calendar year (2026, 2025, 2024). Default: current year.",
               "item": [
