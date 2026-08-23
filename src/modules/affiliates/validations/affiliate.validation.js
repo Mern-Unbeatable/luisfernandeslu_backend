@@ -7,6 +7,7 @@ export const overviewQuerySchema = z.object({
 export const listClientsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),
+  search: z.string().trim().max(200).optional(),
 })
 
 export const listEarningsQuerySchema = listClientsQuerySchema

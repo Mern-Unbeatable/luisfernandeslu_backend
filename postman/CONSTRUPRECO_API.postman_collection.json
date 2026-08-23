@@ -135,6 +135,18 @@
       "value": ""
     },
     {
+      "key": "returnOrderId",
+      "value": "ord-101"
+    },
+    {
+      "key": "returnRequestId",
+      "value": "ret-001"
+    },
+    {
+      "key": "supplierReturnId",
+      "value": "ret-2024-001"
+    },
+    {
       "key": "eupagoReference",
       "value": ""
     }
@@ -4575,9 +4587,81 @@
                         }
                       ],
                       "cookie": [],
-                      "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"summary\": {\n    \"averageRating\": 4.5,\n    \"totalReviews\": 184,\n    \"positivePercent\": 90\n  },\n  \"distribution\": [\n    { \"stars\": 5, \"count\": 125, \"percent\": 68 },\n    { \"stars\": 4, \"count\": 39, \"percent\": 21 },\n    { \"stars\": 3, \"count\": 11, \"percent\": 6 },\n    { \"stars\": 2, \"count\": 5, \"percent\": 3 },\n    { \"stars\": 1, \"count\": 4, \"percent\": 2 }\n  ],\n  \"reviews\": [\n    {\n      \"id\": \"rev-001\",\n      \"customerName\": \"John Doe\",\n      \"customerType\": \"regular\",\n      \"productName\": \"Premium Steel Sheets\",\n      \"orderId\": \"ORD-1001\",\n      \"date\": \"2026-05-01\",\n      \"rating\": 5,\n      \"comment\": \"Excellent quality steel sheets. Exactly as described and delivered on time. Will order again for our next project.\",\n      \"avatarColor\": \"#14B8A6\"\n    },\n    {\n      \"id\": \"rev-002\",\n      \"customerName\": \"Sarah Johnson\",\n      \"customerType\": \"company\",\n      \"productName\": \"Heavy Machinery - Excavator\",\n      \"orderId\": \"ORD-1002\",\n      \"date\": \"2026-04-28\",\n      \"rating\": 5,\n      \"comment\": \"Outstanding service from start to finish. The excavator arrived in perfect condition and the team was very professional.\",\n      \"avatarColor\": \"#3B82F6\"\n    },\n    {\n      \"id\": \"rev-003\",\n      \"customerName\": \"Michael Chen\",\n      \"customerType\": \"regular\",\n      \"productName\": \"Portland Cement - 500 Bags\",\n      \"orderId\": \"ORD-1003\",\n      \"date\": \"2026-04-25\",\n      \"rating\": 4,\n      \"comment\": \"Good quality cement at a fair price. Delivery was slightly delayed but the product itself is top-notch.\",\n      \"avatarColor\": \"#8B5CF6\"\n    },\n    {\n      \"id\": \"rev-004\",\n      \"customerName\": \"Metro Construction\",\n      \"customerType\": \"company\",\n      \"productName\": \"Structural Steel Beams\",\n      \"orderId\": \"ORD-1004\",\n      \"date\": \"2026-04-20\",\n      \"rating\": 5,\n      \"comment\": \"We have been sourcing steel from this supplier for over a year. Consistent quality and reliable delivery every time.\",\n      \"avatarColor\": \"#0EA5E9\"\n    },\n    {\n      \"id\": \"rev-005\",\n      \"customerName\": \"Emily Rodriguez\",\n      \"customerType\": \"regular\",\n      \"productName\": \"Clay Bricks - 10,000 Units\",\n      \"orderId\": \"ORD-1005\",\n      \"date\": \"2026-04-15\",\n      \"rating\": 4,\n      \"comment\": \"Bricks were well packaged and arrived without damage. Happy with the purchase overall.\",\n      \"avatarColor\": \"#F59E0B\"\n    }\n  ]\n}"
+                      "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"summary\": {\n    \"averageRating\": 4.5,\n    \"totalReviews\": 184,\n    \"positivePercent\": 90\n  },\n  \"distribution\": [\n    { \"stars\": 5, \"count\": 125, \"percent\": 68 },\n    { \"stars\": 4, \"count\": 39, \"percent\": 21 },\n    { \"stars\": 3, \"count\": 11, \"percent\": 6 },\n    { \"stars\": 2, \"count\": 5, \"percent\": 3 },\n    { \"stars\": 1, \"count\": 4, \"percent\": 2 }\n  ],\n  \"reviews\": [\n    {\n      \"id\": \"rev-001\",\n      \"customerName\": \"John Doe\",\n      \"customerType\": \"regular\",\n      \"productName\": \"Premium Steel Sheets\",\n      \"orderId\": \"ORD-1001\",\n      \"date\": \"2026-05-01\",\n      \"rating\": 5,\n      \"comment\": \"Excellent quality steel sheets. Exactly as described and delivered on time. Will order again for our next project.\",\n      \"avatarColor\": \"#14B8A6\"\n    }\n  ]\n}"
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "name": "Return Requests",
+              "description": "Supplier return-request dashboard.\n\nGET / — stats + table rows\nGET /:returnId — detail page\nPATCH /:returnId/status — change status",
+              "item": [
+                {
+                  "name": "List Return Requests",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/return-requests",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "return-requests"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Return Request Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/return-requests/{{supplierReturnId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "return-requests", "{{supplierReturnId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Return Status",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"under_review\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/supplier/return-requests/{{supplierReturnId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "supplier", "return-requests", "{{supplierReturnId}}", "status"]
+                    },
+                    "description": "status: pending | under_review | approved | rejected | item_received | inspection_progress | inspection_pass | inspection_rejected"
+                  },
+                  "response": []
                 }
               ]
             },
@@ -7956,6 +8040,115 @@
                 }
               },
               "response": []
+            },
+            {
+              "name": "Returns",
+              "description": "My Order / Return tabs. Customer and Company use the same endpoints (company: /api/company/returns/*).\n\nGET /orders — order cards\nGET /orders/:orderId — order items + return/refund\nPOST /requests — submit return\nGET /requests — my returns list\nGET /requests/:returnId — return details",
+              "item": [
+                {
+                  "name": "List Return Orders",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/returns/orders",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "returns", "orders"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Return Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/returns/orders/{{returnOrderId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "returns", "orders", "{{returnOrderId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List My Return Requests",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/returns/requests",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "returns", "requests"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Return Request Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/returns/requests/{{returnRequestId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "returns", "requests", "{{returnRequestId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Return Request",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"orderId\": \"ord-101\",\n  \"itemId\": \"li-2\",\n  \"reason\": \"Damaged\",\n  \"description\": \"Item arrived with visible damage.\",\n  \"damagedCount\": \"1\",\n  \"refundAccount\": \"123456789012\",\n  \"evidence\": []\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/returns/requests",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "customer", "returns", "requests"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         },

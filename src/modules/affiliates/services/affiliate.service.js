@@ -2,7 +2,7 @@ import { hashPassword, verifyPassword } from 'better-auth/crypto'
 import prisma from '../../../../lib/prisma.js'
 import { httpError } from '../../../shared/errors.js'
 import { money } from '../../../shared/money.js'
-import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
+import { parsePagination, paginationMeta, searchFilter } from '../../../shared/pagination.js'
 import {
   activeSinceDate,
   buildShareLink,
@@ -10,7 +10,6 @@ import {
   generateReferralCode,
   generateTrackingCode,
   isReferralActive,
-  moneyLabel,
   nextTier,
   referralExpiryDate,
   resolveTier,
@@ -188,7 +187,6 @@ class AffiliateService {
       month,
       monthIndex: index + 1,
       amount: byMonth[index],
-      amountLabel: moneyLabel(byMonth[index]),
     }))
 
     const { current, upcoming, activeClients, needMore, progressPercent, helperText } =
@@ -202,11 +200,8 @@ class AffiliateService {
             totalReferredClients,
             activeClients,
             pendingCommissions,
-            pendingCommissionsLabel: moneyLabel(pendingCommissions),
             paidCommission,
-            paidCommissionLabel: moneyLabel(paidCommission),
             totalEarnings,
-            totalEarningsLabel: moneyLabel(totalEarnings),
           },
           tier: {
             currentTier: current
@@ -277,6 +272,8 @@ class AffiliateService {
       referredById: auth.id,
       role: { in: ['CUSTOMER', 'COMPANY'] },
     }
+    const searchOr = searchFilter(query.search, ['name', 'email'])
+    if (searchOr) where.OR = searchOr
 
     const [total, rows] = await Promise.all([
       prisma.user.count({ where }),
@@ -329,9 +326,7 @@ class AffiliateService {
           role: String(u.role).toLowerCase(),
           registeredDate: dateOnly(u.createdAt),
           revenueGenerated: revenue,
-          revenueGeneratedLabel: moneyLabel(revenue),
           commissionEarned,
-          commissionEarnedLabel: moneyLabel(commissionEarned),
           commissionExpiry: dateOnly(expiry),
           status: active ? 'active' : 'expired',
         }
@@ -391,7 +386,7 @@ class AffiliateService {
           minActiveClients: t.minActiveClients,
           commissionPercent: t.commissionPercent,
           isCurrent: current?.id === t.id,
-          description: 'Recurring payout split of admin revenue share.',
+          description: 'Recurring payout split',
         })),
         message: 'Affiliate levels fetched',
       },
@@ -451,13 +446,9 @@ class AffiliateService {
       body: {
         summary: {
           totalEarningsThisMonth: monthTotal,
-          totalEarningsThisMonthLabel: moneyLabel(monthTotal),
           availableBalance: available,
-          availableBalanceLabel: moneyLabel(available),
           pendingAmount: pending,
-          pendingAmountLabel: moneyLabel(pending),
           totalEarningsLifetime: lifeTotal,
-          totalEarningsLifetimeLabel: moneyLabel(lifeTotal),
           ibanNumber: profile?.ibanNumber || null,
           businessName: profile?.companyName || null,
         },
@@ -468,7 +459,6 @@ class AffiliateService {
           accountType: 'IBAN',
           accountNumber: w.accountNumber,
           amount: money(w.amount),
-          amountLabel: moneyLabel(w.amount),
           status: String(w.status || '').toLowerCase(),
         })),
         pagination: paginationMeta({
