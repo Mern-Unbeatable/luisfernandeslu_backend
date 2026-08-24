@@ -6625,6 +6625,87 @@
               ]
             },
             {
+              "name": "Insurance",
+              "description": "Civil + cargo liability.\nGET / — requirementsMet, policies[{ type: civil|cargo, status: verified|pending|expired, provider, policyNumber, coverageAmount, startDate, expiryDate, documentUrl }]\nPOST / multipart — type/insuranceType, provider, policyNumber, coverageAmount, startDate?, expiryDate, document (file)\nGET /:kind/pdf — kind=civil|cargo\nPOST /:kind/renew — same fields as upload; document optional",
+              "item": [
+                {
+                  "name": "Get Insurance",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/insurance",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "insurance"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Upload Insurance",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "type", "value": "civil", "type": "text" },
+                        { "key": "provider", "value": "SafeGuard Insurance Co.", "type": "text" },
+                        { "key": "policyNumber", "value": "POL-CL-849372", "type": "text" },
+                        { "key": "coverageAmount", "value": "1000000", "type": "text" },
+                        { "key": "startDate", "value": "2025-01-15", "type": "text" },
+                        { "key": "expiryDate", "value": "2026-01-15", "type": "text" },
+                        { "key": "document", "type": "file", "src": [] }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/insurance",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "insurance"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download Insurance PDF",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/insurance/civil/pdf",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "insurance", "civil", "pdf"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Renew Insurance Policy",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "provider", "value": "SafeGuard Insurance Co.", "type": "text" },
+                        { "key": "policyNumber", "value": "POL-CL-849372", "type": "text" },
+                        { "key": "coverageAmount", "value": "1000000", "type": "text" },
+                        { "key": "startDate", "value": "2026-01-16", "type": "text" },
+                        { "key": "expiryDate", "value": "2027-01-15", "type": "text" },
+                        { "key": "document", "type": "file", "src": [], "disabled": true }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/insurance/civil/renew",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "insurance", "civil", "renew"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Payments & Payouts",
               "description": "Transporter Earnings & Wallet.\nGET /?period=thisYear|lastYear|2026&page=1&limit=7\nstats + revenue as before.\npaymentHistory: date, type (withdrawal), accountType (bank_transfer), accountNumber, amount (number), status (pending|approved|rejected)\nPOST /withdrawals — amount must be > 0 and <= availableBalance (10 allowed if balance is 10; 11 rejected).",
               "item": [

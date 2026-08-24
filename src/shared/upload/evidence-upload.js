@@ -68,6 +68,11 @@ export const PROOF_FILE_FIELDS = [
   { name: 'proof[]', maxCount: 10 },
 ]
 
+export const DOCUMENT_FILE_FIELDS = [
+  { name: 'document', maxCount: 10 },
+  { name: 'document[]', maxCount: 10 },
+]
+
 export const disputeEvidenceUpload = makeUpload({
   folder: 'disputes',
   mime: IMAGE_MIME,
@@ -87,6 +92,13 @@ export const deliveryProofUpload = makeUpload({
   mime: IMAGE_MIME,
   ext: IMAGE_EXT,
   errorMessage: 'Only JPEG, PNG, or WEBP images are allowed',
+})
+
+export const insuranceDocumentUpload = makeUpload({
+  folder: 'insurance',
+  mime: RETURN_MIME,
+  ext: RETURN_EXT,
+  errorMessage: 'Only JPEG, PNG, WEBP, PDF, DOC, or DOCX files are allowed',
 })
 
 export function evidenceFilePublicUrl(file) {
@@ -149,10 +161,18 @@ export function mergeDeliveryProof(body, files) {
   return [...fromBody, ...uploaded]
 }
 
+export function documentRelativeUrlsFromFiles(files) {
+  return collectedFiles(files, ['document', 'document[]'])
+    .map((file) => evidenceFilePublicUrl(file))
+    .filter(Boolean)
+}
+
 export default {
   disputeEvidenceUpload,
   returnEvidenceUpload,
   deliveryProofUpload,
+  insuranceDocumentUpload,
   EVIDENCE_FILE_FIELDS,
   PROOF_FILE_FIELDS,
+  DOCUMENT_FILE_FIELDS,
 }

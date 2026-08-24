@@ -419,6 +419,51 @@ async function main() {
   await ensureWallet(transporter.id, 500, 45)
   await ensureWallet(affiliate.id, 95, 12)
 
+  await prisma.transporterInsurance.upsert({
+    where: {
+      userId_kind: { userId: transporter.id, kind: 'CIVIL' },
+    },
+    create: {
+      userId: transporter.id,
+      kind: 'CIVIL',
+      provider: 'SafeGuard Insurance Co.',
+      policyNumber: 'POL-CL-849372',
+      coverageAmount: 1000000,
+      startDate: new Date('2025-01-15T00:00:00.000Z'),
+      expiryDate: new Date('2027-01-15T00:00:00.000Z'),
+      status: 'VERIFIED',
+    },
+    update: {
+      provider: 'SafeGuard Insurance Co.',
+      policyNumber: 'POL-CL-849372',
+      coverageAmount: 1000000,
+      expiryDate: new Date('2027-01-15T00:00:00.000Z'),
+      status: 'VERIFIED',
+    },
+  })
+  await prisma.transporterInsurance.upsert({
+    where: {
+      userId_kind: { userId: transporter.id, kind: 'CARGO' },
+    },
+    create: {
+      userId: transporter.id,
+      kind: 'CARGO',
+      provider: 'FreightSecure Insurance',
+      policyNumber: 'POL-CG-394821',
+      coverageAmount: 500000,
+      startDate: new Date('2025-01-15T00:00:00.000Z'),
+      expiryDate: new Date('2027-01-15T00:00:00.000Z'),
+      status: 'VERIFIED',
+    },
+    update: {
+      provider: 'FreightSecure Insurance',
+      policyNumber: 'POL-CG-394821',
+      coverageAmount: 500000,
+      expiryDate: new Date('2027-01-15T00:00:00.000Z'),
+      status: 'VERIFIED',
+    },
+  })
+
   const project = await prisma.project.upsert({
     where: { id: '00000000-0000-4000-8000-000000000001' },
     create: {

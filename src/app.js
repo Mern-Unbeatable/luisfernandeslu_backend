@@ -56,6 +56,7 @@ import factoryAuctionRoutes from './modules/auctions/routes/factory-auction.rout
 import transporterPaymentsRoutes from './modules/transporter-payments/routes/transporter-payments.routes.js'
 import transporterAuctionRoutes from './modules/auctions/routes/transporter-auction.routes.js'
 import transporterDeliveryRoutes from './modules/auctions/routes/transporter-delivery.routes.js'
+import transporterInsuranceRoutes from './modules/transporter-insurance/routes/insurance.routes.js'
 import buyerOrderRoutes from './modules/orders/routes/buyer-order.routes.js'
 import { UPLOAD_ROOT } from './shared/storage.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
@@ -148,6 +149,7 @@ app.use('/api/supplier/auctions', supplierAuctionRoutes)
 app.use('/api/factory/auctions', factoryAuctionRoutes)
 app.use('/api/transporter/auctions', transporterAuctionRoutes)
 app.use('/api/transporter/deliveries', transporterDeliveryRoutes)
+app.use('/api/transporter/insurance', transporterInsuranceRoutes)
 app.use('/api/transporter/payments-payouts', transporterPaymentsRoutes)
 app.use('/api/customer/orders', buyerOrderRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
