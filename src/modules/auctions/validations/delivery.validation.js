@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { optionalUrlList } from '../../../shared/upload/evidence-upload.js'
 
 const uuid = z.string().uuid('Invalid id')
 
@@ -30,5 +31,8 @@ export const updateDeliveryStatusBodySchema = z.object({
 })
 
 export const verifyDeliveryOtpBodySchema = z.object({
-  otp: z.string().trim().regex(/^\d{4}$/, 'OTP must be 4 digits'),
+  otp: z.coerce.string().trim().regex(/^\d{4}$/, 'OTP must be 4 digits'),
+  proof: z
+    .preprocess(optionalUrlList, z.array(z.string().trim().min(1)).max(10))
+    .optional(),
 })

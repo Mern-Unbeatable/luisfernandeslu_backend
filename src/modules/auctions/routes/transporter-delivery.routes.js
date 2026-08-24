@@ -11,6 +11,10 @@ import {
   requireAccessToken,
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
+import {
+  deliveryProofUpload,
+  PROOF_FILE_FIELDS,
+} from '../../../shared/upload/evidence-upload.js'
 
 class TransporterDeliveryRoutes {
   constructor() {
@@ -25,6 +29,13 @@ class TransporterDeliveryRoutes {
       '/',
       validate(listDeliveriesQuerySchema, 'query'),
       (req, res, next) => deliveryController.listForTransporter(req, res, next),
+    )
+
+    this.router.get(
+      '/completed',
+      validate(listDeliveriesQuerySchema, 'query'),
+      (req, res, next) =>
+        deliveryController.listCompletedForTransporter(req, res, next),
     )
 
     this.router.get(
@@ -43,6 +54,7 @@ class TransporterDeliveryRoutes {
     this.router.post(
       '/:id/verify-otp',
       validate(deliveryIdParamSchema, 'params'),
+      deliveryProofUpload.fields(PROOF_FILE_FIELDS),
       validate(verifyDeliveryOtpBodySchema, 'body'),
       (req, res, next) => deliveryController.verifyOtp(req, res, next),
     )

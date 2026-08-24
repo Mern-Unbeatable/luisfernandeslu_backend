@@ -416,7 +416,7 @@ async function main() {
 
   await ensureWallet(supplier.id, 1250, 80)
   await ensureWallet(factory.id, 3400, 0)
-  await ensureWallet(transporter.id, 210, 45)
+  await ensureWallet(transporter.id, 500, 45)
   await ensureWallet(affiliate.id, 95, 12)
 
   const project = await prisma.project.upsert({
@@ -1134,9 +1134,18 @@ async function main() {
       where: { shipmentId: shipment.id },
       select: { id: true, auctionCode: true },
     })
-    auctionSeq += 1
-    const auctionCode =
-      existingAuction?.auctionCode || formatAuctionCode(auctionSeq)
+    let auctionCode = existingAuction?.auctionCode || null
+    if (!auctionCode) {
+      while (!auctionCode) {
+        auctionSeq += 1
+        const candidate = formatAuctionCode(auctionSeq)
+        const taken = await prisma.shipmentAuction.findUnique({
+          where: { auctionCode: candidate },
+          select: { id: true },
+        })
+        if (!taken) auctionCode = candidate
+      }
+    }
     const auction = await prisma.shipmentAuction.upsert({
       where: { shipmentId: shipment.id },
       create: {
@@ -1218,6 +1227,92 @@ async function main() {
     status: 'ASSIGNED',
     expiresInMin: -15,
     acceptBid: true,
+  })
+
+  const doneCement = await makeOrder({
+    orderNumber: 'ORD-DEMO-TR-DONE-001',
+    customerId: company.id,
+    sellerId: supplier.id,
+    shippingAddressId: companyShip.id,
+    billingAddressId: companyShip.id,
+    status: 'COMPLETED',
+    source: 'DIRECT_CART',
+    product: supplierProduct,
+    qty: 30,
+    shippingFee: 21,
+    projectId: project.id,
+  })
+  const doneFactory = await makeOrder({
+    orderNumber: 'ORD-DEMO-TR-DONE-002',
+    customerId: supplier.id,
+    sellerId: factory.id,
+    shippingAddressId: supplierWh.id,
+    billingAddressId: supplierWh.id,
+    status: 'COMPLETED',
+    source: 'FACTORY_CONVERSION',
+    product: factoryProduct,
+    qty: 40,
+    shippingFee: 0,
+  })
+
+  async function seedCompletedJob({
+    order,
+    pickup,
+    delivery,
+    distanceKm,
+    bidStartPrice,
+    isFactoryOrder,
+    pickedAt,
+  }) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { orderStatus: 'COMPLETED' },
+    })
+    const auction = await ensureAuction({
+      order,
+      pickup,
+      delivery,
+      distanceKm,
+      isFactoryOrder,
+      bidStartPrice,
+      status: 'ASSIGNED',
+      expiresInMin: -90,
+      acceptBid: true,
+    })
+    await prisma.trackingEvent.deleteMany({
+      where: { shipmentId: auction.shipmentId },
+    })
+    await prisma.trackingEvent.createMany({
+      data: [
+        { shipmentId: auction.shipmentId, statusText: 'Assigned' },
+        {
+          shipmentId: auction.shipmentId,
+          statusText: 'Picked Up',
+          timestamp: pickedAt,
+        },
+        { shipmentId: auction.shipmentId, statusText: 'In Transit' },
+        { shipmentId: auction.shipmentId, statusText: 'Delivered' },
+      ],
+    })
+  }
+
+  await seedCompletedJob({
+    order: doneCement,
+    pickup: 'Brick Kiln Industries, Vasai East, Palghar 401208',
+    delivery: 'Villa Paradise Construction, Mira Road, Thane 401107',
+    distanceKm: 21,
+    bidStartPrice: 180,
+    isFactoryOrder: false,
+    pickedAt: new Date('2026-08-20T08:15:00.000Z'),
+  })
+  await seedCompletedJob({
+    order: doneFactory,
+    pickup: 'UltraMix Concrete Plant, Ghodbunder Road, Thane 400607',
+    delivery: 'Sunrise Tower Project, Pokhran Road, Thane 400606',
+    distanceKm: 12,
+    bidStartPrice: 78,
+    isFactoryOrder: true,
+    pickedAt: new Date('2026-08-21T09:40:00.000Z'),
   })
 
   // 10 open auctions for transporter board (PENDING_BIDS, not expired, no bid yet)

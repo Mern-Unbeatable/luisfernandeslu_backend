@@ -5,6 +5,7 @@ import { formatAddressLine } from '../../../shared/address.js'
 import { money } from '../../../shared/money.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import { companyDisplayName, partyName } from '../../../shared/party.js'
+import { absolutizeUrl } from '../../../lib/requestUrl.js'
 
 const ACTIVE_STATUSES = ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT']
 
@@ -70,6 +71,21 @@ function assignedWhere(transporterId, statusFilter) {
     auctionStatus: 'ASSIGNED',
     bids: { some: { transporterId, status: 'ACCEPTED' } },
     shipment: { order: { orderStatus } },
+  }
+}
+
+function completedWhere(transporterId) {
+  return assignedWhere(transporterId, { in: ['DELIVERED', 'COMPLETED'] })
+}
+
+function splitPlace(text) {
+  const value = String(text || '').trim()
+  if (!value) return { name: '', address: '' }
+  const comma = value.indexOf(',')
+  if (comma === -1) return { name: value, address: '' }
+  return {
+    name: value.slice(0, comma).trim(),
+    address: value.slice(comma + 1).trim(),
   }
 }
 
@@ -155,6 +171,27 @@ function mapDeliveryCard(auction) {
     deliveryLocation: shipment.deliveryAddressText,
     pickedAt: pickupEvent?.timestamp || null,
     actions: deliveryActions(order, shipment),
+  }
+}
+
+function mapCompletedCard(auction) {
+  const shipment = auction.shipment
+  const order = shipment.order
+  const line = order.orderLineItems?.[0]
+  const bid = auction.bids?.[0]
+  const pickupEvent = shipment.trackingEvents?.find(
+    (e) => e.statusText === 'Picked Up',
+  )
+  return {
+    auctionId: auction.id,
+    productName: line?.product?.title || null,
+    orderId: order.orderNumber,
+    bidAmount: money(bid?.bidAmount),
+    distanceKm: shipment.distanceKm ?? null,
+    status: 'delivered',
+    pickup: splitPlace(shipment.pickupAddressText),
+    delivery: splitPlace(shipment.deliveryAddressText),
+    pickedAt: pickupEvent?.timestamp || null,
   }
 }
 
@@ -294,6 +331,38 @@ class DeliveryService {
     }
   }
 
+  async listCompletedForTransporter(auth, query) {
+    const transporterId = assertRole(
+      auth,
+      'transporter',
+      'Only transporters can list completed deliveries',
+    )
+    const { page, limit, skip, take } = parsePagination(query, {
+      defaultLimit: 20,
+    })
+    const where = completedWhere(transporterId)
+
+    const [total, auctions] = await Promise.all([
+      prisma.shipmentAuction.count({ where }),
+      prisma.shipmentAuction.findMany({
+        where,
+        include: assignedInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+    ])
+
+    return {
+      status: 200,
+      body: {
+        deliveries: auctions.map(mapCompletedCard),
+        pagination: paginationMeta({ page, limit, total }),
+        message: 'Completed deliveries fetched',
+      },
+    }
+  }
+
   async getForTransporter(auth, auctionId) {
     const transporterId = assertRole(
       auth,
@@ -412,7 +481,7 @@ class DeliveryService {
     throw httpError('Unknown delivery action', 400, 'InvalidAction')
   }
 
-  async verifyOtp(auth, auctionId, otp) {
+  async verifyOtp(auth, auctionId, otp, proofUrls = [], baseUrl) {
     const transporterId = assertRole(
       auth,
       'transporter',
@@ -431,6 +500,14 @@ class DeliveryService {
       throw httpError('Invalid delivery OTP', 400, 'InvalidOtp')
     }
 
+    const proofs = (proofUrls || []).map(String).filter(Boolean)
+    const proofImageUrl =
+      proofs.length === 0
+        ? null
+        : proofs.length === 1
+          ? proofs[0]
+          : JSON.stringify(proofs)
+
     await prisma.$transaction([
       prisma.order.update({
         where: { id: order.id },
@@ -443,11 +520,23 @@ class DeliveryService {
         },
       }),
       prisma.trackingEvent.create({
-        data: { shipmentId: auction.shipment.id, statusText: 'Delivered' },
+        data: {
+          shipmentId: auction.shipment.id,
+          statusText: 'Delivered',
+          proofImageUrl,
+        },
       }),
     ])
 
-    return this.mutationOk(auctionId, 'Delivery verified')
+    const proof = proofs.map((url) => absolutizeUrl(url, baseUrl)).filter(Boolean)
+    return {
+      status: 200,
+      body: {
+        id: auctionId,
+        ...(proof.length ? { proof } : {}),
+        message: 'Delivery verified',
+      },
+    }
   }
 
   async listForBuyer(auth, query) {

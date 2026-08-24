@@ -1,5 +1,7 @@
 import deliveryService from '../services/delivery.service.js'
 import { sendServiceResult } from '../../../utils/apiResponse.js'
+import { resolveRequestBaseUrl } from '../../../lib/requestUrl.js'
+import { mergeDeliveryProof } from '../../../shared/upload/evidence-upload.js'
 
 class DeliveryController {
   async listForTransporter(req, res, next) {
@@ -7,6 +9,17 @@ class DeliveryController {
       return sendServiceResult(
         res,
         await deliveryService.listForTransporter(req.auth, req.query),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async listCompletedForTransporter(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await deliveryService.listCompletedForTransporter(req.auth, req.query),
       )
     } catch (err) {
       next(err)
@@ -43,7 +56,13 @@ class DeliveryController {
     try {
       return sendServiceResult(
         res,
-        await deliveryService.verifyOtp(req.auth, req.params.id, req.body.otp),
+        await deliveryService.verifyOtp(
+          req.auth,
+          req.params.id,
+          req.body.otp,
+          mergeDeliveryProof(req.body, req.files),
+          resolveRequestBaseUrl(req),
+        ),
       )
     } catch (err) {
       next(err)

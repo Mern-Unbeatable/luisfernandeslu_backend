@@ -53,6 +53,7 @@ import erpApiKeysRoutes from './modules/supplier-erp/routes/api-keys.routes.js'
 import supplierErpInventoryRoutes from './modules/supplier-erp/routes/inventory-erp.routes.js'
 import supplierAuctionRoutes from './modules/auctions/routes/supplier-auction.routes.js'
 import factoryAuctionRoutes from './modules/auctions/routes/factory-auction.routes.js'
+import transporterPaymentsRoutes from './modules/transporter-payments/routes/transporter-payments.routes.js'
 import transporterAuctionRoutes from './modules/auctions/routes/transporter-auction.routes.js'
 import transporterDeliveryRoutes from './modules/auctions/routes/transporter-delivery.routes.js'
 import buyerOrderRoutes from './modules/orders/routes/buyer-order.routes.js'
@@ -147,6 +148,7 @@ app.use('/api/supplier/auctions', supplierAuctionRoutes)
 app.use('/api/factory/auctions', factoryAuctionRoutes)
 app.use('/api/transporter/auctions', transporterAuctionRoutes)
 app.use('/api/transporter/deliveries', transporterDeliveryRoutes)
+app.use('/api/transporter/payments-payouts', transporterPaymentsRoutes)
 app.use('/api/customer/orders', buyerOrderRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
 app.use('/api/admin/users', adminUserRoutes)

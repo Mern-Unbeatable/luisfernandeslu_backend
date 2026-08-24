@@ -63,6 +63,11 @@ export const EVIDENCE_FILE_FIELDS = [
   { name: 'evidence[]', maxCount: 10 },
 ]
 
+export const PROOF_FILE_FIELDS = [
+  { name: 'proof', maxCount: 10 },
+  { name: 'proof[]', maxCount: 10 },
+]
+
 export const disputeEvidenceUpload = makeUpload({
   folder: 'disputes',
   mime: IMAGE_MIME,
@@ -77,19 +82,23 @@ export const returnEvidenceUpload = makeUpload({
   errorMessage: 'Only JPEG, PNG, WEBP, PDF, DOC, or DOCX files are allowed',
 })
 
+export const deliveryProofUpload = makeUpload({
+  folder: 'deliveries',
+  mime: IMAGE_MIME,
+  ext: IMAGE_EXT,
+  errorMessage: 'Only JPEG, PNG, or WEBP images are allowed',
+})
+
 export function evidenceFilePublicUrl(file) {
   if (!file) return null
   const relative = path.relative(UPLOAD_ROOT, file.path).replace(/\\/g, '/')
   return `/uploads/${relative}`
 }
 
-function collectedFiles(files) {
+function collectedFiles(files, names = ['evidence', 'evidence[]']) {
   if (!files) return []
   if (Array.isArray(files)) return files
-  return [
-    ...(files.evidence || []),
-    ...(files['evidence[]'] || []),
-  ]
+  return names.flatMap((name) => files[name] || [])
 }
 
 export function evidenceUrlsFromFiles(files, baseUrl) {
@@ -128,8 +137,22 @@ export function mergeEvidence(body, files, baseUrl) {
   }
 }
 
+export function proofRelativeUrlsFromFiles(files) {
+  return collectedFiles(files, ['proof', 'proof[]'])
+    .map((file) => evidenceFilePublicUrl(file))
+    .filter(Boolean)
+}
+
+export function mergeDeliveryProof(body, files) {
+  const uploaded = proofRelativeUrlsFromFiles(files)
+  const fromBody = optionalUrlList(body?.proof)
+  return [...fromBody, ...uploaded]
+}
+
 export default {
   disputeEvidenceUpload,
   returnEvidenceUpload,
+  deliveryProofUpload,
   EVIDENCE_FILE_FIELDS,
+  PROOF_FILE_FIELDS,
 }

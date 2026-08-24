@@ -6378,6 +6378,42 @@
                   "response": []
                 },
                 {
+                  "name": "List Completed Deliveries",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/deliveries/completed?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "deliveries",
+                        "completed"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
                   "name": "Get Assigned Delivery Details",
                   "request": {
                     "method": "GET",
@@ -6552,15 +6588,23 @@
                         "key": "Authorization",
                         "value": "Bearer {{accessToken}}",
                         "type": "text"
-                      },
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
                       }
                     ],
                     "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"otp\": \"1234\"\n}"
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "otp",
+                          "value": "1234",
+                          "type": "text"
+                        },
+                        {
+                          "key": "proof",
+                          "type": "file",
+                          "src": [],
+                          "disabled": true
+                        }
+                      ]
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/deliveries/{{auctionId}}/verify-otp",
@@ -6574,6 +6618,50 @@
                         "{{auctionId}}",
                         "verify-otp"
                       ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Payments & Payouts",
+              "description": "Transporter Earnings & Wallet.\nGET /?period=thisYear|lastYear|2026&page=1&limit=7\nstats + revenue as before.\npaymentHistory: date, type (withdrawal), accountType (bank_transfer), accountNumber, amount (number), status (pending|approved|rejected)\nPOST /withdrawals — amount must be > 0 and <= availableBalance (10 allowed if balance is 10; 11 rejected).",
+              "item": [
+                {
+                  "name": "Get Payments & Payouts",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/payments-payouts?period=thisYear&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "payments-payouts"],
+                      "query": [
+                        { "key": "period", "value": "thisYear" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Request Payout",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"amount\": 400,\n  \"businessName\": \"Marlin Transport & Logistics\",\n  \"routingNumber\": \"021000021\",\n  \"accountNumber\": \"458721369845\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/payments-payouts/withdrawals",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "payments-payouts", "withdrawals"]
                     }
                   },
                   "response": []
