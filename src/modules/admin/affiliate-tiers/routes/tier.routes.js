@@ -2,6 +2,7 @@ import { Router } from 'express'
 import adminAffiliateTierController from '../controllers/tier.controller.js'
 import {
   createTierBodySchema,
+  reorderTiersBodySchema,
   tierIdParamSchema,
   updateTierBodySchema,
 } from '../validations/tier.validation.js'
@@ -23,6 +24,12 @@ class AdminAffiliateTierRoutes {
 
     this.router.get('/', (req, res, next) =>
       adminAffiliateTierController.list(req, res, next),
+    )
+
+    this.router.put(
+      '/reorder',
+      validate(reorderTiersBodySchema, 'body'),
+      (req, res, next) => adminAffiliateTierController.reorder(req, res, next),
     )
 
     this.router.post(

@@ -7,17 +7,34 @@ function assertAdmin(auth) {
   }
 }
 
+function requirementLabel(minActiveClients) {
+  const n = Number(minActiveClients) || 0
+  if (n <= 0) return 'ENTRY LEVEL TIER'
+  return `${n}+ Active Clients Required`
+}
+
 function mapTier(t) {
+  const membersRequired = t.minActiveClients
   return {
     id: t.id,
     name: t.name,
-    minActiveClients: t.minActiveClients,
+    membersRequired,
     commissionPercent: t.commissionPercent,
-    sortOrder: t.sortOrder,
+    description: t.description || 'Recurring Lifetime payout split',
+    requirement: requirementLabel(membersRequired),
     isActive: t.isActive,
-    createdAt: t.createdAt,
-    updatedAt: t.updatedAt,
+    sortOrder: t.sortOrder,
   }
+}
+
+function resolveName(body) {
+  return String(body.name || body.levelName || '').trim()
+}
+
+function resolveMembersRequired(body, fallback) {
+  if (body.membersRequired != null) return Number(body.membersRequired)
+  if (body.minActiveClients != null) return Number(body.minActiveClients)
+  return fallback
 }
 
 class AdminAffiliateTierService {
@@ -26,18 +43,28 @@ class AdminAffiliateTierService {
     const tiers = await prisma.affiliateTier.findMany({
       orderBy: [{ sortOrder: 'asc' }, { minActiveClients: 'asc' }],
     })
+    const levels = tiers.map(mapTier)
     return {
       status: 200,
-      body: { tiers: tiers.map(mapTier), message: 'Affiliate tiers fetched' },
+      body: {
+        levels,
+        tiers: levels,
+        message: 'Levels fetched',
+      },
     }
   }
 
   async create(auth, body = {}) {
     assertAdmin(auth)
-    const name = String(body.name || '').trim()
-    const minActiveClients = Number(body.minActiveClients)
+    const name = resolveName(body)
+    const minActiveClients = resolveMembersRequired(body)
     const commissionPercent = Number(body.commissionPercent)
-    const sortOrder = Number(body.sortOrder ?? minActiveClients)
+    const description =
+      body.description != null
+        ? String(body.description).trim()
+        : 'Recurring Lifetime payout split'
+    const sortOrder =
+      body.sortOrder != null ? Number(body.sortOrder) : undefined
 
     if (!name) throw httpError('name is required', 400, 'ValidationError')
     if (!Number.isFinite(minActiveClients) || minActiveClients < 0) {
@@ -47,24 +74,29 @@ class AdminAffiliateTierService {
       throw httpError('commissionPercent must be >= 0', 400, 'ValidationError')
     }
 
+    const last = await prisma.affiliateTier.findFirst({
+      orderBy: { sortOrder: 'desc' },
+      select: { sortOrder: true },
+    })
     try {
       const tier = await prisma.affiliateTier.create({
         data: {
           name,
           minActiveClients,
           commissionPercent,
-          sortOrder,
-          isActive: body.isActive !== false,
+          description: description || 'Recurring Lifetime payout split',
+          sortOrder: Number.isFinite(sortOrder) ? sortOrder : (last?.sortOrder ?? -1) + 1,
+          isActive: body.isActive === true,
         },
       })
       return {
         status: 201,
-        body: { tier: mapTier(tier), message: 'Affiliate tier created' },
+        body: { level: mapTier(tier), message: 'Level created' },
       }
     } catch (err) {
       if (err?.code === 'P2002') {
         throw httpError(
-          'A tier with this minActiveClients already exists',
+          'A level with this membersRequired already exists',
           409,
           'Conflict',
         )
@@ -79,11 +111,12 @@ class AdminAffiliateTierService {
     if (!existing) throw httpError('Tier not found', 404, 'NotFound')
 
     const data = {}
-    if (body.name != null) data.name = String(body.name).trim()
-    if (body.minActiveClients != null) {
-      data.minActiveClients = Number(body.minActiveClients)
+    const name = resolveName(body)
+    if (name) data.name = name
+    if (body.minActiveClients != null || body.membersRequired != null) {
+      data.minActiveClients = resolveMembersRequired(body)
       if (!Number.isFinite(data.minActiveClients) || data.minActiveClients < 0) {
-        throw httpError('minActiveClients must be >= 0', 400, 'ValidationError')
+        throw httpError('membersRequired must be >= 0', 400, 'ValidationError')
       }
     }
     if (body.commissionPercent != null) {
@@ -92,6 +125,9 @@ class AdminAffiliateTierService {
         throw httpError('commissionPercent must be >= 0', 400, 'ValidationError')
       }
     }
+    if (body.description !== undefined) {
+      data.description = body.description == null ? null : String(body.description).trim()
+    }
     if (body.sortOrder != null) data.sortOrder = Number(body.sortOrder)
     if (body.isActive != null) data.isActive = Boolean(body.isActive)
 
@@ -99,12 +135,12 @@ class AdminAffiliateTierService {
       const tier = await prisma.affiliateTier.update({ where: { id }, data })
       return {
         status: 200,
-        body: { tier: mapTier(tier), message: 'Affiliate tier updated' },
+        body: { level: mapTier(tier), message: 'Level updated' },
       }
     } catch (err) {
       if (err?.code === 'P2002') {
         throw httpError(
-          'A tier with this minActiveClients already exists',
+          'A level with this membersRequired already exists',
           409,
           'Conflict',
         )
@@ -120,7 +156,47 @@ class AdminAffiliateTierService {
     await prisma.affiliateTier.delete({ where: { id } })
     return {
       status: 200,
-      body: { id, message: 'Affiliate tier deleted' },
+      body: { id, message: 'Level deleted' },
+    }
+  }
+
+  async reorder(auth, body = {}) {
+    assertAdmin(auth)
+    const ids = (body.ids || []).map((id) => String(id).trim()).filter(Boolean)
+    if (!ids.length) {
+      throw httpError('ids is required', 400, 'ValidationError')
+    }
+
+    const existing = await prisma.affiliateTier.findMany({
+      select: { id: true },
+    })
+    const existingIds = new Set(existing.map((row) => row.id))
+    for (const id of ids) {
+      if (!existingIds.has(id)) {
+        throw httpError('Tier not found', 404, 'NotFound')
+      }
+    }
+
+    await prisma.$transaction(
+      ids.map((id, index) =>
+        prisma.affiliateTier.update({
+          where: { id },
+          data: { sortOrder: index },
+        }),
+      ),
+    )
+
+    const tiers = await prisma.affiliateTier.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { minActiveClients: 'asc' }],
+    })
+    const levels = tiers.map(mapTier)
+    return {
+      status: 200,
+      body: {
+        levels,
+        tiers: levels,
+        message: 'Levels reordered',
+      },
     }
   }
 }

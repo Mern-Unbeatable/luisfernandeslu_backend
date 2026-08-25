@@ -66,7 +66,7 @@ const PT = {
   },
 }
 
-async function ensureUser({ email, password, name, role, phone }) {
+async function ensureUser({ email, password, name, role, phone, status = 'ACTIVE', referralCode }) {
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
     await prisma.user.update({
@@ -74,9 +74,10 @@ async function ensureUser({ email, password, name, role, phone }) {
       data: {
         name,
         role,
-        status: 'ACTIVE',
+        status,
         emailVerified: true,
         phoneNumber: phone,
+        ...(referralCode ? { referralCode } : {}),
       },
     })
     return prisma.user.findUnique({ where: { id: existing.id } })
@@ -98,9 +99,45 @@ async function ensureUser({ email, password, name, role, phone }) {
     where: { id: userId },
     data: {
       role,
-      status: 'ACTIVE',
+      status,
       emailVerified: true,
       phoneNumber: phone,
+      ...(referralCode ? { referralCode } : {}),
+    },
+  })
+}
+
+async function ensureReferredBuyer({
+  email,
+  name,
+  role,
+  phone,
+  referredById,
+  status = 'ACTIVE',
+}) {
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing) {
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        name,
+        role,
+        status,
+        emailVerified: true,
+        phoneNumber: phone,
+        referredById,
+      },
+    })
+  }
+  return prisma.user.create({
+    data: {
+      name,
+      email,
+      emailVerified: true,
+      role,
+      status,
+      phoneNumber: phone,
+      referredById,
     },
   })
 }
@@ -253,6 +290,222 @@ async function ensureOrder(data) {
   return prisma.order.create({ data })
 }
 
+const AFFILIATE_DIRECTORY = [
+  {
+    key: 'alex',
+    email: 'affiliate@test.local',
+    name: 'Alex Rivers',
+    phone: '912000006',
+    referralCode: 'ALEXRIVERS15',
+    status: 'ACTIVE',
+    iban: 'PT50000600000000000000006',
+  },
+  {
+    key: 'sarah',
+    email: 'sarah.corp@test.local',
+    name: 'Sarah Corp',
+    phone: '912000016',
+    referralCode: 'SARAHCORP10',
+    status: 'ACTIVE',
+    iban: 'PT50000600000000000000016',
+  },
+  {
+    key: 'build',
+    email: 'build.partners@test.local',
+    name: 'Build Partners LLC',
+    phone: '912000017',
+    referralCode: 'BUILDPRO08',
+    status: 'SUSPENDED',
+    iban: 'PT50000600000000000000017',
+  },
+  {
+    key: 'mason',
+    email: 'mason.referrals@test.local',
+    name: 'Mason Referrals',
+    phone: '912000018',
+    referralCode: 'MASON12',
+    status: 'ACTIVE',
+    iban: 'PT50000600000000000000018',
+  },
+  {
+    key: 'cement',
+    email: 'cement.connect@test.local',
+    name: 'Cement Connect',
+    phone: '912000019',
+    referralCode: 'CEMENT15',
+    status: 'ACTIVE',
+    iban: 'PT50000600000000000000019',
+  },
+  {
+    key: 'priya',
+    email: 'priya.nair@test.local',
+    name: 'Priya Nair',
+    phone: '912000020',
+    referralCode: 'PRIYA10',
+    status: 'ACTIVE',
+    iban: 'PT50000600000000000000020',
+  },
+  {
+    key: 'north',
+    email: 'northstar@test.local',
+    name: 'North Star Affiliates',
+    phone: '912000021',
+    referralCode: 'NORTHSTAR12',
+    status: 'SUSPENDED',
+    iban: 'PT50000600000000000000021',
+  },
+]
+
+const CLIENT_FIRST = [
+  ['John Anderson', 'CUSTOMER'],
+  ['Sarah Mitchell', 'CUSTOMER'],
+  ['BuildPro Corp', 'COMPANY'],
+  ['Metro Supplies', 'COMPANY'],
+  ['Skyline Projects', 'COMPANY'],
+  ['Porto Mix Plant', 'COMPANY'],
+  ['Downtown Builders', 'COMPANY'],
+]
+
+const PAYOUT_STATUSES = [
+  'COMPLETED',
+  'REJECTED',
+  'PROCESSING',
+  'PENDING',
+  'PENDING',
+  'PROCESSING',
+  'COMPLETED',
+]
+
+async function seedAffiliateDirectory({
+  primaryAffiliate,
+  customer,
+  company,
+  supplier,
+  supplierProduct,
+  customerShip,
+  makeOrder,
+}) {
+  const affiliates = []
+  for (const row of AFFILIATE_DIRECTORY) {
+    const user =
+      row.email === primaryAffiliate.email
+        ? await prisma.user.update({
+            where: { id: primaryAffiliate.id },
+            data: {
+              name: row.name,
+              status: row.status,
+              phoneNumber: row.phone,
+              referralCode: row.referralCode,
+            },
+          })
+        : await ensureUser({
+            email: row.email,
+            password: PASSWORD,
+            name: row.name,
+            role: 'AFFILIATE',
+            phone: row.phone,
+            status: row.status,
+            referralCode: row.referralCode,
+          })
+    await ensureProfile(user.id, {
+      companyName: row.name,
+      ibanNumber: row.iban,
+      ibanPhone: row.phone,
+      verificationStatus: 'APPROVED',
+    })
+    await ensureWallet(user.id, 420 + affiliates.length * 80, 95 + affiliates.length * 10)
+    affiliates.push(user)
+  }
+
+  await prisma.user.update({
+    where: { id: customer.id },
+    data: { referredById: affiliates[0].id },
+  })
+  await prisma.user.update({
+    where: { id: company.id },
+    data: { referredById: affiliates[0].id },
+  })
+
+  const referred = []
+  for (let a = 0; a < affiliates.length; a += 1) {
+    const aff = affiliates[a]
+    for (let i = 0; i < CLIENT_FIRST.length; i += 1) {
+      const [baseName, role] = CLIENT_FIRST[i]
+      const name = a === 0 ? baseName : `${baseName} ${a + 1}`
+      const slug = String(aff.referralCode || `aff${a}`).toLowerCase()
+      const buyer = await ensureReferredBuyer({
+        email: `ref-${slug}-${i + 1}@test.local`,
+        name,
+        role,
+        phone: `91210${String(a).padStart(2, '0')}${String(i).padStart(2, '0')}`,
+        referredById: aff.id,
+        status: i === 1 ? 'SUSPENDED' : 'ACTIVE',
+      })
+      referred.push({ buyer, affiliate: aff, index: i, affIndex: a })
+    }
+  }
+
+  await prisma.withdrawalRequest.deleteMany({
+    where: { accountNumber: { startsWith: 'DEMO-AFF-' } },
+  })
+
+  for (let a = 0; a < affiliates.length; a += 1) {
+    const aff = affiliates[a]
+    for (let i = 0; i < CLIENT_FIRST.length; i += 1) {
+      const slot = referred.find(
+        (row) => row.affiliate.id === aff.id && row.index === i,
+      )
+      const month = i % 12
+      const at = new Date(Date.UTC(2026, month, 4 + i, 10, 0, 0))
+      const qty = 12 + i * 3 + a
+      const order = await makeOrder({
+        orderNumber: `ORD-DEMO-AFF-${a + 1}-${String(i + 1).padStart(2, '0')}`,
+        customerId: slot.buyer.id,
+        sellerId: supplier.id,
+        shippingAddressId: customerShip.id,
+        billingAddressId: customerShip.id,
+        status: 'COMPLETED',
+        source: 'DIRECT_CART',
+        product: supplierProduct,
+        qty,
+        shippingFee: 18,
+        affiliateId: aff.id,
+      })
+      const saleAmount = order.subTotal
+      const commissionAmount = Math.round(saleAmount * 0.15 * 100) / 100
+      await prisma.commissionTransaction.upsert({
+        where: { orderId: order.id },
+        create: {
+          affiliateId: aff.id,
+          orderId: order.id,
+          saleAmount,
+          commissionAmount,
+          status: i === 0 ? 'PENDING' : 'CLEARED',
+          createdAt: at,
+        },
+        update: {
+          affiliateId: aff.id,
+          saleAmount,
+          commissionAmount,
+          status: i === 0 ? 'PENDING' : 'CLEARED',
+          createdAt: at,
+        },
+      })
+
+      await prisma.withdrawalRequest.create({
+        data: {
+          userId: aff.id,
+          amount: 800 + i * 150 + a * 40,
+          accountNumber: `DEMO-AFF-${aff.referralCode}-${i + 1}`,
+          status: PAYOUT_STATUSES[i],
+          requestedAt: at,
+          processedAt: PAYOUT_STATUSES[i] === 'PENDING' ? null : at,
+        },
+      })
+    }
+  }
+}
+
 async function main() {
   const category = await leafCategory()
 
@@ -310,9 +563,10 @@ async function main() {
   const affiliate = await ensureUser({
     email: 'affiliate@test.local',
     password: PASSWORD,
-    name: 'Pedro Affiliates',
+    name: 'Alex Rivers',
     role: 'AFFILIATE',
     phone: '912000006',
+    referralCode: 'ALEXRIVERS15',
   })
   const admin = await ensureUser({
     email: ADMIN_EMAIL,
@@ -324,7 +578,7 @@ async function main() {
 
   await prisma.user.update({
     where: { id: affiliate.id },
-    data: { referralCode: affiliate.referralCode || 'AFF-DEMO-1' },
+    data: { referralCode: 'ALEXRIVERS15' },
   })
   await prisma.user.update({
     where: { id: customer.id },
@@ -336,30 +590,49 @@ async function main() {
   })
 
   const defaultTiers = [
-    { name: 'Starter Level', minActiveClients: 0, commissionPercent: 5, sortOrder: 0 },
-    { name: 'Bronze Level', minActiveClients: 100, commissionPercent: 10, sortOrder: 1 },
-    { name: 'Silver Level', minActiveClients: 200, commissionPercent: 15, sortOrder: 2 },
-    { name: 'Gold Level', minActiveClients: 300, commissionPercent: 20, sortOrder: 3 },
-    { name: 'Premium Level', minActiveClients: 500, commissionPercent: 25, sortOrder: 4 },
+    {
+      name: 'Starter Level',
+      minActiveClients: 0,
+      commissionPercent: 5,
+      sortOrder: 0,
+      isActive: true,
+      description: 'Recurring Lifetime payout split',
+    },
+    {
+      name: 'Bronze Level',
+      minActiveClients: 100,
+      commissionPercent: 10,
+      sortOrder: 1,
+      isActive: false,
+      description: 'Recurring Lifetime payout split',
+    },
+    {
+      name: 'Silver Level',
+      minActiveClients: 200,
+      commissionPercent: 15,
+      sortOrder: 2,
+      isActive: false,
+      description: 'Recurring Lifetime payout split',
+    },
+    {
+      name: 'Gold Level',
+      minActiveClients: 300,
+      commissionPercent: 20,
+      sortOrder: 3,
+      isActive: false,
+      description: 'Recurring Lifetime payout split',
+    },
+    {
+      name: 'Premium Level',
+      minActiveClients: 500,
+      commissionPercent: 25,
+      sortOrder: 4,
+      isActive: false,
+      description: 'Recurring Lifetime payout split',
+    },
   ]
-  for (const tier of defaultTiers) {
-    const existing = await prisma.affiliateTier.findFirst({
-      where: { minActiveClients: tier.minActiveClients },
-    })
-    if (existing) {
-      await prisma.affiliateTier.update({
-        where: { id: existing.id },
-        data: {
-          name: tier.name,
-          commissionPercent: tier.commissionPercent,
-          sortOrder: tier.sortOrder,
-          isActive: true,
-        },
-      })
-    } else {
-      await prisma.affiliateTier.create({ data: tier })
-    }
-  }
+  await prisma.affiliateTier.deleteMany({})
+  await prisma.affiliateTier.createMany({ data: defaultTiers })
 
   await ensureProfile(company.id, {
     companyName: 'Acme Construction Lda',
@@ -384,8 +657,9 @@ async function main() {
     verificationStatus: 'APPROVED',
   })
   await ensureProfile(affiliate.id, {
-    companyName: 'Pedro Affiliates',
+    companyName: 'Alex Rivers',
     ibanNumber: 'PT50000600000000000000006',
+    ibanPhone: '912000006',
     verificationStatus: 'APPROVED',
   })
 
@@ -1115,6 +1389,16 @@ async function main() {
     update: {},
   })
 
+  await seedAffiliateDirectory({
+    primaryAffiliate: affiliate,
+    customer,
+    company,
+    supplier,
+    supplierProduct,
+    customerShip,
+    makeOrder,
+  })
+
   await prisma.review.deleteMany({
     where: { authorId: customer.id, productId: supplierProduct.id },
   })
@@ -1549,14 +1833,14 @@ async function main() {
     create: {
       affiliateId: affiliate.id,
       campaignName: 'PRIMARY CHANNEL',
-      targetUrl: 'http://localhost:5173/ref?code=AFF-DEMO-1',
+      targetUrl: 'http://localhost:5173/ref?code=ALEXRIVERS15',
       trackingCode: 'DEMO-AFF-HOME',
       totalClicks: 42,
       totalConversions: 1,
     },
     update: {
       campaignName: 'PRIMARY CHANNEL',
-      targetUrl: 'http://localhost:5173/ref?code=AFF-DEMO-1',
+      targetUrl: 'http://localhost:5173/ref?code=ALEXRIVERS15',
     },
   })
 
@@ -1571,7 +1855,8 @@ async function main() {
   console.log(`  ${ADMIN_EMAIL}  (password: ${ADMIN_PASSWORD})`)
   console.log('\nERP key: erp_demo_supplier_key_construpreco')
   console.log('Promo: DEMO10')
-  console.log('Affiliate referral code: AFF-DEMO-1')
+  console.log('Affiliate referral code: ALEXRIVERS15')
+  console.log('Extra affiliates: sarah.corp / build.partners / mason.referrals / cement.connect / priya.nair / northstar @test.local')
   console.log('Orders: ORD-DEMO-CUST-001, ORD-DEMO-CO-001/002, ORD-DEMO-FAC-001/002/003')
   console.log('Open transporter auctions: ORD-DEMO-TX-OPEN-01 … 10')
   console.log('Marketing: MKT-DEMO-001…008 (pending/active/completed/rejected + unpaid hidden)')

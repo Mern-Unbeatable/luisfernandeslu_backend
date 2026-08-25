@@ -42,6 +42,17 @@ class AdminAffiliateTierController {
       next(err)
     }
   }
+
+  async reorder(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminAffiliateTierService.reorder(req.auth, req.body),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new AdminAffiliateTierController()

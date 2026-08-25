@@ -10939,6 +10939,328 @@
               ]
             },
             {
+              "name": "Affiliates",
+              "description": "Admin affiliate directory.\nGET /stats — status cards\nGET / — table (search, status, page, limit=7)\nPATCH /:id/status — { status: active|suspended }\nDELETE /:id\nGET /:id — details header + revenue/earned/clients\nGET /:id/clients — search, status, plan, sort=latest|oldest\nGET /:id/analytics — thisYear monthly series (numbers)\nGET /:id/commissions — status filter\nGET /:id/payouts — payout history\nGET /payouts — payout control table\nPATCH /payouts/:payoutId/status — paid|approved|rejected",
+              "item": [
+                {
+                  "name": "Get Affiliate Stats",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/stats",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "stats"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Affiliates",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.affiliates?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"affiliateId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates?status=all&search=&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates"],
+                      "query": [
+                        { "key": "status", "value": "all", "description": "all | active | suspended" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Affiliate Status",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"suspended\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "status"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Affiliate",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Affiliate Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Referred Clients",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/clients?status=all&plan=all&sort=latest&search=&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "clients"],
+                      "query": [
+                        { "key": "status", "value": "all" },
+                        { "key": "plan", "value": "all", "description": "all | customer | company" },
+                        { "key": "sort", "value": "latest", "description": "latest | oldest" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Revenue Analytics",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/analytics?period=thisYear",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "analytics"],
+                      "query": [{ "key": "period", "value": "thisYear" }]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Commission History",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/commissions?status=all&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "commissions"],
+                      "query": [
+                        { "key": "status", "value": "all", "description": "all | pending | approved | rejected" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Payout History",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/payouts?status=all&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "payouts"],
+                      "query": [
+                        { "key": "status", "value": "all", "description": "all | pending | approved | paid | rejected" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Payout Requests",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.payouts?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"affiliatePayoutId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/payouts?status=all&search=&page=1&limit=7",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "payouts"],
+                      "query": [
+                        { "key": "status", "value": "all" },
+                        { "key": "search", "value": "" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "7" }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Payout Status",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"approved\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/payouts/{{affiliatePayoutId}}/status",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "payouts", "{{affiliatePayoutId}}", "status"]
+                    },
+                    "description": "status: paid | approved | rejected"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Commission Levels",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const row = json.levels?.[0];",
+                          "if (row?.id) pm.collectionVariables.set(\"affiliateTierId\", row.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/levels",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "levels"]
+                    },
+                    "description": "Level Control cards: name, requirement, commissionPercent, description, isActive"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Create Commission Level",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Diamond\",\n  \"commissionPercent\": 5,\n  \"membersRequired\": 5,\n  \"description\": \"Recurring Lifetime payout split\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/levels",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "levels"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Commission Level",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Starter Level\",\n  \"commissionPercent\": 5,\n  \"membersRequired\": 0,\n  \"description\": \"Recurring Lifetime payout split\",\n  \"isActive\": true\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/levels/{{affiliateTierId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "levels", "{{affiliateTierId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Commission Level",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/levels/{{affiliateTierId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "levels", "{{affiliateTierId}}"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reorder Commission Levels",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"ids\": [\"{{affiliateTierId}}\"]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliates/levels/reorder",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliates", "levels", "reorder"]
+                    },
+                    "description": "Drag-and-drop: send all level ids left-to-right"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Affiliate Tiers",
               "description": "Admin manages affiliate commission tiers (min active referred clients → % of admin share).",
               "item": [
@@ -10996,7 +11318,7 @@
                     },
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"name\": \"Growth Level\",\n  \"minActiveClients\": 10,\n  \"commissionPercent\": 7.5,\n  \"sortOrder\": 0\n}",
+                      "raw": "{\n  \"name\": \"Growth Level\",\n  \"membersRequired\": 10,\n  \"commissionPercent\": 7.5,\n  \"description\": \"Recurring Lifetime payout spilt\"\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -11069,6 +11391,27 @@
                         "%7B%7BaffiliateTierId%7D%7D"
                       ]
                     }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reorder Affiliate Tiers",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"ids\": [\"{{affiliateTierId}}\"]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/affiliate-tiers/reorder",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "affiliate-tiers", "reorder"]
+                    },
+                    "description": "Drag-and-drop order. Send all level ids left-to-right."
                   },
                   "response": []
                 }
