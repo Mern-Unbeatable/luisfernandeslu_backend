@@ -6626,7 +6626,7 @@
             },
             {
               "name": "Insurance",
-              "description": "Civil + cargo liability.\nGET / — requirementsMet, policies[{ type: civil|cargo, status: verified|pending|expired, provider, policyNumber, coverageAmount, startDate, expiryDate, documentUrl }]\nPOST / multipart — type/insuranceType, provider, policyNumber, coverageAmount, startDate?, expiryDate, document (file)\nGET /:kind/pdf — kind=civil|cargo\nPOST /:kind/renew — same fields as upload; document optional",
+              "description": "Civil + cargo liability.\nGET / — requirementsMet, policies[{ type, status, provider, policyNumber, coverageAmount, startDate, expiryDate, documentUrl }]\nPOST / — upload and renew (same API). Multipart: type (civil|cargo), provider, policyNumber, coverageAmount, startDate?, expiryDate, document (required on first upload, optional on renew)\nGET /:kind/pdf — kind=civil|cargo",
               "item": [
                 {
                   "name": "Get Insurance",
@@ -6642,7 +6642,7 @@
                   "response": []
                 },
                 {
-                  "name": "Upload Insurance",
+                  "name": "Save Insurance (Upload / Renew)",
                   "request": {
                     "method": "POST",
                     "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
@@ -6654,7 +6654,7 @@
                         { "key": "policyNumber", "value": "POL-CL-849372", "type": "text" },
                         { "key": "coverageAmount", "value": "1000000", "type": "text" },
                         { "key": "startDate", "value": "2025-01-15", "type": "text" },
-                        { "key": "expiryDate", "value": "2026-01-15", "type": "text" },
+                        { "key": "expiryDate", "value": "2027-01-15", "type": "text" },
                         { "key": "document", "type": "file", "src": [] }
                       ]
                     },
@@ -6675,30 +6675,6 @@
                       "raw": "{{baseUrl}}/api/transporter/insurance/civil/pdf",
                       "host": ["{{baseUrl}}"],
                       "path": ["api", "transporter", "insurance", "civil", "pdf"]
-                    }
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Renew Insurance Policy",
-                  "request": {
-                    "method": "POST",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
-                    "body": {
-                      "mode": "formdata",
-                      "formdata": [
-                        { "key": "provider", "value": "SafeGuard Insurance Co.", "type": "text" },
-                        { "key": "policyNumber", "value": "POL-CL-849372", "type": "text" },
-                        { "key": "coverageAmount", "value": "1000000", "type": "text" },
-                        { "key": "startDate", "value": "2026-01-16", "type": "text" },
-                        { "key": "expiryDate", "value": "2027-01-15", "type": "text" },
-                        { "key": "document", "type": "file", "src": [], "disabled": true }
-                      ]
-                    },
-                    "url": {
-                      "raw": "{{baseUrl}}/api/transporter/insurance/civil/renew",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "insurance", "civil", "renew"]
                     }
                   },
                   "response": []
@@ -10109,6 +10085,33 @@
                     "description": "Same PATCH endpoint as approve — body.status=rejected + reason required."
                   },
                   "response": []
+                },
+                {
+                  "name": "Delete Product",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products/{{productId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "products",
+                        "{{productId}}"
+                      ]
+                    },
+                    "description": "Deletes a moderation product. 409 if it appears on any order."
+                  },
+                  "response": []
                 }
               ]
             },
@@ -10603,6 +10606,33 @@
                       ]
                     },
                     "description": "Single API for all status changes (supplier or factory order detected automatically).\n\nSupplier: new | pending | processing | assigned | completed | cancel\nFactory: in_production | produced | ready | assigned | completed | cancel\n\nAdmin cancel → status label \"Cancel by Admin\".\n_comment_* fields are ignored."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Order",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "orders",
+                        "{{orderId}}"
+                      ]
+                    },
+                    "description": "Deletes an order (UUID or orderNumber). Also removes returns, disputes, and commission for that order. Line items, invoices, shipment, and chat cascade."
                   },
                   "response": []
                 }

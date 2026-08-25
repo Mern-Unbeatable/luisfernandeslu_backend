@@ -39,6 +39,12 @@ class ProductAdminRoutes {
       validate(adminModerateProductBodySchema, 'body'),
       (req, res, next) => productController.adminModerate(req, res, next),
     )
+
+    this.router.delete(
+      '/products/:id',
+      validate(productIdParamSchema, 'params'),
+      (req, res, next) => productController.adminDelete(req, res, next),
+    )
   }
 
   getRoutes() {

@@ -509,6 +509,33 @@ class AdminOrderService {
       },
     }
   }
+
+  async adminDelete(auth, orderId) {
+    assertAdmin(auth)
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [{ id: orderId }, { orderNumber: orderId }],
+      },
+      select: { id: true, orderNumber: true },
+    })
+    if (!order) throw httpError('Order not found', 404, 'NotFound')
+
+    await prisma.$transaction(async (tx) => {
+      await tx.returnRequest.deleteMany({ where: { orderId: order.id } })
+      await tx.dispute.deleteMany({ where: { orderId: order.id } })
+      await tx.commissionTransaction.deleteMany({ where: { orderId: order.id } })
+      await tx.order.delete({ where: { id: order.id } })
+    })
+
+    return {
+      status: 200,
+      body: {
+        id: order.id,
+        orderId: order.orderNumber,
+        message: 'Order deleted',
+      },
+    }
+  }
 }
 
 export default new AdminOrderService()

@@ -10,23 +10,17 @@ function parseCoverage(raw) {
   return Number(cleaned)
 }
 
-const policyFields = {
-  provider: z.string().trim().min(2),
-  policyNumber: z.string().trim().min(3),
-  coverageAmount: z.preprocess(parseCoverage, z.number().positive()),
-  startDate: z.string().trim().min(4).optional(),
-  expiryDate: z.string().trim().min(4),
-}
-
-export const uploadInsuranceBodySchema = z
+export const saveInsuranceBodySchema = z
   .object({
-    ...policyFields,
     type: z.enum(['civil', 'cargo']).optional(),
     insuranceType: z.enum(['civil', 'cargo']).optional(),
+    provider: z.string().trim().min(2),
+    policyNumber: z.string().trim().min(3),
+    coverageAmount: z.preprocess(parseCoverage, z.number().positive()),
+    startDate: z.string().trim().min(4).optional(),
+    expiryDate: z.string().trim().min(4),
   })
   .refine((b) => b.type || b.insuranceType, {
     message: 'type is required',
     path: ['type'],
   })
-
-export const renewInsuranceBodySchema = z.object(policyFields)

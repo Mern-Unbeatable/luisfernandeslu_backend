@@ -22,29 +22,12 @@ export class TransporterInsuranceController {
     }
   }
 
-  async upload(req, res, next) {
+  async save(req, res, next) {
     try {
       return sendServiceResult(
         res,
-        await insuranceService.upload(
+        await insuranceService.save(
           req.auth,
-          req.body,
-          req.files,
-          resolveRequestBaseUrl(req),
-        ),
-      )
-    } catch (err) {
-      next(err)
-    }
-  }
-
-  async renew(req, res, next) {
-    try {
-      return sendServiceResult(
-        res,
-        await insuranceService.renew(
-          req.auth,
-          req.params.kind,
           req.body,
           req.files,
           resolveRequestBaseUrl(req),

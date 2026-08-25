@@ -1082,6 +1082,43 @@ export class ProductService {
     }
   }
 
+  async adminDelete(productId) {
+    const product = await prisma.product.findFirst({
+      where: { id: productId },
+      select: {
+        id: true,
+        sku: true,
+        title: true,
+        _count: { select: { orderLineItems: true } },
+      },
+    })
+    if (!product) throw httpError('Product not found', 404, 'NotFound')
+    if (product._count.orderLineItems > 0) {
+      throw httpError(
+        'Cannot delete a product that appears on orders',
+        409,
+        'ProductInUse',
+      )
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.quoteItem.deleteMany({ where: { productId } })
+      await tx.review.updateMany({
+        where: { productId },
+        data: { productId: null },
+      })
+      await tx.product.delete({ where: { id: productId } })
+    })
+
+    return {
+      status: 200,
+      body: {
+        id: product.id,
+        message: 'Product deleted',
+      },
+    }
+  }
+
   /** Demo CSV template (headers + sample rows). */
   getCsvTemplate() {
     return {

@@ -39,6 +39,12 @@ class AdminOrderRoutes {
       validate(updateAdminOrderStatusBodySchema, 'body'),
       (req, res, next) => adminOrderController.updateStatus(req, res, next),
     )
+
+    this.router.delete(
+      '/:id',
+      validate(adminOrderIdParamSchema, 'params'),
+      (req, res, next) => adminOrderController.adminDelete(req, res, next),
+    )
   }
 
   getRoutes() {

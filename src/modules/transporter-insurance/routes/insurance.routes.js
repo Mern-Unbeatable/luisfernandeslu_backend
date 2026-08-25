@@ -2,8 +2,7 @@ import { Router } from 'express'
 import insuranceController from '../controllers/insurance.controller.js'
 import {
   insuranceKindParamSchema,
-  renewInsuranceBodySchema,
-  uploadInsuranceBodySchema,
+  saveInsuranceBodySchema,
 } from '../validations/insurance.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
@@ -31,22 +30,14 @@ class TransporterInsuranceRoutes {
     this.router.post(
       '/',
       insuranceDocumentUpload.fields(DOCUMENT_FILE_FIELDS),
-      validate(uploadInsuranceBodySchema, 'body'),
-      (req, res, next) => insuranceController.upload(req, res, next),
+      validate(saveInsuranceBodySchema, 'body'),
+      (req, res, next) => insuranceController.save(req, res, next),
     )
 
     this.router.get(
       '/:kind/pdf',
       validate(insuranceKindParamSchema, 'params'),
       (req, res, next) => insuranceController.downloadPdf(req, res, next),
-    )
-
-    this.router.post(
-      '/:kind/renew',
-      validate(insuranceKindParamSchema, 'params'),
-      insuranceDocumentUpload.fields(DOCUMENT_FILE_FIELDS),
-      validate(renewInsuranceBodySchema, 'body'),
-      (req, res, next) => insuranceController.renew(req, res, next),
     )
   }
 

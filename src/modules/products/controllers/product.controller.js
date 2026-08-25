@@ -181,6 +181,17 @@ export class ProductController {
       next(err)
     }
   }
+
+  async adminDelete(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await productService.adminDelete(req.params.id),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new ProductController()

@@ -161,36 +161,23 @@ export class TransporterInsuranceService {
     }
   }
 
-  async upload(auth, body, files, baseUrl) {
+  async save(auth, body, files, baseUrl) {
     const userId = assertTransporter(auth)
     const kind = body.type || body.insuranceType
-    const docs = documentRelativeUrlsFromFiles(files)
-    if (!docs.length) {
-      throw httpError('Insurance document is required', 400, 'ValidationError')
-    }
-    const row = await upsertPolicy(userId, kind, body, docs)
-    return {
-      status: 201,
-      body: {
-        ...mapPolicy(row, baseUrl),
-        message: 'Insurance uploaded',
-      },
-    }
-  }
-
-  async renew(auth, kind, body, files, baseUrl) {
-    const userId = assertTransporter(auth)
     const existing = await prisma.transporterInsurance.findUnique({
       where: { userId_kind: { userId, kind: KIND[kind] } },
     })
-    if (!existing) throw notFound('Insurance policy not found')
     const docs = documentRelativeUrlsFromFiles(files)
+    if (!existing && !docs.length) {
+      throw httpError('Insurance document is required', 400, 'ValidationError')
+    }
     const row = await upsertPolicy(userId, kind, body, docs)
+    const created = !existing
     return {
-      status: 200,
+      status: created ? 201 : 200,
       body: {
         ...mapPolicy(row, baseUrl),
-        message: 'Insurance policy renewed',
+        message: created ? 'Insurance uploaded' : 'Insurance policy renewed',
       },
     }
   }

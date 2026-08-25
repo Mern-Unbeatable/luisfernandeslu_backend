@@ -31,6 +31,17 @@ class AdminOrderController {
       next(err)
     }
   }
+
+  async adminDelete(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminOrderService.adminDelete(req.auth, req.params.id),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new AdminOrderController()
