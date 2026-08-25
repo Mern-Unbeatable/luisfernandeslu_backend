@@ -363,6 +363,7 @@ model BusinessProfile {
   companyName               String?
   nifNumber                 String?
   ibanNumber                String?
+  ibanPhone                 String?
   eupagoExternKey           String?
   rcbeNumber                String?
   logoUrl                   String?

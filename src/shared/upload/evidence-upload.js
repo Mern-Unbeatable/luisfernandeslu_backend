@@ -101,6 +101,18 @@ export const insuranceDocumentUpload = makeUpload({
   errorMessage: 'Only JPEG, PNG, WEBP, PDF, DOC, or DOCX files are allowed',
 })
 
+export const avatarUpload = makeUpload({
+  folder: 'avatars',
+  mime: IMAGE_MIME,
+  ext: IMAGE_EXT,
+  errorMessage: 'Only JPEG, PNG, or WEBP images are allowed',
+})
+
+export const AVATAR_FILE_FIELDS = [
+  { name: 'avatar', maxCount: 1 },
+  { name: 'image', maxCount: 1 },
+]
+
 export function evidenceFilePublicUrl(file) {
   if (!file) return null
   const relative = path.relative(UPLOAD_ROOT, file.path).replace(/\\/g, '/')
@@ -165,6 +177,12 @@ export function documentRelativeUrlsFromFiles(files) {
   return collectedFiles(files, ['document', 'document[]'])
     .map((file) => evidenceFilePublicUrl(file))
     .filter(Boolean)
+}
+
+export function avatarRelativeUrlFromFiles(files) {
+  return collectedFiles(files, ['avatar', 'image'])
+    .map((file) => evidenceFilePublicUrl(file))
+    .filter(Boolean)[0] || null
 }
 
 export default {

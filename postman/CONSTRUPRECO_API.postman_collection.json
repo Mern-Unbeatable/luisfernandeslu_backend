@@ -6625,6 +6625,117 @@
               ]
             },
             {
+              "name": "Profile",
+              "description": "Transporter My Profile.\nGET / — displayName, displayEmail, name, email, phone, avatarUrl, iban, ibanPhone\nPATCH / — { name, phone } (email is read-only)\nPOST /password — { password, confirmPassword } (newPassword alias ok; currentPassword optional)\nPUT /iban — { iban, ibanPhone }\nPOST /avatar — multipart field avatar (or image)\nDELETE /avatar",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Profile",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Swift Logistics\",\n  \"phone\": \"+351910000006\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"password\": \"Password1234!\",\n  \"confirmPassword\": \"Password1234!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/profile/password",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "profile", "password"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"iban\": \"PT50 0002 0123 1234 5678 9013 4\",\n  \"ibanPhone\": \"+351910000006\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/profile/iban",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "profile", "iban"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Upload Avatar",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "avatar", "type": "file", "src": [] }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/profile/avatar",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "profile", "avatar"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Remove Avatar",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/profile/avatar",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "transporter", "profile", "avatar"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Insurance",
               "description": "Civil + cargo liability.\nGET / — requirementsMet, policies[{ type, status, provider, policyNumber, coverageAmount, startDate, expiryDate, documentUrl }]\nPOST / — upload and renew (same API). Multipart: type (civil|cargo), provider, policyNumber, coverageAmount, startDate?, expiryDate, document (required on first upload, optional on renew)\nGET /:kind/pdf — kind=civil|cargo",
               "item": [
