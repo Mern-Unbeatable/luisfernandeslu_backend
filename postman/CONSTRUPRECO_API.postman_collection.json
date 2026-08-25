@@ -6893,6 +6893,105 @@
           "description": "Factory dashboard APIs. Login as Factory first.",
           "item": [
             {
+              "name": "Profile",
+              "description": "Factory My Profile.\nGET / — displayName, displayEmail, name, email, phone, avatarUrl, warehouses[{id,label,address}], iban, ibanPhone\nPATCH / — { name, email, phone }\nPUT /warehouses — { warehouses: [{ id?, label?, address }] }\nPOST /password — { newPassword, confirmPassword } (password / confirmNewPassword aliases; currentPassword optional)\nPUT /iban — { iban, ibanPhone }",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Profile",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Chowdhury Group Of Industries\",\n  \"email\": \"factory@test.local\",\n  \"phone\": \"+351910000003\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Warehouses",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"warehouses\": [\n    { \"address\": \"4140 Parker Rd. Allentown, New Mexico 31134\" }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/profile/warehouses",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "profile", "warehouses"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"newPassword\": \"Password1234!\",\n  \"confirmPassword\": \"Password1234!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/profile/password",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "profile", "password"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"iban\": \"PT50 0002 0123 1234 5678 9015 4\",\n  \"ibanPhone\": \"+351910000003\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/factory/profile/iban",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "factory", "profile", "iban"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Commission Invoices",
               "description": "Logged-in factory. Admin-set % × order total.",
               "item": [
