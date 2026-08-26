@@ -11117,6 +11117,85 @@
               ]
             },
             {
+              "name": "Profile",
+              "description": "Admin My Profile.\nGET / — name, email, iban, ibanPhone\nPATCH / — { name, email }\nPOST /password — { currentPassword, newPassword, confirmNewPassword }\nPUT /iban — { iban, ibanPhone }",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Profile",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"John Industries\",\n  \"email\": \"admin@johnindustries.com\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "profile"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"AdminDemo123!\",\n  \"newPassword\": \"AdminDemo123!\",\n  \"confirmNewPassword\": \"AdminDemo123!\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/profile/password",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "profile", "password"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"iban\": \"PT50 0000 0000 0000 0000 0000 0\",\n  \"ibanPhone\": \"912345678\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/profile/iban",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "profile", "iban"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Affiliates",
               "description": "Admin affiliate directory.\nGET /stats — status cards\nGET / — table (search, status, page, limit=7)\nPATCH /:id/status — { status: active|suspended }\nDELETE /:id\nGET /:id — details header + revenue/earned/clients\nGET /:id/clients — search, status, plan, sort=latest|oldest\nGET /:id/analytics — thisYear monthly series (numbers)\nGET /:id/commissions — status filter\nGET /:id/payouts — payout history\nGET /payouts — payout control table\nPATCH /payouts/:payoutId/status — paid|approved|rejected",
               "item": [
