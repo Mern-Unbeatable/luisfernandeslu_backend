@@ -46,6 +46,7 @@ import supplierProfileRoutes from './modules/profile/routes/supplier-profile.rou
 import transporterProfileRoutes from './modules/profile/routes/transporter-profile.routes.js'
 import factoryProfileRoutes from './modules/profile/routes/factory-profile.routes.js'
 import supplierReviewsRoutes from './modules/reviews/routes/supplier-reviews.routes.js'
+import buyerReviewsRoutes from './modules/reviews/routes/buyer-reviews.routes.js'
 import supplierReturnRoutes from './modules/returns/routes/supplier-returns.routes.js'
 import buyerReturnRoutes from './modules/returns/routes/buyer-returns.routes.js'
 import buyerDisputesRoutes from './modules/disputes/routes/buyer-disputes.routes.js'
@@ -143,6 +144,8 @@ app.use('/api/supplier/reviews', supplierReviewsRoutes)
 app.use('/api/supplier/return-requests', supplierReturnRoutes)
 app.use('/api/customer/returns', buyerReturnRoutes)
 app.use('/api/company/returns', buyerReturnRoutes)
+app.use('/api/customer/reviews', buyerReviewsRoutes)
+app.use('/api/company/reviews', buyerReviewsRoutes)
 app.use('/api/customer/disputes', buyerDisputesRoutes)
 app.use('/api/company/disputes', buyerDisputesRoutes)
 app.use('/api/supplier/disputes', supplierDisputesRoutes)

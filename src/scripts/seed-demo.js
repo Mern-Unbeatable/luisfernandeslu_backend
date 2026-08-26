@@ -1644,6 +1644,30 @@ async function main() {
     pickedAt: new Date('2026-08-21T09:40:00.000Z'),
   })
 
+  // Customer "Product to review" demos — COMPLETED orders on products not yet reviewed
+  const reviewDemoSkus = ['MKT-DEMO-003', 'MKT-DEMO-004', 'MKT-DEMO-005']
+  const reviewDemoProducts = await prisma.product.findMany({
+    where: { sku: { in: reviewDemoSkus } },
+  })
+  for (let i = 0; i < reviewDemoProducts.length; i += 1) {
+    const product = reviewDemoProducts[i]
+    await prisma.review.deleteMany({
+      where: { authorId: customer.id, productId: product.id },
+    })
+    await makeOrder({
+      orderNumber: `ORD-DEMO-CUST-REV-${String(i + 1).padStart(2, '0')}`,
+      customerId: customer.id,
+      sellerId: supplier.id,
+      shippingAddressId: customerShip.id,
+      billingAddressId: customerShip.id,
+      status: 'COMPLETED',
+      source: 'DIRECT_CART',
+      product,
+      qty: 8 + i * 2,
+      shippingFee: 15,
+    })
+  }
+
   // 10 open auctions for transporter board (PENDING_BIDS, not expired, no bid yet)
   const openAuctionRoutes = [
     {
@@ -1857,7 +1881,7 @@ async function main() {
   console.log('Promo: DEMO10')
   console.log('Affiliate referral code: ALEXRIVERS15')
   console.log('Extra affiliates: sarah.corp / build.partners / mason.referrals / cement.connect / priya.nair / northstar @test.local')
-  console.log('Orders: ORD-DEMO-CUST-001, ORD-DEMO-CO-001/002, ORD-DEMO-FAC-001/002/003')
+  console.log('Orders: ORD-DEMO-CUST-001, ORD-DEMO-CUST-REV-01/02/03 (completed → review), ORD-DEMO-CO-001/002, ORD-DEMO-FAC-001/002/003')
   console.log('Open transporter auctions: ORD-DEMO-TX-OPEN-01 … 10')
   console.log('Marketing: MKT-DEMO-001…008 (pending/active/completed/rejected + unpaid hidden)')
 }

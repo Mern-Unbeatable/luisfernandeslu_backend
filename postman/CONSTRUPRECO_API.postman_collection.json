@@ -157,6 +157,14 @@
     {
       "key": "eupagoReference",
       "value": ""
+    },
+    {
+      "key": "reviewLineItemId",
+      "value": ""
+    },
+    {
+      "key": "reviewProductId",
+      "value": ""
     }
   ],
   "item": [
@@ -1664,6 +1672,127 @@
                             "invoice",
                             "download"
                           ]
+                        }
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "Product Reviews",
+                  "description": "Product to review after delivery.\nGET /pending — delivered line items not yet reviewed\nGET /pending/:id — one item (id = orderLineItemId)\nPOST / — submit { orderLineItemId, rating, comment|review }",
+                  "item": [
+                    {
+                      "name": "List Products To Review",
+                      "event": [
+                        {
+                          "listen": "test",
+                          "script": {
+                            "type": "text/javascript",
+                            "exec": [
+                              "const json = pm.response.json();",
+                              "const p = json.products?.[0];",
+                              "if (p?.id) pm.collectionVariables.set(\"reviewLineItemId\", p.id);",
+                              "if (p?.productId) pm.collectionVariables.set(\"reviewProductId\", p.productId);"
+                            ]
+                          }
+                        }
+                      ],
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/reviews/pending?page=1&limit=20",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "reviews",
+                            "pending"
+                          ],
+                          "query": [
+                            {
+                              "key": "page",
+                              "value": "1"
+                            },
+                            {
+                              "key": "limit",
+                              "value": "20"
+                            }
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Get Product To Review",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/reviews/pending/{{reviewLineItemId}}",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "reviews",
+                            "pending",
+                            "{{reviewLineItemId}}"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Submit Product Review",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          },
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/reviews",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "reviews"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"orderLineItemId\": \"{{reviewLineItemId}}\",\n  \"rating\": 4,\n  \"review\": \"Good quality material, arrived as expected.\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
                         }
                       },
                       "response": []
@@ -9932,6 +10061,127 @@
                         "invoice",
                         "download"
                       ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Product Reviews",
+              "description": "Product to review after delivery.\nGET /pending — delivered line items not yet reviewed\nGET /pending/:id — one item (id = orderLineItemId)\nPOST / — submit { orderLineItemId, rating, comment|review }",
+              "item": [
+                {
+                  "name": "List Products To Review",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0];",
+                          "if (p?.id) pm.collectionVariables.set(\"reviewLineItemId\", p.id);",
+                          "if (p?.productId) pm.collectionVariables.set(\"reviewProductId\", p.productId);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/reviews/pending?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "reviews",
+                        "pending"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product To Review",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/reviews/pending/{{reviewLineItemId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "reviews",
+                        "pending",
+                        "{{reviewLineItemId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Submit Product Review",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/reviews",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "reviews"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"orderLineItemId\": \"{{reviewLineItemId}}\",\n  \"rating\": 4,\n  \"review\": \"Good quality material, arrived as expected.\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
                     }
                   },
                   "response": []
