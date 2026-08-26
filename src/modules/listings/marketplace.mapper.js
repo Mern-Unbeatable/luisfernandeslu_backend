@@ -58,8 +58,8 @@ function mapSeller(product) {
 
 /**
  * Card / list item.
- * Guest & customer: basePrice only.
- * Company: basePrice + b2bPrice.
+ * Guest & customer: retail fields only (no B2B keys).
+ * Company: basePrice + b2bPrice / min order.
  */
 export function mapMarketplaceListProduct(product, baseUrl, buyer) {
   const { bannerImage } = mapProductMedia(product, baseUrl)
@@ -95,18 +95,11 @@ export function mapMarketplaceListProduct(product, baseUrl, buyer) {
     category: mapCategoryNode(path?.category),
     subCategory: mapCategoryNode(path?.subCategory),
     productType: mapCategoryNode(path?.productType || product.category),
+    pricingView: buyer.isCompany ? 'company' : 'retail',
   }
 
   if (!buyer.isCompany) {
-    return {
-      ...base,
-      b2bPrice: null,
-      companyPrice: null,
-      companyPriceText: null,
-      minOrder: null,
-      minOrderLabel: null,
-      pricingView: 'retail',
-    }
+    return base
   }
 
   const hasB2b = product.b2bPrice != null
@@ -122,12 +115,12 @@ export function mapMarketplaceListProduct(product, baseUrl, buyer) {
     minOrder: minQty != null ? `${minQty} ${unit}` : null,
     minOrderLabel: minQty != null ? `Min: ${minQty} ${unit}` : null,
     minB2bQuantity: minQty,
-    pricingView: 'company',
   }
 }
 
 /**
  * Detail — retail/customer vs company.
+ * Without company token: no B2B keys and no below-basePrice bulk tiers.
  */
 export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
   const { bannerImage, images, gallery } = mapProductMedia(product, baseUrl)
@@ -135,7 +128,11 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
   const seller = mapSeller(product)
   const { availability, availabilityLabel } = marketplaceAvailability(product)
   const unit = unitLabel(product)
-  const bulkOptions = mapBulkOptions(product)
+  const basePrice = money(product.basePrice)
+  const allBulk = mapBulkOptions(product)
+  const bulkOptions = buyer.isCompany
+    ? allBulk
+    : allBulk.filter((tier) => tier.price >= basePrice)
   const minQty = product.minB2bQuantity ?? product.minOrderQuantity ?? null
 
   const shared = {
@@ -150,7 +147,7 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
     category: mapCategoryNode(path?.category),
     subCategory: mapCategoryNode(path?.subCategory),
     productType: mapCategoryNode(path?.productType || product.category),
-    basePrice: money(product.basePrice),
+    basePrice,
     priceLabel: priceLabel(product),
     unitOfMeasure: unit,
     weightKg: product.weightKg,
@@ -181,31 +178,21 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
       createdAt: r.createdAt,
       author: r.author ? { id: r.author.id, name: r.author.name } : null,
     })),
+    pricingView: buyer.isCompany ? 'company' : 'retail',
+    actions: {
+      addToCart: true,
+      buyNow: true,
+      ...(buyer.isCompany ? { sendQuote: true } : {}),
+    },
   }
 
   if (!buyer.isCompany) {
-    return {
-      ...shared,
-      pricingView: 'retail',
-      b2bPrice: null,
-      companyPrice: null,
-      companyPriceText: null,
-      minOrder: null,
-      minOrderLabel: null,
-      minB2bQuantity: null,
-      showMinimumOrder: false,
-      actions: {
-        addToCart: true,
-        buyNow: true,
-        sendQuote: false,
-      },
-    }
+    return shared
   }
 
   const hasB2b = product.b2bPrice != null
   return {
     ...shared,
-    pricingView: 'company',
     b2bPrice: hasB2b ? money(product.b2bPrice) : null,
     companyPrice: hasB2b ? formatMoney(product.b2bPrice) : null,
     companyPriceText: hasB2b
@@ -216,11 +203,6 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
       minQty != null ? `Minimum Order ${minQty} PCS` : null,
     minB2bQuantity: minQty,
     showMinimumOrder: minQty != null,
-    actions: {
-      addToCart: true,
-      buyNow: true,
-      sendQuote: true,
-    },
   }
 }
 
