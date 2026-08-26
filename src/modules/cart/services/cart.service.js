@@ -3,6 +3,7 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { env } from '../../../config/env.js'
 import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
+import { resolveVatRate } from '../../admin/settings/settings.store.js'
 
 const SHIPPING_FEE = env.shippingFee
 const VAT_FIXED = env.vatFixed
@@ -426,6 +427,10 @@ class CartService {
     return this.buildCartPayload(cartId, items, role, vatRate, baseUrl, promos)
   }
 
+  async resolveVatRate(userVat) {
+    return resolveVatRate(userVat)
+  }
+
   async getCart(auth, baseUrl) {
     const role = this.assertBuyer(auth)
 
@@ -440,7 +445,7 @@ class CartService {
     const payload = await this.loadCartPayload(
       cart.id,
       role,
-      user?.vatRate ?? 0,
+      await this.resolveVatRate(user?.vatRate),
       baseUrl,
     )
 
@@ -515,7 +520,7 @@ class CartService {
       cart.id,
       items,
       role,
-      user?.vatRate ?? 0,
+      await this.resolveVatRate(user?.vatRate),
       baseUrl,
       promos,
     )
@@ -559,7 +564,7 @@ class CartService {
     const payload = await this.loadCartPayload(
       cart.id,
       role,
-      user?.vatRate ?? 0,
+      await this.resolveVatRate(user?.vatRate),
       baseUrl,
     )
 

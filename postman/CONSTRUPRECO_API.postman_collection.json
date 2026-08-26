@@ -10999,6 +10999,124 @@
               ]
             },
             {
+              "name": "Settings",
+              "description": "Admin Settings.\nGET / — all (shipping, vat, auction)\nPUT /shipping | /vat | /auction — update that section\nPOST /shipping/reset | /vat/reset | /auction/reset",
+              "item": [
+                {
+                  "name": "Get Settings",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Shipping",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"vehicleRates\": [\n    { \"id\": \"crane-12\", \"perKmCharge\": 100 },\n    { \"id\": \"crane-24\", \"perKmCharge\": 120 },\n    { \"id\": \"tipper\", \"perKmCharge\": 80 },\n    { \"id\": \"forklift\", \"perKmCharge\": 60 },\n    { \"id\": \"manual\", \"perKmCharge\": 40 }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings/shipping",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings", "shipping"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reset Shipping",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings/shipping/reset",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings", "shipping", "reset"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update VAT",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"defaultRate\": 25\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings/vat",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings", "vat"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reset VAT",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings/vat/reset",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings", "vat", "reset"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Auction",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"hours\": 0,\n  \"minutes\": 30\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings/auction",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings", "auction"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reset Auction",
+                  "request": {
+                    "method": "POST",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/settings/auction/reset",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "settings", "auction", "reset"]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Affiliates",
               "description": "Admin affiliate directory.\nGET /stats — status cards\nGET / — table (search, status, page, limit=7)\nPATCH /:id/status — { status: active|suspended }\nDELETE /:id\nGET /:id — details header + revenue/earned/clients\nGET /:id/clients — search, status, plan, sort=latest|oldest\nGET /:id/analytics — thisYear monthly series (numbers)\nGET /:id/commissions — status filter\nGET /:id/payouts — payout history\nGET /payouts — payout control table\nPATCH /payouts/:payoutId/status — paid|approved|rejected",
               "item": [

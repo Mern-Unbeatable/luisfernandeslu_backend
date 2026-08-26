@@ -7,6 +7,11 @@ import { money } from '../../../shared/money.js'
 import { formatAuctionCode } from '../../../shared/numbering.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import { companyDisplayName, partyName } from '../../../shared/party.js'
+import {
+  auctionDurationMinutes,
+  auctionPricePerKm,
+  loadPlatformSettings,
+} from '../../admin/settings/settings.store.js'
 
 function assertRole(auth, role, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -430,7 +435,7 @@ class AuctionService {
       )
     }
 
-    const durationMs = env.auctionDurationMinutes * 60 * 1000
+    const durationMs = auctionDurationMinutes(await loadPlatformSettings()) * 60 * 1000
     const expiresAt = new Date(Date.now() + durationMs)
 
     const shipment = await prisma.shipment.upsert({
@@ -1162,10 +1167,13 @@ class AuctionService {
 
     let distanceKm = null
     let bidStartFrom = null
+    let pricePerKm = env.transportPricePerKm
     try {
+      const settings = await loadPlatformSettings()
+      pricePerKm = auctionPricePerKm(settings, null)
       const route = await factorySupplierRoute(factoryAddr, supplierAddr)
       distanceKm = route.distanceKm
-      bidStartFrom = Math.round(distanceKm * env.transportPricePerKm * 100) / 100
+      bidStartFrom = Math.round(distanceKm * pricePerKm * 100) / 100
     } catch {
       // distance calculation failed; frontend can still submit
     }
@@ -1182,7 +1190,7 @@ class AuctionService {
           deliveryLocation,
           distanceKm,
           bidStartFrom,
-          pricePerKm: env.transportPricePerKm,
+          pricePerKm,
           customer: {
             id: order.customer?.id || null,
             name: companyDisplayName(order.customer) || partyName(order.customer),
@@ -1233,12 +1241,14 @@ class AuctionService {
     const deliveryText = route.deliveryText || 'Supplier address not set'
     const distanceKm = route.distanceKm
 
-    const bidStartPrice = Math.round(distanceKm * env.transportPricePerKm * 100) / 100
+    const settings = await loadPlatformSettings()
+    const pricePerKm = auctionPricePerKm(settings, body.requiredVehicleType)
+    const bidStartPrice = Math.round(distanceKm * pricePerKm * 100) / 100
     if (bidStartPrice <= 0) {
       throw httpError('Calculated bid start price must be greater than 0', 400, 'InvalidPrice')
     }
 
-    const durationMs = env.auctionDurationMinutes * 60 * 1000
+    const durationMs = auctionDurationMinutes(settings) * 60 * 1000
     const expiresAt = new Date(Date.now() + durationMs)
 
     const shipment = await prisma.shipment.upsert({
@@ -1301,7 +1311,7 @@ class AuctionService {
         message: 'Factory shipment auction created',
         distanceKm,
         bidStartPrice,
-        pricePerKm: env.transportPricePerKm,
+        pricePerKm,
       },
     }
   }
@@ -1319,6 +1329,7 @@ class AuctionService {
       select: {
         id: true,
         bidStartPrice: true,
+        requiredVehicleType: true,
         shipment: { select: { orderId: true, distanceKm: true } },
         bids: {
           where: { status: 'ACCEPTED' },
@@ -1329,8 +1340,10 @@ class AuctionService {
     })
     if (!auction) throw httpError('Auction not found or not pending payment', 404, 'NotFound')
 
+    const settings = await loadPlatformSettings()
+    const pricePerKm = auctionPricePerKm(settings, auction.requiredVehicleType)
     const totalAmount = Math.round(
-      (auction.shipment.distanceKm || 0) * env.transportPricePerKm * 100,
+      (auction.shipment.distanceKm || 0) * pricePerKm * 100,
     ) / 100
 
     await prisma.$transaction(async (tx) => {

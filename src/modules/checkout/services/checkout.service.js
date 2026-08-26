@@ -9,6 +9,7 @@ import {
   isMockPayments,
 } from '../../payments/eupago.client.js'
 import { recordAffiliateCommissionsForCheckout } from '../../affiliates/services/commission.service.js'
+import { resolveVatRate } from '../../admin/settings/settings.store.js'
 import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
 import { mapAddress, formatAddressLine } from '../../../shared/address.js'
@@ -195,7 +196,7 @@ class CheckoutService {
       where: { id: userId },
       select: { vatRate: true },
     })
-    return user?.vatRate ?? 0
+    return resolveVatRate(user?.vatRate)
   }
 
   async assertOwnedAddress(userId, addressId) {
