@@ -57,65 +57,53 @@ function mapSeller(product) {
 }
 
 /**
- * Card / list item.
- * Guest & customer: retail fields only (no B2B keys).
- * Company: basePrice + b2bPrice / min order.
+ * Card / list item — raw values only; frontend formats currency/labels.
+ * Guest/customer: retail `price`; `b2bPrice` is always present as null.
+ * Company: retail `price` + `b2bPrice` when set (else null).
  */
 export function mapMarketplaceListProduct(product, baseUrl, buyer) {
   const { bannerImage } = mapProductMedia(product, baseUrl)
-  const path = categoryPathStrict(product)
-  const seller = mapSeller(product)
   const unit = unitLabel(product)
+  const seller = mapSeller(product)
+  const rawDescription =
+    product.shortDescription || product.longDescription || ''
   const description =
-    product.longDescription || product.shortDescription || ''
+    rawDescription.length > 120
+      ? `${rawDescription.slice(0, 117).trim()}...`
+      : rawDescription
 
-  const base = {
+  const price = money(product.basePrice)
+  const weightKg =
+    product.weightKg != null && Number(product.weightKg) > 0
+      ? Number(product.weightKg)
+      : null
+  const minQty = buyer.isCompany
+    ? product.minB2bQuantity ?? product.minOrderQuantity ?? null
+    : product.minOrderQuantity ?? null
+  const minOrder =
+    minQty != null && Number(minQty) > 0 ? Number(minQty) : null
+
+  const row = {
     id: product.id,
     slug: publicSlug(product.slug),
-    title: product.title,
-    description:
-      description.length > 160
-        ? `${description.slice(0, 157).trim()}...`
-        : description,
     image: bannerImage?.url || null,
-    bannerImage,
-    unitOfMeasure: unit,
-    basePrice: money(product.basePrice),
-    price: formatMoney(product.basePrice),
-    priceLabel: priceLabel(product),
-    isSponsored: Boolean(product.isSponsored),
-    isFeatured: Boolean(product.isFeatured),
-    badge: product.isSponsored
-      ? { label: 'SPONSORED', type: 'sponsored' }
-      : null,
-    seller: { id: seller.id, name: seller.name },
+    title: product.title,
+    description,
+    price,
+    b2bPrice:
+      buyer.isCompany && product.b2bPrice != null
+        ? money(product.b2bPrice)
+        : null,
+    unit,
+    weightKg,
     company: seller.name,
-    averageRating: Number(product.averageRating ?? 0),
     rating: Number(product.averageRating ?? 0),
-    category: mapCategoryNode(path?.category),
-    subCategory: mapCategoryNode(path?.subCategory),
-    productType: mapCategoryNode(path?.productType || product.category),
-    pricingView: buyer.isCompany ? 'company' : 'retail',
+    isSponsored: Boolean(product.isSponsored),
+    minOrder,
+    hasBulkOption: (product.pricingTiers || []).length > 0,
   }
 
-  if (!buyer.isCompany) {
-    return base
-  }
-
-  const hasB2b = product.b2bPrice != null
-  const minQty = product.minB2bQuantity ?? product.minOrderQuantity ?? null
-
-  return {
-    ...base,
-    b2bPrice: hasB2b ? money(product.b2bPrice) : null,
-    companyPrice: hasB2b ? formatMoney(product.b2bPrice) : null,
-    companyPriceText: hasB2b
-      ? `Company: ${formatMoney(product.b2bPrice)} /${unit}`
-      : null,
-    minOrder: minQty != null ? `${minQty} ${unit}` : null,
-    minOrderLabel: minQty != null ? `Min: ${minQty} ${unit}` : null,
-    minB2bQuantity: minQty,
-  }
+  return row
 }
 
 /**

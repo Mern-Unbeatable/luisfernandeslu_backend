@@ -145,10 +145,9 @@ class MarketplaceService {
     return {
       status: 200,
       body: {
-        products: pageRows.map((p) => ({
-          ...mapMarketplaceListProduct(p, baseUrl, buyer),
-          soldQuantity: soldMap.get(p.id) || 0,
-        })),
+        products: pageRows.map((p) =>
+          mapMarketplaceListProduct(p, baseUrl, buyer),
+        ),
         pagination: paginationMeta({ page, limit, total }),
         viewer: marketplaceViewer(buyer),
         message: 'Top selling products fetched',

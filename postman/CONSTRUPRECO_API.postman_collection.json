@@ -1274,186 +1274,602 @@
     },
     {
       "name": "CONSTRUPRECO (Website)",
-      "description": "Public storefront APIs for the CONSTRUPRECO website.\n\nProducts: sponsored | top-selling | catalog | details\nOptional Bearer = customer/company pricing.",
+      "description": "Public storefront APIs.\n\nProducts → Public | Customer | Company\n(same URLs; token on Customer/Company)\nAuth → Login Customer / Login Company sets {{accessToken}}.",
       "item": [
         {
           "name": "Products",
-          "description": "Website product lists (same URLs for public / customer / company).\nOptional Bearer changes pricingView.\nGET /sponsored — home sponsored\nGET /top-selling — home top selling\nGET / — product page catalog\nGET /:slug — details by public slug",
+          "description": "Same 3 list APIs + details for Public / Customer / Company.\nURLs identical; Customer & Company send Authorization: Bearer {{accessToken}}.\nList cards: raw values only — no currency/label strings.\nAlways includes `price` + `b2bPrice` (null for guest/customer; value for company when set).\nLogin Customer or Login Company first (Auth folder).",
           "item": [
             {
-              "name": "List Sponsored Products",
-              "event": [
+              "name": "Public",
+              "description": "No token. Card price = retail (basePrice) only.",
+              "item": [
                 {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const json = pm.response.json();",
-                      "const p = json.products?.[0] || json.product;",
-                      "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
-                      "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/marketplace/products/sponsored?page=1&limit=12",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "marketplace",
-                    "products",
-                    "sponsored"
-                  ],
-                  "query": [
+                  "name": "List Sponsored Products",
+                  "event": [
                     {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "12"
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
                     }
-                  ]
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/sponsored?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "sponsored"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Home sponsored. No Authorization header. retail only."
+                  },
+                  "response": []
                 },
-                "description": "Home Sponsored Products. Optional Bearer: company sees b2bPrice; guest/customer see retail only."
-              },
-              "response": []
+                {
+                  "name": "List Top Selling Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/top-selling?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "top-selling"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Home top selling. No Authorization header. retail only."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "disabled": true
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "minPrice",
+                          "value": "0",
+                          "disabled": true
+                        },
+                        {
+                          "key": "maxPrice",
+                          "value": "500",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Product page catalog (filters). No Authorization header. retail only."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductSlug}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductSlug}}"
+                      ]
+                    },
+                    "description": "Product detail by slug. No Authorization header. retail only."
+                  },
+                  "response": []
+                }
+              ]
             },
             {
-              "name": "List Top Selling Products",
-              "event": [
+              "name": "Customer",
+              "description": "Requires Login Customer → accessToken. Retail pricing (same shape as public).",
+              "item": [
                 {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const json = pm.response.json();",
-                      "const p = json.products?.[0] || json.product;",
-                      "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
-                      "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/marketplace/products/top-selling?page=1&limit=12",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "marketplace",
-                    "products",
-                    "top-selling"
-                  ],
-                  "query": [
+                  "name": "List Sponsored Products",
+                  "event": [
                     {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "12"
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
                     }
-                  ]
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/sponsored?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "sponsored"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Home sponsored. Authorization: Bearer {{accessToken}} (customer). retail pricing."
+                  },
+                  "response": []
                 },
-                "description": "Home Top Selling. Sorted by sold quantity (non-cancelled), then rating. Optional Bearer for company pricing."
-              },
-              "response": []
+                {
+                  "name": "List Top Selling Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/top-selling?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "top-selling"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Home top selling. Authorization: Bearer {{accessToken}} (customer). retail pricing."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "disabled": true
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "minPrice",
+                          "value": "0",
+                          "disabled": true
+                        },
+                        {
+                          "key": "maxPrice",
+                          "value": "500",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Product page catalog (filters). Authorization: Bearer {{accessToken}} (customer). retail pricing."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductSlug}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductSlug}}"
+                      ]
+                    },
+                    "description": "Product detail by slug. Authorization: Bearer {{accessToken}} (customer). retail pricing."
+                  },
+                  "response": []
+                }
+              ]
             },
             {
-              "name": "List Products",
-              "event": [
+              "name": "Company",
+              "description": "Requires Login Company → accessToken. B2B price / min order / sendQuote.",
+              "item": [
                 {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const json = pm.response.json();",
-                      "const p = json.products?.[0] || json.product;",
-                      "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
-                      "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "marketplace",
-                    "products"
-                  ],
-                  "query": [
+                  "name": "List Sponsored Products",
+                  "event": [
                     {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "12"
-                    },
-                    {
-                      "key": "categoryId",
-                      "value": "{{categoryId}}",
-                      "disabled": true
-                    },
-                    {
-                      "key": "search",
-                      "value": "",
-                      "disabled": true
-                    },
-                    {
-                      "key": "minPrice",
-                      "value": "0",
-                      "disabled": true
-                    },
-                    {
-                      "key": "maxPrice",
-                      "value": "500",
-                      "disabled": true
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
                     }
-                  ]
-                },
-                "description": "Product page get-all with filters (category, search, minPrice, maxPrice). Optional Bearer for company pricing."
-              },
-              "response": []
-            },
-            {
-              "name": "Get Product Details",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductSlug}}",
-                  "host": [
-                    "{{baseUrl}}"
                   ],
-                  "path": [
-                    "api",
-                    "marketplace",
-                    "products",
-                    "{{marketplaceProductSlug}}"
-                  ]
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/sponsored?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "sponsored"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Home sponsored. Company token: card price = b2bPrice when set (single price field)."
+                  },
+                  "response": []
                 },
-                "description": "Product detail by public slug (not UUID). Optional Bearer: company gets sendQuote=true + b2b fields."
-              },
-              "response": []
+                {
+                  "name": "List Top Selling Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/top-selling?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "top-selling"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        }
+                      ]
+                    },
+                    "description": "Home top selling. Authorization: Bearer {{accessToken}} (company). B2B fields included."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "List Products",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.products?.[0] || json.product;",
+                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "12"
+                        },
+                        {
+                          "key": "categoryId",
+                          "value": "{{categoryId}}",
+                          "disabled": true
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        },
+                        {
+                          "key": "minPrice",
+                          "value": "0",
+                          "disabled": true
+                        },
+                        {
+                          "key": "maxPrice",
+                          "value": "500",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Product page catalog (filters). Authorization: Bearer {{accessToken}} (company). B2B fields included."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Product Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductSlug}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "marketplace",
+                        "products",
+                        "{{marketplaceProductSlug}}"
+                      ]
+                    },
+                    "description": "Product detail by slug. Authorization: Bearer {{accessToken}} (company). B2B fields included."
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         },

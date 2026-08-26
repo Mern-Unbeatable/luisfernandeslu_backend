@@ -22,6 +22,21 @@ export const factoryProductInclude = {
 export const marketplaceListInclude = {
   inventory: true,
   media: { orderBy: { sortOrder: 'asc' } },
+  pricingTiers: { select: { id: true }, take: 1 },
+  seller: {
+    select: {
+      id: true,
+      name: true,
+      profile: { select: { companyName: true } },
+    },
+  },
+}
+
+export const marketplaceDetailInclude = {
+  inventory: true,
+  media: { orderBy: { sortOrder: 'asc' } },
+  features: true,
+  pricingTiers: { orderBy: { minQuantity: 'asc' } },
   seller: {
     select: {
       id: true,
@@ -30,12 +45,6 @@ export const marketplaceListInclude = {
     },
   },
   category: categoryTreeInclude,
-}
-
-export const marketplaceDetailInclude = {
-  ...marketplaceListInclude,
-  features: true,
-  pricingTiers: { orderBy: { minQuantity: 'asc' } },
   reviews: {
     orderBy: { createdAt: 'desc' },
     take: 20,
