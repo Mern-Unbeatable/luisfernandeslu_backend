@@ -1463,8 +1463,213 @@
             },
             {
               "name": "Customer",
-              "description": "Requires Login Customer → accessToken. Retail pricing (same shape as public).",
+              "description": "Buyer dashboard. Login as Customer (or Company). Orders: list, details, track, cancel (reason), invoice view/download when supplier generated CUSTOMER invoice.",
               "item": [
+                {
+                  "name": "Orders",
+                  "description": "Customer/company buyer orders.\nGET / — list cards\nGET /:orderId — details (address, products, driver, timeline)\nGET /:orderId/track — tracking\nPOST /:orderId/cancel — { reason }\nGET /:orderId/invoice — invoice meta\nGET /:orderId/invoice/download — PDF (only if supplier generated CUSTOMER invoice)",
+                  "item": [
+                    {
+                      "name": "List My Orders",
+                      "event": [
+                        {
+                          "listen": "test",
+                          "script": {
+                            "type": "text/javascript",
+                            "exec": [
+                              "const json = pm.response.json();",
+                              "const o = json.orders?.[0];",
+                              "if (o?.id) pm.collectionVariables.set(\"orderId\", o.id);",
+                              "if (o?.orderNumber) pm.collectionVariables.set(\"orderNumber\", o.orderNumber);"
+                            ]
+                          }
+                        }
+                      ],
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/orders?page=1&limit=20",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "orders"
+                          ],
+                          "query": [
+                            {
+                              "key": "page",
+                              "value": "1"
+                            },
+                            {
+                              "key": "limit",
+                              "value": "20"
+                            },
+                            {
+                              "key": "status",
+                              "value": "",
+                              "disabled": true,
+                              "description": "processing|shipped|delivered|cancelled"
+                            }
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Get My Order Details",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "orders",
+                            "{{orderId}}"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Track My Order",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/track",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "orders",
+                            "{{orderId}}",
+                            "track"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Cancel My Order",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/cancel",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "orders",
+                            "{{orderId}}",
+                            "cancel"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"reason\": \"Changed project requirements\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Get My Order Invoice",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/invoice",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "orders",
+                            "{{orderId}}",
+                            "invoice"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Download My Order Invoice",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/invoice/download",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "orders",
+                            "{{orderId}}",
+                            "invoice",
+                            "download"
+                          ]
+                        }
+                      },
+                      "response": []
+                    }
+                  ]
+                },
                 {
                   "name": "List Sponsored Products",
                   "event": [
@@ -9526,68 +9731,212 @@
         },
         {
           "name": "Customer",
-          "description": "Buyer dashboard. Login as Customer or Company. deliveryOtp appears after transporter clicks Verify Delivery.",
+          "description": "Buyer dashboard. Login as Customer (or Company). Orders: list, details, track, cancel (reason), invoice view/download when supplier generated CUSTOMER invoice.",
           "item": [
             {
-              "name": "List My Orders",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/customer/orders?page=1&limit=20",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "customer",
-                    "orders"
-                  ],
-                  "query": [
+              "name": "Orders",
+              "description": "Customer/company buyer orders.\nGET / — list cards\nGET /:orderId — details (address, products, driver, timeline)\nGET /:orderId/track — tracking\nPOST /:orderId/cancel — { reason }\nGET /:orderId/invoice — invoice meta\nGET /:orderId/invoice/download — PDF (only if supplier generated CUSTOMER invoice)",
+              "item": [
+                {
+                  "name": "List My Orders",
+                  "event": [
                     {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "20"
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const o = json.orders?.[0];",
+                          "if (o?.id) pm.collectionVariables.set(\"orderId\", o.id);",
+                          "if (o?.orderNumber) pm.collectionVariables.set(\"orderNumber\", o.orderNumber);"
+                        ]
+                      }
                     }
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Get My Order Details",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}",
-                  "host": [
-                    "{{baseUrl}}"
                   ],
-                  "path": [
-                    "api",
-                    "customer",
-                    "orders",
-                    "{{orderId}}"
-                  ]
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "orders"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
+                        {
+                          "key": "status",
+                          "value": "",
+                          "disabled": true,
+                          "description": "processing|shipped|delivered|cancelled"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get My Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "orders",
+                        "{{orderId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Track My Order",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/track",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "orders",
+                        "{{orderId}}",
+                        "track"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Cancel My Order",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/cancel",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "orders",
+                        "{{orderId}}",
+                        "cancel"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"Changed project requirements\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get My Order Invoice",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/invoice",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "orders",
+                        "{{orderId}}",
+                        "invoice"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Download My Order Invoice",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/orders/{{orderId}}/invoice/download",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "orders",
+                        "{{orderId}}",
+                        "invoice",
+                        "download"
+                      ]
+                    }
+                  },
+                  "response": []
                 }
-              },
-              "response": []
+              ]
             },
             {
               "name": "Returns",

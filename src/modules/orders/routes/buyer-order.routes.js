@@ -1,9 +1,10 @@
 import { Router } from 'express'
-import deliveryController from '../../auctions/controllers/delivery.controller.js'
+import buyerOrderController from '../controllers/buyer-order.controller.js'
 import {
   buyerOrderIdParamSchema,
-  listDeliveriesQuerySchema,
-} from '../../auctions/validations/delivery.validation.js'
+  listBuyerOrdersQuerySchema,
+  cancelBuyerOrderBodySchema,
+} from '../validations/buyer-order.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
   requireAccessToken,
@@ -21,14 +22,39 @@ class BuyerOrderRoutes {
 
     this.router.get(
       '/',
-      validate(listDeliveriesQuerySchema, 'query'),
-      (req, res, next) => deliveryController.listForBuyer(req, res, next),
+      validate(listBuyerOrdersQuerySchema, 'query'),
+      (req, res, next) => buyerOrderController.list(req, res, next),
+    )
+
+    this.router.get(
+      '/:orderId/track',
+      validate(buyerOrderIdParamSchema, 'params'),
+      (req, res, next) => buyerOrderController.track(req, res, next),
+    )
+
+    this.router.get(
+      '/:orderId/invoice',
+      validate(buyerOrderIdParamSchema, 'params'),
+      (req, res, next) => buyerOrderController.getInvoice(req, res, next),
+    )
+
+    this.router.get(
+      '/:orderId/invoice/download',
+      validate(buyerOrderIdParamSchema, 'params'),
+      (req, res, next) => buyerOrderController.downloadInvoice(req, res, next),
+    )
+
+    this.router.post(
+      '/:orderId/cancel',
+      validate(buyerOrderIdParamSchema, 'params'),
+      validate(cancelBuyerOrderBodySchema, 'body'),
+      (req, res, next) => buyerOrderController.cancel(req, res, next),
     )
 
     this.router.get(
       '/:orderId',
       validate(buyerOrderIdParamSchema, 'params'),
-      (req, res, next) => deliveryController.getForBuyer(req, res, next),
+      (req, res, next) => buyerOrderController.getById(req, res, next),
     )
   }
 
