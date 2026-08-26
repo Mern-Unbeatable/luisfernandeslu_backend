@@ -25,6 +25,7 @@ import adminAuctionRoutes from './modules/admin/auctions/routes/auction.routes.j
 import adminOrderRoutes from './modules/admin/orders/routes/order.routes.js'
 import adminLogisticsRoutes from './modules/admin/logistics/routes/logistics.routes.js'
 import adminAffiliateTierRoutes from './modules/admin/affiliate-tiers/routes/tier.routes.js'
+import adminRolesPermissionsRoutes from './modules/admin/roles-permissions/routes/roles-permissions.routes.js'
 import adminAffiliateRoutes from './modules/admin/affiliates/routes/affiliate.routes.js'
 import { partyCommissionInvoiceRoutes } from './modules/commission-invoices/party.routes.js'
 import productAdminRoutes from './modules/products/routes/admin.routes.js'
@@ -171,6 +172,7 @@ app.use('/api/admin/disputes', adminDisputesRoutes)
 app.use('/api/admin/logistics', adminLogisticsRoutes)
 app.use('/api/admin/affiliates', adminAffiliateRoutes)
 app.use('/api/admin/affiliate-tiers', adminAffiliateTierRoutes)
+app.use('/api/admin/roles-permissions', adminRolesPermissionsRoutes)
 app.use('/api/admin', productAdminRoutes)
 app.use('/api/affiliate', affiliateRoutes)
 app.use('/api/admin', promotionAdminRoutes)

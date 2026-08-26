@@ -10939,6 +10939,66 @@
               ]
             },
             {
+              "name": "Roles & Permissions",
+              "description": "Role & Permission Strategy.\nGET / — roles (admin|moderator), editMatrix, visibilityMatrix (same modules; visible = editEnabled)\nPUT /moderator — { edit: [{ id, editEnabled }] }\nPOST /invite — { email, role: admin|moderator, edit? }",
+              "item": [
+                {
+                  "name": "Get Role Permissions",
+                  "request": {
+                    "method": "GET",
+                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/roles-permissions",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "roles-permissions"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Moderator Permissions",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"edit\": [\n    { \"id\": \"dashboard-overview\", \"editEnabled\": false },\n    { \"id\": \"product-management\", \"editEnabled\": true },\n    { \"id\": \"supplier-management\", \"editEnabled\": true },\n    { \"id\": \"factory-management\", \"editEnabled\": true },\n    { \"id\": \"transporter-management\", \"editEnabled\": false },\n    { \"id\": \"product-moderation\", \"editEnabled\": false }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/roles-permissions/moderator",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "roles-permissions", "moderator"]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Invite Team Member",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+                      { "key": "Content-Type", "value": "application/json" }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"moderator@test.local\",\n  \"role\": \"moderator\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/roles-permissions/invite",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "roles-permissions", "invite"]
+                    },
+                    "description": "Creates staff (login /admin/login). Optional edit saves Moderator matrix; visibility follows editEnabled."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Affiliates",
               "description": "Admin affiliate directory.\nGET /stats — status cards\nGET / — table (search, status, page, limit=7)\nPATCH /:id/status — { status: active|suspended }\nDELETE /:id\nGET /:id — details header + revenue/earned/clients\nGET /:id/clients — search, status, plan, sort=latest|oldest\nGET /:id/analytics — thisYear monthly series (numbers)\nGET /:id/commissions — status filter\nGET /:id/payouts — payout history\nGET /payouts — payout control table\nPATCH /payouts/:payoutId/status — paid|approved|rejected",
               "item": [

@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer'
 import { env, isProduction } from '../config/env.js'
 
 let transporter = null
-let transporterVerified = false
 
 const PLACEHOLDER_HOSTS = new Set([
   'smtp.example.com',
@@ -28,6 +27,11 @@ function getTransporter() {
     port,
     secure: secure || port === 465,
     auth: { user, pass },
+    pool: true,
+    maxConnections: 1,
+    connectionTimeout: 8_000,
+    greetingTimeout: 8_000,
+    socketTimeout: 12_000,
   })
 
   return transporter
@@ -49,12 +53,6 @@ export async function sendMail({ to, subject, text, html }) {
   }
 
   try {
-    if (!transporterVerified) {
-      await mailer.verify()
-      transporterVerified = true
-      console.info(`[mail] SMTP ready (${env.smtp.host})`)
-    }
-
     const info = await mailer.sendMail({ from, to, subject, text, html })
     console.info(`[mail] sent to ${to} messageId=${info.messageId}`)
     return { queued: true, mode: 'smtp', messageId: info.messageId }
@@ -101,4 +99,36 @@ export function sendDeliveryOtpEmail(email, otp, orderNumber) {
   return sendMail({ to: email, subject, text, html })
 }
 
-export default { sendMail, sendOtpEmail, sendDeliveryOtpEmail, smtpConfigured }
+export function sendStaffInviteEmail({
+  email,
+  roleLabel,
+  loginUrl,
+  temporaryPassword,
+}) {
+  const subject = `You're invited to CONSTRUPRECO as ${roleLabel}`
+  const passwordLine = temporaryPassword
+    ? `Temporary password: ${temporaryPassword}`
+    : 'Use your existing password to sign in.'
+  const text = [
+    `You have been invited to CONSTRUPRECO as ${roleLabel}.`,
+    `Login: ${loginUrl}`,
+    passwordLine,
+    'Change your password after first login.',
+  ].join('\n')
+  const html = `
+    <div style="font-family:sans-serif;max-width:480px">
+      <h2>CONSTRUPRECO</h2>
+      <p>You have been invited as <strong>${roleLabel}</strong>.</p>
+      <p><a href="${loginUrl}">${loginUrl}</a></p>
+      ${
+        temporaryPassword
+          ? `<p>Temporary password: <strong>${temporaryPassword}</strong></p>`
+          : `<p>Use your existing password to sign in.</p>`
+      }
+      <p style="color:#666">Change your password after first login.</p>
+    </div>
+  `
+  return sendMail({ to: email, subject, text, html })
+}
+
+export default { sendMail, sendOtpEmail, sendDeliveryOtpEmail, sendStaffInviteEmail, smtpConfigured }
