@@ -8,6 +8,36 @@ function sendResult(res, result) {
 }
 
 export class MarketplaceController {
+  async listSponsored(req, res, next) {
+    try {
+      return sendResult(
+        res,
+        await marketplaceService.listSponsored(
+          req.auth,
+          req.query,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async listTopSelling(req, res, next) {
+    try {
+      return sendResult(
+        res,
+        await marketplaceService.listTopSelling(
+          req.auth,
+          req.query,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async list(req, res, next) {
     try {
       const result = await marketplaceService.list(
@@ -21,11 +51,11 @@ export class MarketplaceController {
     }
   }
 
-  async getById(req, res, next) {
+  async getBySlug(req, res, next) {
     try {
-      const result = await marketplaceService.getById(
+      const result = await marketplaceService.getBySlug(
         req.auth,
-        req.params.id,
+        req.params.slug,
         resolveRequestBaseUrl(req),
       )
       return sendResult(res, result)

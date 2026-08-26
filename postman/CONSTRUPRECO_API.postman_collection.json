@@ -67,6 +67,10 @@
       "value": ""
     },
     {
+      "key": "marketplaceProductSlug",
+      "value": ""
+    },
+    {
       "key": "quoteId",
       "value": ""
     },
@@ -1270,566 +1274,466 @@
     },
     {
       "name": "CONSTRUPRECO (Website)",
-      "description": "Public storefront APIs for the CONSTRUPRECO website.\n\nProducts → Public | Customer | Company\n\nSame endpoints; response changes by optional Bearer role.",
+      "description": "Public storefront APIs for the CONSTRUPRECO website.\n\nProducts: sponsored | top-selling | catalog | details\nOptional Bearer = customer/company pricing.",
       "item": [
         {
           "name": "Products",
+          "description": "Website product lists (same URLs for public / customer / company).\nOptional Bearer changes pricingView.\nGET /sponsored — home sponsored\nGET /top-selling — home top selling\nGET / — product page catalog\nGET /:slug — details by public slug",
           "item": [
             {
-              "name": "Public",
-              "description": "No login (guest). Sees regular basePrice only. No b2bPrice / company price.",
-              "item": [
+              "name": "List Sponsored Products",
+              "event": [
                 {
-                  "name": "List Products",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const p = json.products?.[0] || json.product;",
-                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        },
-                        {
-                          "key": "categoryId",
-                          "value": "{{categoryId}}",
-                          "disabled": true
-                        },
-                        {
-                          "key": "search",
-                          "value": "",
-                          "disabled": true
-                        },
-                        {
-                          "key": "sponsored",
-                          "value": "true",
-                          "disabled": true,
-                          "description": "true|false"
-                        }
-                      ]
-                    },
-                    "description": "Guest list — basePrice / price only. APPROVED supplier products with listedQuantity > 0."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Get Product Details",
-                  "request": {
-                    "method": "GET",
-                    "header": [],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "{{marketplaceProductId}}"
-                      ]
-                    },
-                    "description": "Guest detail (image 2 style): priceLabel, pricingTable/bulkOptions, gallery, tabs. sendQuote=false."
-                  },
-                  "response": []
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const p = json.products?.[0] || json.product;",
+                      "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                      "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                    ]
+                  }
                 }
-              ]
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/marketplace/products/sponsored?page=1&limit=12",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "marketplace",
+                    "products",
+                    "sponsored"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "12"
+                    }
+                  ]
+                },
+                "description": "Home Sponsored Products. Optional Bearer: company sees b2bPrice; guest/customer see retail only."
+              },
+              "response": []
             },
             {
-              "name": "Customer",
-              "description": "Logged-in customer. Same retail pricing as public (basePrice). Login Customer first.",
-              "item": [
+              "name": "List Top Selling Products",
+              "event": [
                 {
-                  "name": "List Products",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const p = json.products?.[0] || json.product;",
-                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        },
-                        {
-                          "key": "categoryId",
-                          "value": "{{categoryId}}",
-                          "disabled": true
-                        },
-                        {
-                          "key": "search",
-                          "value": "",
-                          "disabled": true
-                        },
-                        {
-                          "key": "sponsored",
-                          "value": "true",
-                          "disabled": true,
-                          "description": "true|false"
-                        }
-                      ]
-                    },
-                    "description": "Customer token — still retail pricing (basePrice only, b2bPrice null)."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Get Product Details",
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "{{marketplaceProductId}}"
-                      ]
-                    },
-                    "description": "Customer detail (image 2): priceLabel + bulk pricing table. actions.sendQuote=false. No minimum-order banner."
-                  },
-                  "response": []
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const p = json.products?.[0] || json.product;",
+                      "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                      "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                    ]
+                  }
                 }
-              ]
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/marketplace/products/top-selling?page=1&limit=12",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "marketplace",
+                    "products",
+                    "top-selling"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "12"
+                    }
+                  ]
+                },
+                "description": "Home Top Selling. Sorted by sold quantity (non-cancelled), then rating. Optional Bearer for company pricing."
+              },
+              "response": []
             },
             {
-              "name": "Company",
-              "description": "Logged-in company. Sees basePrice + b2bPrice on list; detail shows min order + Send Quote. Login Company first.",
-              "item": [
+              "name": "List Products",
+              "event": [
                 {
-                  "name": "List Products",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const p = json.products?.[0] || json.product;",
-                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        },
-                        {
-                          "key": "categoryId",
-                          "value": "{{categoryId}}",
-                          "disabled": true
-                        },
-                        {
-                          "key": "search",
-                          "value": "",
-                          "disabled": true
-                        },
-                        {
-                          "key": "sponsored",
-                          "value": "true",
-                          "disabled": true,
-                          "description": "true|false"
-                        }
-                      ]
-                    },
-                    "description": "Company token — card shows basePrice + companyPriceText (b2bPrice) + minOrder when set."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Get Product Details",
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "{{marketplaceProductId}}"
-                      ]
-                    },
-                    "description": "Company detail (image 3): basePrice + bulk table + b2bPrice + minOrderLabel + actions.sendQuote=true."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Send Quote",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "if (json.quote?.id) pm.collectionVariables.set(\"quoteId\", json.quote.id);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      },
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  // Send Quote modal (company only)\n  // budget: slider / presets e.g. 80, 50, 70, 60\n  \"budget\": 80,\n  // quantity: free text from UI (e.g. \"10 bags\")\n  \"quantity\": \"10 bags\",\n  \"message\": \"Need delivery within 2 weeks for our site project.\"\n}"
-                    },
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}/quote",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "{{marketplaceProductId}}",
-                        "quote"
-                      ]
-                    },
-                    "description": "Company Send Quote modal. Creates PENDING QuoteRequest for the product seller. Requires Login Company + marketplaceProductId."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "List My Quote Chats",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const q = json.quotes?.[0];",
-                          "if (q?.id) pm.collectionVariables.set(\"quoteId\", q.id);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        },
-                        {
-                          "key": "status",
-                          "value": "all",
-                          "description": "all|PENDING|IN_CHAT|ACCEPTED|REJECTED"
-                        }
-                      ]
-                    },
-                    "description": "Company: quotes I sent + messenger sidebar `chats` array"
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Get Quote Thread",
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes",
-                        "{{quoteId}}"
-                      ]
-                    }
-                  },
-                  "response": []
-                },
-                {
-                  "name": "List Chat Messages",
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes",
-                        "{{quoteId}}",
-                        "messages"
-                      ]
-                    },
-                    "description": "Poll for live chat. Optional ?after=ISO date for new messages only."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Send Chat Message",
-                  "request": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      },
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"message\": \"Hi, can you confirm delivery timeline?\"\n}"
-                    },
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes",
-                        "{{quoteId}}",
-                        "messages"
-                      ]
-                    }
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Negotiate Offer",
-                  "request": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/negotiate",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes",
-                        "{{quoteId}}",
-                        "offers",
-                        "{{offerId}}",
-                        "negotiate"
-                      ]
-                    },
-                    "description": "Company taps Negotiate on Offer Card"
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Accept Offer",
-                  "request": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/accept",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes",
-                        "{{quoteId}}",
-                        "offers",
-                        "{{offerId}}",
-                        "accept"
-                      ]
-                    },
-                    "description": "Company accepts offer (Pay Now flow can follow later)"
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Pay Offer (Demo)",
-                  "request": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/pay",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "quotes",
-                        "{{quoteId}}",
-                        "offers",
-                        "{{offerId}}",
-                        "pay"
-                      ]
-                    },
-                    "description": "Company demo-pays the supplier offer card. Creates QUOTE_CONVERSION chat order (first installment marked paid). Then GET /api/supplier/company-orders/chat as the supplier."
-                  },
-                  "response": []
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const p = json.products?.[0] || json.product;",
+                      "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
+                      "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
+                    ]
+                  }
                 }
-              ]
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "marketplace",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "12"
+                    },
+                    {
+                      "key": "categoryId",
+                      "value": "{{categoryId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "minPrice",
+                      "value": "0",
+                      "disabled": true
+                    },
+                    {
+                      "key": "maxPrice",
+                      "value": "500",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Product page get-all with filters (category, search, minPrice, maxPrice). Optional Bearer for company pricing."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Product Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductSlug}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "marketplace",
+                    "products",
+                    "{{marketplaceProductSlug}}"
+                  ]
+                },
+                "description": "Product detail by public slug (not UUID). Optional Bearer: company gets sendQuote=true + b2b fields."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Quotes",
+          "description": "Company quote / offer chat (requires Login Company).",
+          "item": [
+            {
+              "name": "Send Quote",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.quote?.id) pm.collectionVariables.set(\"quoteId\", json.quote.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  // Send Quote modal (company only)\n  // budget: slider / presets e.g. 80, 50, 70, 60\n  \"budget\": 80,\n  // quantity: free text from UI (e.g. \"10 bags\")\n  \"quantity\": \"10 bags\",\n  \"message\": \"Need delivery within 2 weeks for our site project.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductId}}/quote",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "marketplace",
+                    "products",
+                    "{{marketplaceProductId}}",
+                    "quote"
+                  ]
+                },
+                "description": "Company Send Quote modal. Creates PENDING QuoteRequest for the product seller. Requires Login Company + marketplaceProductId."
+              },
+              "response": []
+            },
+            {
+              "name": "List My Quote Chats",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const q = json.quotes?.[0];",
+                      "if (q?.id) pm.collectionVariables.set(\"quoteId\", q.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes?page=1&limit=12",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "12"
+                    },
+                    {
+                      "key": "status",
+                      "value": "all",
+                      "description": "all|PENDING|IN_CHAT|ACCEPTED|REJECTED"
+                    }
+                  ]
+                },
+                "description": "Company: quotes I sent + messenger sidebar `chats` array"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Quote Thread",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes/{{quoteId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes",
+                    "{{quoteId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Chat Messages",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes",
+                    "{{quoteId}}",
+                    "messages"
+                  ]
+                },
+                "description": "Poll for live chat. Optional ?after=ISO date for new messages only."
+              },
+              "response": []
+            },
+            {
+              "name": "Send Chat Message",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"message\": \"Hi, can you confirm delivery timeline?\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/messages",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes",
+                    "{{quoteId}}",
+                    "messages"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Negotiate Offer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/negotiate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes",
+                    "{{quoteId}}",
+                    "offers",
+                    "{{offerId}}",
+                    "negotiate"
+                  ]
+                },
+                "description": "Company taps Negotiate on Offer Card"
+              },
+              "response": []
+            },
+            {
+              "name": "Accept Offer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/accept",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes",
+                    "{{quoteId}}",
+                    "offers",
+                    "{{offerId}}",
+                    "accept"
+                  ]
+                },
+                "description": "Company accepts offer (Pay Now flow can follow later)"
+              },
+              "response": []
+            },
+            {
+              "name": "Pay Offer (Demo)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/quotes/{{quoteId}}/offers/{{offerId}}/pay",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "quotes",
+                    "{{quoteId}}",
+                    "offers",
+                    "{{offerId}}",
+                    "pay"
+                  ]
+                },
+                "description": "Company demo-pays the supplier offer card. Creates QUOTE_CONVERSION chat order (first installment marked paid). Then GET /api/supplier/company-orders/chat as the supplier."
+              },
+              "response": []
             }
           ]
         },
@@ -4469,15 +4373,36 @@
                   "name": "List Commission Invoices",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/commission-invoices?page=1&limit=7&search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "commission-invoices"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "commission-invoices"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" },
-                        { "key": "search", "value": "" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        }
                       ]
                     }
                   },
@@ -4487,11 +4412,24 @@
                   "name": "Get Commission Invoice",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/commission-invoices/{{commissionInvoiceId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "commission-invoices", "{{commissionInvoiceId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "commission-invoices",
+                        "{{commissionInvoiceId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -4500,11 +4438,25 @@
                   "name": "Download Commission Invoice PDF",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/commission-invoices/{{commissionInvoiceId}}/pdf",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "commission-invoices", "{{commissionInvoiceId}}", "pdf"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "commission-invoices",
+                        "{{commissionInvoiceId}}",
+                        "pdf"
+                      ]
                     }
                   },
                   "response": []
@@ -4519,11 +4471,23 @@
                   "name": "Get Profile",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -4533,8 +4497,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -4542,8 +4513,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -4553,8 +4530,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -4562,8 +4546,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/profile/warehouses",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "profile", "warehouses"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "profile",
+                        "warehouses"
+                      ]
                     }
                   },
                   "response": []
@@ -4573,8 +4564,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -4582,8 +4580,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/profile/password",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "profile", "password"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "profile",
+                        "password"
+                      ]
                     }
                   },
                   "response": []
@@ -4593,8 +4598,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -4602,8 +4614,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/profile/iban",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "profile", "iban"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "profile",
+                        "iban"
+                      ]
                     }
                   },
                   "response": []
@@ -4618,15 +4637,36 @@
                   "name": "Get Business Overview",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/overview?period=2026&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "overview"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "overview"
+                      ],
                       "query": [
-                        { "key": "period", "value": "2026" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "period",
+                          "value": "2026"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -4787,8 +4827,14 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/return-requests",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "return-requests"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "return-requests"
+                      ]
                     }
                   },
                   "response": []
@@ -4806,8 +4852,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/return-requests/{{supplierReturnId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "return-requests", "{{supplierReturnId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "return-requests",
+                        "{{supplierReturnId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -4833,8 +4886,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/return-requests/{{supplierReturnId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "return-requests", "{{supplierReturnId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "return-requests",
+                        "{{supplierReturnId}}",
+                        "status"
+                      ]
                     },
                     "description": "status: pending | under_review | approved | rejected | item_received | inspection_progress | inspection_pass | inspection_rejected"
                   },
@@ -4850,11 +4911,23 @@
                   "name": "List Disputes",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/disputes",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "disputes"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "disputes"
+                      ]
                     }
                   },
                   "response": []
@@ -4863,11 +4936,24 @@
                   "name": "Get Dispute Details",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/disputes/{{disputeId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "disputes", "{{disputeId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "disputes",
+                        "{{disputeId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -4877,14 +4963,32 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
-                    "body": { "mode": "raw", "raw": "{\n  \"status\": \"under_review\"\n}" },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"under_review\"\n}"
+                    },
                     "url": {
                       "raw": "{{baseUrl}}/api/supplier/disputes/{{disputeId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "supplier", "disputes", "{{disputeId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "supplier",
+                        "disputes",
+                        "{{disputeId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -6632,11 +6736,23 @@
                   "name": "Get Profile",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -6646,8 +6762,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6655,8 +6778,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -6666,8 +6795,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6675,8 +6811,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/profile/password",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "profile", "password"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "profile",
+                        "password"
+                      ]
                     }
                   },
                   "response": []
@@ -6686,8 +6829,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6695,8 +6845,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/profile/iban",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "profile", "iban"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "profile",
+                        "iban"
+                      ]
                     }
                   },
                   "response": []
@@ -6705,17 +6862,34 @@
                   "name": "Upload Avatar",
                   "request": {
                     "method": "POST",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "body": {
                       "mode": "formdata",
                       "formdata": [
-                        { "key": "avatar", "type": "file", "src": [] }
+                        {
+                          "key": "avatar",
+                          "type": "file",
+                          "src": []
+                        }
                       ]
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/profile/avatar",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "profile", "avatar"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "profile",
+                        "avatar"
+                      ]
                     }
                   },
                   "response": []
@@ -6724,11 +6898,24 @@
                   "name": "Remove Avatar",
                   "request": {
                     "method": "DELETE",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/profile/avatar",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "profile", "avatar"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "profile",
+                        "avatar"
+                      ]
                     }
                   },
                   "response": []
@@ -6743,11 +6930,23 @@
                   "name": "Get Insurance",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/insurance",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "insurance"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "insurance"
+                      ]
                     }
                   },
                   "response": []
@@ -6756,23 +6955,63 @@
                   "name": "Save Insurance (Upload / Renew)",
                   "request": {
                     "method": "POST",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "body": {
                       "mode": "formdata",
                       "formdata": [
-                        { "key": "type", "value": "civil", "type": "text" },
-                        { "key": "provider", "value": "SafeGuard Insurance Co.", "type": "text" },
-                        { "key": "policyNumber", "value": "POL-CL-849372", "type": "text" },
-                        { "key": "coverageAmount", "value": "1000000", "type": "text" },
-                        { "key": "startDate", "value": "2025-01-15", "type": "text" },
-                        { "key": "expiryDate", "value": "2027-01-15", "type": "text" },
-                        { "key": "document", "type": "file", "src": [] }
+                        {
+                          "key": "type",
+                          "value": "civil",
+                          "type": "text"
+                        },
+                        {
+                          "key": "provider",
+                          "value": "SafeGuard Insurance Co.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "policyNumber",
+                          "value": "POL-CL-849372",
+                          "type": "text"
+                        },
+                        {
+                          "key": "coverageAmount",
+                          "value": "1000000",
+                          "type": "text"
+                        },
+                        {
+                          "key": "startDate",
+                          "value": "2025-01-15",
+                          "type": "text"
+                        },
+                        {
+                          "key": "expiryDate",
+                          "value": "2027-01-15",
+                          "type": "text"
+                        },
+                        {
+                          "key": "document",
+                          "type": "file",
+                          "src": []
+                        }
                       ]
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/insurance",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "insurance"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "insurance"
+                      ]
                     }
                   },
                   "response": []
@@ -6781,11 +7020,25 @@
                   "name": "Download Insurance PDF",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/insurance/civil/pdf",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "insurance", "civil", "pdf"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "insurance",
+                        "civil",
+                        "pdf"
+                      ]
                     }
                   },
                   "response": []
@@ -6800,15 +7053,36 @@
                   "name": "Get Payments & Payouts",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/payments-payouts?period=thisYear&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "payments-payouts"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "payments-payouts"
+                      ],
                       "query": [
-                        { "key": "period", "value": "thisYear" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "period",
+                          "value": "thisYear"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -6819,8 +7093,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6828,8 +7109,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/payments-payouts/withdrawals",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "payments-payouts", "withdrawals"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "payments-payouts",
+                        "withdrawals"
+                      ]
                     }
                   },
                   "response": []
@@ -6844,15 +7132,36 @@
                   "name": "List Commission Invoices",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/commission-invoices?page=1&limit=7&search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "commission-invoices"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "commission-invoices"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" },
-                        { "key": "search", "value": "" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        }
                       ]
                     }
                   },
@@ -6862,11 +7171,24 @@
                   "name": "Get Commission Invoice",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/commission-invoices/{{commissionInvoiceId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "commission-invoices", "{{commissionInvoiceId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "commission-invoices",
+                        "{{commissionInvoiceId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -6875,11 +7197,25 @@
                   "name": "Download Commission Invoice PDF",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/transporter/commission-invoices/{{commissionInvoiceId}}/pdf",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "transporter", "commission-invoices", "{{commissionInvoiceId}}", "pdf"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "commission-invoices",
+                        "{{commissionInvoiceId}}",
+                        "pdf"
+                      ]
                     }
                   },
                   "response": []
@@ -6900,11 +7236,23 @@
                   "name": "Get Profile",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -6914,8 +7262,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6923,8 +7278,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -6934,8 +7295,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6943,8 +7311,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/profile/warehouses",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "profile", "warehouses"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "profile",
+                        "warehouses"
+                      ]
                     }
                   },
                   "response": []
@@ -6954,8 +7329,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6963,8 +7345,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/profile/password",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "profile", "password"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "profile",
+                        "password"
+                      ]
                     }
                   },
                   "response": []
@@ -6974,8 +7363,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -6983,8 +7379,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/profile/iban",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "profile", "iban"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "profile",
+                        "iban"
+                      ]
                     }
                   },
                   "response": []
@@ -6999,15 +7402,36 @@
                   "name": "List Commission Invoices",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/commission-invoices?page=1&limit=7&search=",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "commission-invoices"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "commission-invoices"
+                      ],
                       "query": [
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" },
-                        { "key": "search", "value": "" }
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        }
                       ]
                     }
                   },
@@ -7017,11 +7441,24 @@
                   "name": "Get Commission Invoice",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/commission-invoices/{{commissionInvoiceId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "commission-invoices", "{{commissionInvoiceId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "commission-invoices",
+                        "{{commissionInvoiceId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -7030,11 +7467,25 @@
                   "name": "Download Commission Invoice PDF",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/factory/commission-invoices/{{commissionInvoiceId}}/pdf",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "factory", "commission-invoices", "{{commissionInvoiceId}}", "pdf"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "factory",
+                        "commission-invoices",
+                        "{{commissionInvoiceId}}",
+                        "pdf"
+                      ]
                     }
                   },
                   "response": []
@@ -8739,8 +9190,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/returns/orders",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "returns", "orders"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "returns",
+                        "orders"
+                      ]
                     }
                   },
                   "response": []
@@ -8758,8 +9216,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/returns/orders/{{returnOrderId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "returns", "orders", "{{returnOrderId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "returns",
+                        "orders",
+                        "{{returnOrderId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -8777,8 +9243,15 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/returns/requests",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "returns", "requests"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "returns",
+                        "requests"
+                      ]
                     }
                   },
                   "response": []
@@ -8796,8 +9269,16 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/returns/requests/{{returnRequestId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "returns", "requests", "{{returnRequestId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "returns",
+                        "requests",
+                        "{{returnRequestId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -8816,19 +9297,55 @@
                     "body": {
                       "mode": "formdata",
                       "formdata": [
-                        { "key": "orderId", "value": "ord-101", "type": "text" },
-                        { "key": "itemId", "value": "li-2", "type": "text" },
-                        { "key": "reason", "value": "Damaged", "type": "text" },
-                        { "key": "description", "value": "Item arrived with visible damage.", "type": "text" },
-                        { "key": "damagedCount", "value": "1", "type": "text" },
-                        { "key": "refundAccount", "value": "123456789012", "type": "text" },
-                        { "key": "evidence", "type": "file", "src": [], "description": "JPEG/PNG/WEBP/PDF/DOC/DOCX — repeat key for more files" }
+                        {
+                          "key": "orderId",
+                          "value": "ord-101",
+                          "type": "text"
+                        },
+                        {
+                          "key": "itemId",
+                          "value": "li-2",
+                          "type": "text"
+                        },
+                        {
+                          "key": "reason",
+                          "value": "Damaged",
+                          "type": "text"
+                        },
+                        {
+                          "key": "description",
+                          "value": "Item arrived with visible damage.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "damagedCount",
+                          "value": "1",
+                          "type": "text"
+                        },
+                        {
+                          "key": "refundAccount",
+                          "value": "123456789012",
+                          "type": "text"
+                        },
+                        {
+                          "key": "evidence",
+                          "type": "file",
+                          "src": [],
+                          "description": "JPEG/PNG/WEBP/PDF/DOC/DOCX — repeat key for more files"
+                        }
                       ]
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/returns/requests",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "returns", "requests"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "returns",
+                        "requests"
+                      ]
                     },
                     "description": "multipart/form-data. Field `evidence` accepts image, PDF, or Word docs (max 10 files, 8MB each). Company: /api/company/returns/requests."
                   },
@@ -8844,11 +9361,24 @@
                   "name": "List Dispute Orders",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/disputes/orders",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "disputes", "orders"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "disputes",
+                        "orders"
+                      ]
                     }
                   },
                   "response": []
@@ -8857,11 +9387,23 @@
                   "name": "List Disputes",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/disputes",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "disputes"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "disputes"
+                      ]
                     }
                   },
                   "response": []
@@ -8871,22 +9413,54 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
                     ],
                     "body": {
                       "mode": "formdata",
                       "formdata": [
-                        { "key": "orderNumber", "value": "ORD-101", "type": "text" },
-                        { "key": "itemIds", "value": "", "type": "text", "description": "Optional. Repeat key for multiple order line item UUIDs from GET /orders. Empty = all items on the order." },
-                        { "key": "issueType", "value": "Damaged", "type": "text" },
-                        { "key": "description", "value": "Item arrived with visible damage.", "type": "text" },
-                        { "key": "evidence", "type": "file", "src": [], "description": "JPEG/PNG/WEBP — repeat key for more files" }
+                        {
+                          "key": "orderNumber",
+                          "value": "ORD-101",
+                          "type": "text"
+                        },
+                        {
+                          "key": "itemIds",
+                          "value": "",
+                          "type": "text",
+                          "description": "Optional. Repeat key for multiple order line item UUIDs from GET /orders. Empty = all items on the order."
+                        },
+                        {
+                          "key": "issueType",
+                          "value": "Damaged",
+                          "type": "text"
+                        },
+                        {
+                          "key": "description",
+                          "value": "Item arrived with visible damage.",
+                          "type": "text"
+                        },
+                        {
+                          "key": "evidence",
+                          "type": "file",
+                          "src": [],
+                          "description": "JPEG/PNG/WEBP — repeat key for more files"
+                        }
                       ]
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/disputes",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "disputes"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "disputes"
+                      ]
                     },
                     "description": "multipart/form-data. Field `evidence` accepts images only (max 10, 8MB each). Company: /api/company/disputes."
                   },
@@ -8896,11 +9470,24 @@
                   "name": "Get Dispute Details",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/customer/disputes/{{disputeId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "customer", "disputes", "{{disputeId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "disputes",
+                        "{{disputeId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -8920,11 +9507,23 @@
                   "name": "List Disputes",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/disputes",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "disputes"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "disputes"
+                      ]
                     }
                   },
                   "response": []
@@ -8933,11 +9532,24 @@
                   "name": "Get Dispute Details",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/disputes/{{disputeId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "disputes", "{{disputeId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "disputes",
+                        "{{disputeId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -8947,14 +9559,32 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
-                    "body": { "mode": "raw", "raw": "{\n  \"status\": \"resolved\"\n}" },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"status\": \"resolved\"\n}"
+                    },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/disputes/{{disputeId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "disputes", "{{disputeId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "disputes",
+                        "{{disputeId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -10946,11 +11576,23 @@
                   "name": "Get Role Permissions",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/roles-permissions",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "roles-permissions"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "roles-permissions"
+                      ]
                     }
                   },
                   "response": []
@@ -10960,8 +11602,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -10969,8 +11618,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/roles-permissions/moderator",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "roles-permissions", "moderator"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "roles-permissions",
+                        "moderator"
+                      ]
                     }
                   },
                   "response": []
@@ -10980,8 +11636,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -10989,8 +11652,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/roles-permissions/invite",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "roles-permissions", "invite"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "roles-permissions",
+                        "invite"
+                      ]
                     },
                     "description": "Creates staff (login /admin/login). Optional edit saves Moderator matrix; visibility follows editEnabled."
                   },
@@ -11006,11 +11676,23 @@
                   "name": "Get Settings",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings"
+                      ]
                     }
                   },
                   "response": []
@@ -11020,8 +11702,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11029,8 +11718,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings/shipping",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings", "shipping"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings",
+                        "shipping"
+                      ]
                     }
                   },
                   "response": []
@@ -11039,11 +11735,25 @@
                   "name": "Reset Shipping",
                   "request": {
                     "method": "POST",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings/shipping/reset",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings", "shipping", "reset"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings",
+                        "shipping",
+                        "reset"
+                      ]
                     }
                   },
                   "response": []
@@ -11053,8 +11763,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11062,8 +11779,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings/vat",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings", "vat"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings",
+                        "vat"
+                      ]
                     }
                   },
                   "response": []
@@ -11072,11 +11796,25 @@
                   "name": "Reset VAT",
                   "request": {
                     "method": "POST",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings/vat/reset",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings", "vat", "reset"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings",
+                        "vat",
+                        "reset"
+                      ]
                     }
                   },
                   "response": []
@@ -11086,8 +11824,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11095,8 +11840,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings/auction",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings", "auction"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings",
+                        "auction"
+                      ]
                     }
                   },
                   "response": []
@@ -11105,11 +11857,25 @@
                   "name": "Reset Auction",
                   "request": {
                     "method": "POST",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/settings/auction/reset",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "settings", "auction", "reset"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "settings",
+                        "auction",
+                        "reset"
+                      ]
                     }
                   },
                   "response": []
@@ -11124,11 +11890,23 @@
                   "name": "Get Profile",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -11138,8 +11916,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11147,8 +11932,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/profile",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "profile"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "profile"
+                      ]
                     }
                   },
                   "response": []
@@ -11158,8 +11949,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11167,8 +11965,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/profile/password",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "profile", "password"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "profile",
+                        "password"
+                      ]
                     }
                   },
                   "response": []
@@ -11178,8 +11983,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11187,8 +11999,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/profile/iban",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "profile", "iban"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "profile",
+                        "iban"
+                      ]
                     }
                   },
                   "response": []
@@ -11203,11 +12022,24 @@
                   "name": "Get Affiliate Stats",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/stats",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "stats"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "stats"
+                      ]
                     }
                   },
                   "response": []
@@ -11229,16 +12061,41 @@
                   ],
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates?status=all&search=&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all", "description": "all | active | suspended" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all | active | suspended"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -11249,8 +12106,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11258,8 +12122,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}",
+                        "status"
+                      ]
                     }
                   },
                   "response": []
@@ -11268,11 +12140,24 @@
                   "name": "Delete Affiliate",
                   "request": {
                     "method": "DELETE",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -11281,11 +12166,24 @@
                   "name": "Get Affiliate Details",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -11294,18 +12192,52 @@
                   "name": "List Referred Clients",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/clients?status=all&plan=all&sort=latest&search=&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "clients"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}",
+                        "clients"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all" },
-                        { "key": "plan", "value": "all", "description": "all | customer | company" },
-                        { "key": "sort", "value": "latest", "description": "latest | oldest" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "plan",
+                          "value": "all",
+                          "description": "all | customer | company"
+                        },
+                        {
+                          "key": "sort",
+                          "value": "latest",
+                          "description": "latest | oldest"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -11315,12 +12247,31 @@
                   "name": "Get Revenue Analytics",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/analytics?period=thisYear",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "analytics"],
-                      "query": [{ "key": "period", "value": "thisYear" }]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}",
+                        "analytics"
+                      ],
+                      "query": [
+                        {
+                          "key": "period",
+                          "value": "thisYear"
+                        }
+                      ]
                     }
                   },
                   "response": []
@@ -11329,15 +12280,39 @@
                   "name": "List Commission History",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/commissions?status=all&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "commissions"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}",
+                        "commissions"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all", "description": "all | pending | approved | rejected" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all | pending | approved | rejected"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -11347,15 +12322,39 @@
                   "name": "List Payout History",
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/{{affiliateId}}/payouts?status=all&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "{{affiliateId}}", "payouts"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "{{affiliateId}}",
+                        "payouts"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all", "description": "all | pending | approved | paid | rejected" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all | pending | approved | paid | rejected"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -11378,16 +12377,41 @@
                   ],
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/payouts?status=all&search=&page=1&limit=7",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "payouts"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "payouts"
+                      ],
                       "query": [
-                        { "key": "status", "value": "all" },
-                        { "key": "search", "value": "" },
-                        { "key": "page", "value": "1" },
-                        { "key": "limit", "value": "7" }
+                        {
+                          "key": "status",
+                          "value": "all"
+                        },
+                        {
+                          "key": "search",
+                          "value": ""
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "7"
+                        }
                       ]
                     }
                   },
@@ -11398,8 +12422,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11407,8 +12438,17 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/payouts/{{affiliatePayoutId}}/status",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "payouts", "{{affiliatePayoutId}}", "status"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "payouts",
+                        "{{affiliatePayoutId}}",
+                        "status"
+                      ]
                     },
                     "description": "status: paid | approved | rejected"
                   },
@@ -11431,11 +12471,24 @@
                   ],
                   "request": {
                     "method": "GET",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/levels",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "levels"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "levels"
+                      ]
                     },
                     "description": "Level Control cards: name, requirement, commissionPercent, description, isActive"
                   },
@@ -11446,8 +12499,15 @@
                   "request": {
                     "method": "POST",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11455,8 +12515,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/levels",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "levels"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "levels"
+                      ]
                     }
                   },
                   "response": []
@@ -11466,8 +12533,15 @@
                   "request": {
                     "method": "PATCH",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11475,8 +12549,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/levels/{{affiliateTierId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "levels", "{{affiliateTierId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "levels",
+                        "{{affiliateTierId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -11485,11 +12567,25 @@
                   "name": "Delete Commission Level",
                   "request": {
                     "method": "DELETE",
-                    "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/levels/{{affiliateTierId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "levels", "{{affiliateTierId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "levels",
+                        "{{affiliateTierId}}"
+                      ]
                     }
                   },
                   "response": []
@@ -11499,8 +12595,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11508,8 +12611,16 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliates/levels/reorder",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliates", "levels", "reorder"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliates",
+                        "levels",
+                        "reorder"
+                      ]
                     },
                     "description": "Drag-and-drop: send all level ids left-to-right"
                   },
@@ -11656,8 +12767,15 @@
                   "request": {
                     "method": "PUT",
                     "header": [
-                      { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
-                      { "key": "Content-Type", "value": "application/json" }
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -11665,8 +12783,15 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/api/admin/affiliate-tiers/reorder",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "admin", "affiliate-tiers", "reorder"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "affiliate-tiers",
+                        "reorder"
+                      ]
                     },
                     "description": "Drag-and-drop order. Send all level ids left-to-right."
                   },

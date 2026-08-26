@@ -1,0 +1,402 @@
+﻿{
+    "success":  true,
+    "statusCode":  200,
+    "message":  "Marketplace products fetched",
+    "products":  [
+                     {
+                         "id":  "4e6ce5e8-581c-4c79-8932-4830944b9964",
+                         "slug":  "portland-cement-quick-set-demo",
+                         "title":  "Portland Cement Quick Set",
+                         "description":  "CEM I 52.5R Portland cement suitable for slabs and columns.",
+                         "image":  "http://localhost:8080/uploads/seed/cement-banner.jpg",
+                         "bannerImage":  {
+                                             "id":  "f931c52d-1415-44f6-856e-44ae1a7570e6",
+                                             "url":  "http://localhost:8080/uploads/seed/cement-banner.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  8.5,
+                         "price":  "€8.50",
+                         "priceLabel":  "€8.50 Per bags ( 50kg )",
+                         "isSponsored":  true,
+                         "isFeatured":  true,
+                         "badge":  {
+                                       "label":  "SPONSORED",
+                                       "type":  "sponsored"
+                                   },
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  4.6,
+                         "rating":  4.6,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "e5952c9d-3a9c-48ff-90b5-32cebc5608a9",
+                         "slug":  "mkt-active-waterproof-demo",
+                         "title":  "Active Waterproofing Kit",
+                         "description":  "Active Waterproofing Kit — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-4.jpg",
+                         "bannerImage":  {
+                                             "id":  "1e518fb7-dc37-463a-b71a-6afb005a1a99",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-4.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  13,
+                         "price":  "€13.00",
+                         "priceLabel":  "€13.00 Per bags ( 25kg )",
+                         "isSponsored":  true,
+                         "isFeatured":  true,
+                         "badge":  {
+                                       "label":  "SPONSORED",
+                                       "type":  "sponsored"
+                                   },
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "607ea569-7293-4afa-bac6-20f2e3fda93e",
+                         "slug":  "mkt-active-steel-mesh-demo",
+                         "title":  "Active Steel Mesh Bundle",
+                         "description":  "Active Steel Mesh Bundle — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-3.jpg",
+                         "bannerImage":  {
+                                             "id":  "b329095c-97f0-44c0-9b95-1cd24dfc8799",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-3.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  12,
+                         "price":  "€12.00",
+                         "priceLabel":  "€12.00 Per bags ( 25kg )",
+                         "isSponsored":  true,
+                         "isFeatured":  true,
+                         "badge":  {
+                                       "label":  "SPONSORED",
+                                       "type":  "sponsored"
+                                   },
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "62ccacf5-de66-4c2b-a0b6-cb8971cace83",
+                         "slug":  "mkt-unpaid-draft-demo",
+                         "title":  "Unpaid Draft Promo",
+                         "description":  "Unpaid Draft Promo — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-8.jpg",
+                         "bannerImage":  {
+                                             "id":  "909ffdf6-7c59-42c4-8e1d-240f1b7f2f2f",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-8.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  17,
+                         "price":  "€17.00",
+                         "priceLabel":  "€17.00 Per bags ( 25kg )",
+                         "isSponsored":  false,
+                         "isFeatured":  false,
+                         "badge":  null,
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "253f274b-6e62-4ba1-9bad-cf0380c29174",
+                         "slug":  "mkt-rejected-paint-demo",
+                         "title":  "Rejected Paint Promo",
+                         "description":  "Rejected Paint Promo — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-7.jpg",
+                         "bannerImage":  {
+                                             "id":  "05d4b26a-f790-47b2-acd6-0807202b4309",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-7.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  16,
+                         "price":  "€16.00",
+                         "priceLabel":  "€16.00 Per bags ( 25kg )",
+                         "isSponsored":  false,
+                         "isFeatured":  false,
+                         "badge":  null,
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "edef30de-986c-49cb-8762-107af7695108",
+                         "slug":  "mkt-completed-scaffold-demo",
+                         "title":  "Completed Scaffold Hire Promo",
+                         "description":  "Completed Scaffold Hire Promo — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-6.jpg",
+                         "bannerImage":  {
+                                             "id":  "a4e394ba-fc1f-4d85-8805-5830edfa2b3c",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-6.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  15,
+                         "price":  "€15.00",
+                         "priceLabel":  "€15.00 Per bags ( 25kg )",
+                         "isSponsored":  false,
+                         "isFeatured":  false,
+                         "badge":  null,
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "93657c6f-d01f-44d2-9777-47bd1f26ae55",
+                         "slug":  "mkt-completed-tile-demo",
+                         "title":  "Completed Tile Adhesive Promo",
+                         "description":  "Completed Tile Adhesive Promo — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-5.jpg",
+                         "bannerImage":  {
+                                             "id":  "39f7f909-0536-4aa0-9f39-42fa038ae440",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-5.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  14,
+                         "price":  "€14.00",
+                         "priceLabel":  "€14.00 Per bags ( 25kg )",
+                         "isSponsored":  false,
+                         "isFeatured":  false,
+                         "badge":  null,
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     },
+                     {
+                         "id":  "dd6fed7a-fa5c-4f0b-aaac-038321c1f2b8",
+                         "slug":  "mkt-bulk-aggregate-demo",
+                         "title":  "Bulk Aggregate Promo Pack",
+                         "description":  "Bulk Aggregate Promo Pack — marketing seed product.",
+                         "image":  "http://localhost:8080/uploads/seed/mkt-2.jpg",
+                         "bannerImage":  {
+                                             "id":  "cd8f7297-2da9-46c7-9bad-9af23c5020b9",
+                                             "url":  "http://localhost:8080/uploads/seed/mkt-2.jpg"
+                                         },
+                         "unitOfMeasure":  "bags",
+                         "basePrice":  11,
+                         "price":  "€11.00",
+                         "priceLabel":  "€11.00 Per bags ( 25kg )",
+                         "isSponsored":  false,
+                         "isFeatured":  false,
+                         "badge":  null,
+                         "seller":  {
+                                        "id":  "IR7daYp7CZZU3vfMvbcFxjYpJ72iJQTP",
+                                        "name":  "Lisboa Materials"
+                                    },
+                         "company":  "Lisboa Materials",
+                         "averageRating":  0,
+                         "rating":  0,
+                         "category":  {
+                                          "id":  "ba51838a-979c-4efd-acbc-e7675553d6a7",
+                                          "slug":  "plumbing-hydraulics",
+                                          "name":  "Canalização \u0026 Hidráulica"
+                                      },
+                         "subCategory":  {
+                                             "id":  "2e1eaa0d-4f55-4f03-a06f-69f6ec4eb105",
+                                             "slug":  "connections",
+                                             "name":  "Conexões"
+                                         },
+                         "productType":  {
+                                             "id":  "68f36979-0a59-4df7-b9fc-a0b63b6c2798",
+                                             "slug":  "clamps",
+                                             "name":  "Abraçadeiras"
+                                         },
+                         "b2bPrice":  null,
+                         "companyPrice":  null,
+                         "companyPriceText":  null,
+                         "minOrder":  null,
+                         "minOrderLabel":  null,
+                         "pricingView":  "retail"
+                     }
+                 ],
+    "pagination":  {
+                       "page":  1,
+                       "limit":  8,
+                       "total":  9,
+                       "totalPages":  2
+                   },
+    "viewer":  {
+                   "role":  "guest",
+                   "isCompany":  false,
+                   "isAuthenticated":  false,
+                   "pricingView":  "retail"
+               },
+    "filters":  {
+                    "categoryId":  null,
+                    "category":  null,
+                    "search":  null,
+                    "sponsored":  null
+                }
+}

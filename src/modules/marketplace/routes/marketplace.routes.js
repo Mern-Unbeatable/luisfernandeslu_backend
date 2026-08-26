@@ -2,7 +2,8 @@ import { Router } from 'express'
 import marketplaceController from '../controllers/marketplace.controller.js'
 import {
   marketplaceListQuerySchema,
-  marketplaceProductIdParamSchema,
+  marketplaceProductSlugParamSchema,
+  marketplaceSimpleListQuerySchema,
 } from '../validations/marketplace.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import { optionalAccessToken } from '../../../middlewares/auth.middleware.js'
@@ -14,8 +15,20 @@ class MarketplaceRoutes {
   }
 
   initRoutes() {
-    // Public — optional Bearer token (company sees B2B prices)
+    // Optional Bearer: guest/customer = retail, company = B2B fields
     this.router.use(optionalAccessToken)
+
+    this.router.get(
+      '/sponsored',
+      validate(marketplaceSimpleListQuerySchema, 'query'),
+      (req, res, next) => marketplaceController.listSponsored(req, res, next),
+    )
+
+    this.router.get(
+      '/top-selling',
+      validate(marketplaceSimpleListQuerySchema, 'query'),
+      (req, res, next) => marketplaceController.listTopSelling(req, res, next),
+    )
 
     this.router.get(
       '/',
@@ -24,9 +37,9 @@ class MarketplaceRoutes {
     )
 
     this.router.get(
-      '/:id',
-      validate(marketplaceProductIdParamSchema, 'params'),
-      (req, res, next) => marketplaceController.getById(req, res, next),
+      '/:slug',
+      validate(marketplaceProductSlugParamSchema, 'params'),
+      (req, res, next) => marketplaceController.getBySlug(req, res, next),
     )
   }
 
