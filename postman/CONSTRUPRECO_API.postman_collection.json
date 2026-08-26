@@ -1997,6 +1997,295 @@
                     "description": "Product detail by slug. Authorization: Bearer {{accessToken}} (customer). retail pricing."
                   },
                   "response": []
+                },
+                {
+                  "name": "Profile",
+                  "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",
+                  "item": [
+                    {
+                      "name": "Get Profile",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Update Account Settings",
+                      "request": {
+                        "method": "PATCH",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          },
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Customer\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1000\",\n  \"address\": \"Rua Demo 12\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "description": "JSON body OR multipart/form-data. For image: Body = form-data, key avatar (file) + optional text fields (firstName, lastName, ...)."
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Change Password",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          },
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile/password",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile",
+                            "password"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"Password123!\",\n  \"confirmPassword\": \"Password123!\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Save IBAN",
+                      "request": {
+                        "method": "PUT",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          },
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile/iban",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile",
+                            "iban"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"iban\": \"PT50000201231234567890154\",\n  \"ibanPhone\": \"+351910000001\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Save Billing Address",
+                      "request": {
+                        "method": "PUT",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          },
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile/billing-address",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile",
+                            "billing-address"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Gilbert\",\n  \"companyName\": \"\",\n  \"address\": \"Road No. 12\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1207\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Save Shipping Address",
+                      "request": {
+                        "method": "PUT",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          },
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile/shipping-address",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile",
+                            "shipping-address"
+                          ]
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Gilbert\",\n  \"companyName\": \"\",\n  \"address\": \"Road No. 13\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1000\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Upload Avatar",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "body": {
+                          "mode": "formdata",
+                          "formdata": [
+                            {
+                              "key": "avatar",
+                              "type": "file",
+                              "src": [],
+                              "description": "JPEG/PNG/WEBP"
+                            }
+                          ]
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile/avatar",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile",
+                            "avatar"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Remove Avatar",
+                      "request": {
+                        "method": "DELETE",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{accessToken}}",
+                            "type": "text"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/customer/profile/avatar",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "customer",
+                            "profile",
+                            "avatar"
+                          ]
+                        }
+                      },
+                      "response": []
+                    }
+                  ]
                 }
               ]
             },
@@ -5215,7 +5504,7 @@
             },
             {
               "name": "Profile",
-              "description": "Supplier My Profile.\nGET / — displayName, displayEmail, name, email, phone, avatarUrl, warehouses[{id,label,address}], iban, ibanPhone\nPATCH / — { name, email, phone }\nPUT /warehouses — { warehouses: [{ id?, label?, address }] }\nPOST /password — { currentPassword, newPassword, confirmPassword }\nPUT /iban — { iban, ibanPhone }",
+              "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",
               "item": [
                 {
                   "name": "Get Profile",
@@ -7480,7 +7769,7 @@
             },
             {
               "name": "Profile",
-              "description": "Transporter My Profile.\nGET / — displayName, displayEmail, name, email, phone, avatarUrl, iban, ibanPhone\nPATCH / — { name, phone } (email is read-only)\nPOST /password — { password, confirmPassword } (newPassword alias ok; currentPassword optional)\nPUT /iban — { iban, ibanPhone }\nPOST /avatar — multipart field avatar (or image)\nDELETE /avatar",
+              "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",
               "item": [
                 {
                   "name": "Get Profile",
@@ -7980,7 +8269,7 @@
           "item": [
             {
               "name": "Profile",
-              "description": "Factory My Profile.\nGET / — displayName, displayEmail, name, email, phone, avatarUrl, warehouses[{id,label,address}], iban, ibanPhone\nPATCH / — { name, email, phone }\nPUT /warehouses — { warehouses: [{ id?, label?, address }] }\nPOST /password — { newPassword, confirmPassword } (password / confirmNewPassword aliases; currentPassword optional)\nPUT /iban — { iban, ibanPhone }",
+              "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",
               "item": [
                 {
                   "name": "Get Profile",
@@ -10182,6 +10471,295 @@
                           "language": "json"
                         }
                       }
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Profile",
+              "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Account Settings",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Customer\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1000\",\n  \"address\": \"Rua Demo 12\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "description": "JSON body OR multipart/form-data. For image: Body = form-data, key avatar (file) + optional text fields (firstName, lastName, ...)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile",
+                        "password"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"Password123!\",\n  \"confirmPassword\": \"Password123!\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile/iban",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile",
+                        "iban"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"iban\": \"PT50000201231234567890154\",\n  \"ibanPhone\": \"+351910000001\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Billing Address",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile/billing-address",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile",
+                        "billing-address"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Gilbert\",\n  \"companyName\": \"\",\n  \"address\": \"Road No. 12\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1207\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Shipping Address",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile/shipping-address",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile",
+                        "shipping-address"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Gilbert\",\n  \"companyName\": \"\",\n  \"address\": \"Road No. 13\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1000\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Upload Avatar",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "avatar",
+                          "type": "file",
+                          "src": [],
+                          "description": "JPEG/PNG/WEBP"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile/avatar",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile",
+                        "avatar"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Remove Avatar",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/customer/profile/avatar",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "customer",
+                        "profile",
+                        "avatar"
+                      ]
                     }
                   },
                   "response": []
@@ -12899,7 +13477,7 @@
             },
             {
               "name": "Profile",
-              "description": "Admin My Profile.\nGET / — name, email, iban, ibanPhone\nPATCH / — { name, email }\nPOST /password — { currentPassword, newPassword, confirmNewPassword }\nPUT /iban — { iban, ibanPhone }",
+              "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",
               "item": [
                 {
                   "name": "Get Profile",

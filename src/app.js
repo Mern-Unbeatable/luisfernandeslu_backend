@@ -45,6 +45,7 @@ import supplierOverviewRoutes from './modules/overview/routes/supplier-overview.
 import supplierProfileRoutes from './modules/profile/routes/supplier-profile.routes.js'
 import transporterProfileRoutes from './modules/profile/routes/transporter-profile.routes.js'
 import factoryProfileRoutes from './modules/profile/routes/factory-profile.routes.js'
+import buyerProfileRoutes from './modules/profile/routes/buyer-profile.routes.js'
 import supplierReviewsRoutes from './modules/reviews/routes/supplier-reviews.routes.js'
 import buyerReviewsRoutes from './modules/reviews/routes/buyer-reviews.routes.js'
 import supplierReturnRoutes from './modules/returns/routes/supplier-returns.routes.js'
@@ -163,6 +164,8 @@ app.use('/api/transporter/insurance', transporterInsuranceRoutes)
 app.use('/api/transporter/profile', transporterProfileRoutes)
 app.use('/api/transporter/payments-payouts', transporterPaymentsRoutes)
 app.use('/api/customer/orders', buyerOrderRoutes)
+app.use('/api/customer/profile', buyerProfileRoutes)
+app.use('/api/company/profile', buyerProfileRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
 app.use('/api/admin/users', adminUserRoutes)
 app.use('/api/supplier/commission-invoices', partyCommissionInvoiceRoutes('supplier'))
