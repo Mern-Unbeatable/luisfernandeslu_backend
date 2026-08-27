@@ -10980,6 +10980,295 @@
           "description": "Company buyer dashboard. Login as Company first.\nOrders: list + details (project, payment plan, driver, timeline).\nAlso: /api/company/profile, /api/company/returns, /api/company/disputes, /api/company/reviews.",
           "item": [
             {
+              "name": "Profile",
+              "description": "Company Account Setting (My Profile).\\nGET /api/company/profile — full profile (includes avatarUrl)\\nPATCH / — account fields; multipart can include avatar|image file\\nPOST /avatar — upload/replace profile picture (form-data key: avatar)\\nDELETE /avatar — remove profile picture\\nAlso: POST /password, PUT /iban, PUT /billing-address, PUT /shipping-address",
+              "item": [
+                {
+                  "name": "Get Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Account Settings",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Display name\",\n  \"email\": \"company@test.local\",\n  \"phone\": \"+1-202-555-0118\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1000\",\n  \"address\": \"Road No. 13/a, House no. 1320/C, Flat No. 5D\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "description": "JSON body OR multipart/form-data. For image: Body = form-data, key avatar (file) + optional text fields (firstName, lastName, ...)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile",
+                        "password"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"Password123!\",\n  \"confirmPassword\": \"Password123!\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save IBAN",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile/iban",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile",
+                        "iban"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"iban\": \"PT50000201231234567890154\",\n  \"ibanPhone\": \"+351910000001\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Billing Address",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile/billing-address",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile",
+                        "billing-address"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Gilbert\",\n  \"companyName\": \"\",\n  \"address\": \"Road No. 12\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1207\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Save Shipping Address",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile/shipping-address",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile",
+                        "shipping-address"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Kevin\",\n  \"lastName\": \"Gilbert\",\n  \"companyName\": \"\",\n  \"address\": \"Road No. 13\",\n  \"region\": \"lisbon\",\n  \"city\": \"lisbon-city\",\n  \"zipCode\": \"1000\",\n  \"email\": \"customer@test.local\",\n  \"phone\": \"+351910000001\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Upload Avatar",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "avatar",
+                          "type": "file",
+                          "src": [],
+                          "description": "JPEG/PNG/WEBP"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile/avatar",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile",
+                        "avatar"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Remove Avatar",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/profile/avatar",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "profile",
+                        "avatar"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
               "name": "Projects",
               "description": "Company projects.\nGET /suggestions?q= — checkout autocomplete (name + location)\nGET / — all projects + orderCount\nGET /:projectId — detail + orders table\nGET /:projectId/orders/:orderId — order/installment details\nCheckout place: send projectId OR projectName+projectLocation (reuse by name or create new).",
               "item": [
