@@ -125,7 +125,6 @@ async function factorySupplierRoute(factoryLoc, supplierLoc) {
   const factoryCoords = await resolveCoordinates(factoryLoc)
   if (factoryCoords?.geocoded) {
     await persistCoords(factoryLoc, factoryCoords)
-    await new Promise((r) => setTimeout(r, 1100))
   }
   const supplierCoords = await resolveCoordinates(supplierLoc)
   if (supplierCoords?.geocoded) {
@@ -134,7 +133,7 @@ async function factorySupplierRoute(factoryLoc, supplierLoc) {
 
   if (!factoryCoords || !supplierCoords) {
     throw httpError(
-      'Could not geocode factory or supplier address with OpenStreetMap',
+      'Could not geocode factory or supplier address with Mapbox',
       400,
       'GeocodeFailed',
     )

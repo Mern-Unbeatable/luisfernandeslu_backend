@@ -51,6 +51,39 @@ class AdminTransporterController {
     }
   }
 
+  async verifyInsurance(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminTransporterService.verifyInsurance(
+          req.auth,
+          req.params.id,
+          req.params.kind,
+          req,
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async rejectInsurance(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminTransporterService.rejectInsurance(
+          req.auth,
+          req.params.id,
+          req.params.kind,
+          req.body,
+          req,
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async updateStatus(req, res, next) {
     try {
       return sendServiceResult(

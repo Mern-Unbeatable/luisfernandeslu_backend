@@ -238,6 +238,58 @@ class CheckoutService {
     return address.id
   }
 
+  /**
+   * Reuse existing company project by id or case-insensitive name;
+   * otherwise create a new project from name + location.
+   */
+  async resolveCompanyProject(tx, userId, body) {
+    if (body.projectId) {
+      const existing = await tx.project.findFirst({
+        where: { id: body.projectId, userId },
+      })
+      if (!existing) throw httpError('Project not found', 404, 'NotFound')
+      const nextLocation = body.projectLocation?.trim()
+      if (nextLocation && nextLocation !== existing.location) {
+        return tx.project.update({
+          where: { id: existing.id },
+          data: { location: nextLocation },
+        })
+      }
+      return existing
+    }
+
+    const projectName = String(body.projectName || '').trim()
+    const location = String(body.projectLocation || '').trim()
+    if (!projectName || !location) {
+      throw httpError(
+        'projectName and projectLocation are required',
+        400,
+        'ProjectRequired',
+      )
+    }
+
+    const match = await tx.project.findFirst({
+      where: {
+        userId,
+        projectName: { equals: projectName, mode: 'insensitive' },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (match) {
+      if (location !== match.location) {
+        return tx.project.update({
+          where: { id: match.id },
+          data: { location },
+        })
+      }
+      return match
+    }
+
+    return tx.project.create({
+      data: { userId, projectName, location },
+    })
+  }
+
   async resolveAddresses(tx, userId, body) {
     let billingAddressId
     if (body.billingAddressId) {
@@ -347,9 +399,13 @@ class CheckoutService {
     const role = this.assertBuyer(auth)
 
     if (role === 'company') {
-      if (!body.projectName?.trim() || !body.projectLocation?.trim()) {
+      const hasProjectId = Boolean(body.projectId)
+      const hasNameLoc =
+        Boolean(body.projectName?.trim()) &&
+        Boolean(body.projectLocation?.trim())
+      if (!hasProjectId && !hasNameLoc) {
         throw httpError(
-          'projectName and projectLocation are required for company checkout',
+          'Provide projectId or projectName + projectLocation for company checkout',
           400,
           'ProjectRequired',
         )
@@ -449,14 +505,11 @@ class CheckoutService {
         await this.resolveAddresses(tx, auth.id, body)
 
       let projectId = null
-      if (body.projectName?.trim() && body.projectLocation?.trim()) {
-        const project = await tx.project.create({
-          data: {
-            userId: auth.id,
-            projectName: body.projectName.trim(),
-            location: body.projectLocation.trim(),
-          },
-        })
+      if (role === 'company') {
+        const project = await this.resolveCompanyProject(tx, auth.id, body)
+        projectId = project.id
+      } else if (body.projectName?.trim() && body.projectLocation?.trim()) {
+        const project = await this.resolveCompanyProject(tx, auth.id, body)
         projectId = project.id
       }
 

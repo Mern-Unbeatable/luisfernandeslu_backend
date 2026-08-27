@@ -165,6 +165,10 @@
     {
       "key": "reviewProductId",
       "value": ""
+    },
+    {
+      "key": "projectId",
+      "value": ""
     }
   ],
   "item": [
@@ -2288,211 +2292,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "name": "Company",
-              "description": "Requires Login Company → accessToken. B2B price / min order / sendQuote.",
-              "item": [
-                {
-                  "name": "List Sponsored Products",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const p = json.products?.[0] || json.product;",
-                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
-                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/sponsored?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "sponsored"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        }
-                      ]
-                    },
-                    "description": "Home sponsored. Company token: card price = b2bPrice when set (single price field)."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "List Top Selling Products",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const p = json.products?.[0] || json.product;",
-                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
-                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/top-selling?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "top-selling"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        }
-                      ]
-                    },
-                    "description": "Home top selling. Authorization: Bearer {{accessToken}} (company). B2B fields included."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "List Products",
-                  "event": [
-                    {
-                      "listen": "test",
-                      "script": {
-                        "type": "text/javascript",
-                        "exec": [
-                          "const json = pm.response.json();",
-                          "const p = json.products?.[0] || json.product;",
-                          "if (p?.id) pm.collectionVariables.set(\"marketplaceProductId\", p.id);",
-                          "if (p?.slug) pm.collectionVariables.set(\"marketplaceProductSlug\", p.slug);"
-                        ]
-                      }
-                    }
-                  ],
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products?page=1&limit=12",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products"
-                      ],
-                      "query": [
-                        {
-                          "key": "page",
-                          "value": "1"
-                        },
-                        {
-                          "key": "limit",
-                          "value": "12"
-                        },
-                        {
-                          "key": "categoryId",
-                          "value": "{{categoryId}}",
-                          "disabled": true
-                        },
-                        {
-                          "key": "search",
-                          "value": "",
-                          "disabled": true
-                        },
-                        {
-                          "key": "minPrice",
-                          "value": "0",
-                          "disabled": true
-                        },
-                        {
-                          "key": "maxPrice",
-                          "value": "500",
-                          "disabled": true
-                        }
-                      ]
-                    },
-                    "description": "Product page catalog (filters). Authorization: Bearer {{accessToken}} (company). B2B fields included."
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Get Product Details",
-                  "request": {
-                    "method": "GET",
-                    "header": [
-                      {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                      }
-                    ],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/marketplace/products/{{marketplaceProductSlug}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "api",
-                        "marketplace",
-                        "products",
-                        "{{marketplaceProductSlug}}"
-                      ]
-                    },
-                    "description": "Product detail by slug. Authorization: Bearer {{accessToken}} (company). B2B fields included."
-                  },
-                  "response": []
-                }
-              ]
             }
           ]
         },
@@ -3194,6 +2993,93 @@
           "name": "Checkout",
           "description": "Place order from selected cart items.\n\nPAYMENT_PROVIDER=mock (default): no EuPago — after place, call POST /api/checkout/:id/pay.\nPAYMENT_PROVIDER=eupago: real Split Pay — needs EUPAGO_API_KEY, EUPAGO_ADMIN_EXTERN_KEY, seller eupagoExternKey + webhook.\n\nCart page: select items on FE from GET /api/cart (item.subtotal + fees.shipping/vat). No preview endpoint.",
           "item": [
+            {
+              "name": "Suggest Projects (Checkout)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "const p = json.projects?.[0];",
+                      "if (p?.id) pm.collectionVariables.set(\"projectId\", p.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/company/projects/suggestions?q=Porto&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "company",
+                    "projects",
+                    "suggestions"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "Porto"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Suggest Locations (Checkout)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "description": "Company checkout project-location autocomplete.\nTypeahead: call as user types (min 2 chars).\nReturns past project locations + Mapbox places (Portugal).\nUse locations[].label as projectLocation on place checkout.\nRequires company token. MAPBOX_ACCESS_TOKEN enables Mapbox hits.",
+                "url": {
+                  "raw": "{{baseUrl}}/api/company/projects/location-suggestions?q=Lisb&limit=8",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "company",
+                    "projects",
+                    "location-suggestions"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "Lisb",
+                      "description": "Location search text (min 2 chars)"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "8"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
             {
               "name": "Place Checkout (Multibanco)",
               "request": {
@@ -11090,6 +10976,234 @@
           ]
         },
         {
+          "name": "Company",
+          "description": "Company buyer dashboard. Login as Company first.\nOrders: list + details (project, payment plan, driver, timeline).\nAlso: /api/company/profile, /api/company/returns, /api/company/disputes, /api/company/reviews.",
+          "item": [
+            {
+              "name": "Projects",
+              "description": "Company projects.\nGET /suggestions?q= — checkout autocomplete (name + location)\nGET / — all projects + orderCount\nGET /:projectId — detail + orders table\nGET /:projectId/orders/:orderId — order/installment details\nCheckout place: send projectId OR projectName+projectLocation (reuse by name or create new).",
+              "item": [
+                {
+                  "name": "List Projects",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const p = json.projects?.[0];",
+                          "if (p?.id) pm.collectionVariables.set(\"projectId\", p.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/projects?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "projects"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
+                        {
+                          "key": "search",
+                          "value": "",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Project Details",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const o = json.project?.orders?.[0];",
+                          "if (o?.id) pm.collectionVariables.set(\"orderId\", o.id);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/projects/{{projectId}}?page=1&limit=20",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "projects",
+                        "{{projectId}}"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Project Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/projects/{{projectId}}/orders/{{orderId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "projects",
+                        "{{projectId}}",
+                        "orders",
+                        "{{orderId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Orders",
+              "description": "GET / — table rows (status filter: all|pending|progress|assign|completed)\nGET /:orderId — detail (payment, unloading, driver, timeline)\n:orderId accepts uuid or orderNumber",
+              "item": [
+                {
+                  "name": "List Company Orders",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "const json = pm.response.json();",
+                          "const o = json.orders?.[0];",
+                          "if (o?.id) pm.collectionVariables.set(\"orderId\", o.id);",
+                          "if (o?.orderNumber) pm.collectionVariables.set(\"orderNumber\", o.orderNumber);"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/orders?page=1&limit=20&status=all",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "orders"
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        },
+                        {
+                          "key": "status",
+                          "value": "all",
+                          "description": "all|pending|progress|assign|completed"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get Company Order Details",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/company/orders/{{orderId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "company",
+                        "orders",
+                        "{{orderId}}"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "Admin",
           "item": [
             {
@@ -12187,6 +12301,79 @@
                         "approve"
                       ]
                     }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Verify Transporter Insurance",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/insurance/civil/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "insurance",
+                        "civil",
+                        "verify"
+                      ]
+                    },
+                    "description": "Admin verifies civil|cargo insurance after transporter upload/renew (status pending → verified)."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reject Transporter Insurance",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"Document unclear or expired coverage details\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/transporters/{{transporterId}}/insurance/civil/reject",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "transporters",
+                        "{{transporterId}}",
+                        "insurance",
+                        "civil",
+                        "reject"
+                      ]
+                    },
+                    "description": "Admin rejects pending insurance. kind = civil|cargo."
                   },
                   "response": []
                 },

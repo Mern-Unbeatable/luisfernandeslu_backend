@@ -1,10 +1,10 @@
 /**
- * AI content for supplier product listing fields.
+ * AI content for supplier / factory product listing fields.
  *
- * Providers (first match wins):
- * 1. OPENROUTER_API_KEY → https://openrouter.ai (free models available)
- * 2. OPENAI_API_KEY → https://api.openai.com
- * 3. otherwise → local template fallback
+ * Provider selection:
+ * - production  → GEMINI_API_KEY (Google Gemini)
+ * - development → OPENROUTER_API_KEY (free/dev models)
+ * Fallbacks: other configured keys, then local template (dev only on error).
  */
 import { env, isProduction } from '../config/env.js'
 
@@ -15,6 +15,9 @@ const AI_FIELDS = new Set([
   'specifications',
 ])
 
+const SYSTEM_PROMPT =
+  'You write concise construction marketplace product copy in clear English. Avoid markdown headings and marketing fluff.'
+
 export function isAiField(field) {
   return AI_FIELDS.has(String(field || ''))
 }
@@ -23,16 +26,45 @@ function buildPrompt(title, field) {
   const t = String(title || '').trim()
   switch (field) {
     case 'description':
-      return `Write a professional marketplace product description (2-3 short paragraphs) for this construction product: "${t}". Focus on use cases, quality, and buyer benefits. No markdown headings.`
+      return `Product: "${t}". Write 2 short marketplace paragraphs (max ~120 words). Use cases + buyer benefits. No headings.`
     case 'feature':
-      return `List 5-7 key selling features for this construction product: "${t}". Return plain text, one feature per line, no bullets or numbers.`
+      return `Product: "${t}". List exactly 6 selling features, one per line. No bullets/numbers.`
     case 'additionalInfo':
-      return `Write short additional product information (storage, handling, compatibility, warranty tips) for: "${t}". 1-2 short paragraphs. No markdown headings.`
+      return `Product: "${t}". Write 1 short paragraph on storage, handling, and warranty tips. No headings.`
     case 'specifications':
-      return `Write technical specifications for this construction product: "${t}". Use plain lines like "Key: Value". Include typical construction-relevant attributes. No markdown headings.`
+      return `Product: "${t}". Write 6 lines as "Key: Value" technical specs for construction use. No headings.`
     default:
-      return `Write marketplace copy for: "${t}"`
+      return `Write short marketplace copy for: "${t}"`
   }
+}
+
+/** Cap reply length so generation finishes faster. */
+function maxOutputTokensFor(field) {
+  switch (field) {
+    case 'description':
+      return 220
+    case 'feature':
+      return 160
+    case 'additionalInfo':
+      return 140
+    case 'specifications':
+      return 180
+    default:
+      return 200
+  }
+}
+
+/**
+ * Product copy is simple — keep thinking as low as the model allows.
+ * gemini-flash-latest defaults to heavy thinking (often 20–50s + hundreds of thought tokens).
+ */
+function geminiThinkingConfig(model) {
+  const id = String(model || '').toLowerCase()
+  if (id.includes('2.5') || id.includes('2.0')) {
+    return { thinkingBudget: 0 }
+  }
+  // Gemini 3 / *-latest: MINIMAL ≈ no thinking on flash-lite; some ids only accept LOW.
+  return { thinkingLevel: 'MINIMAL' }
 }
 
 function templateFallback(title, field) {
@@ -63,56 +95,136 @@ function templateFallback(title, field) {
   }
 }
 
-function resolveProvider() {
-  const openRouterKey = env.ai.openRouter.apiKey
-  if (openRouterKey) {
-    return {
-      name: 'openrouter',
-      apiKey: openRouterKey,
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      model: env.ai.openRouter.model,
-      headers: {
-        Authorization: `Bearer ${openRouterKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': env.apiUrl,
-        'X-Title': 'CONSTRUPRECO',
-      },
-    }
+function geminiProvider() {
+  const apiKey = env.ai.gemini.apiKey
+  if (!apiKey) return null
+  return {
+    name: 'gemini',
+    kind: 'gemini',
+    apiKey,
+    model: env.ai.gemini.model,
   }
-
-  const openAiKey = env.ai.openAi.apiKey
-  if (openAiKey) {
-    return {
-      name: 'openai',
-      apiKey: openAiKey,
-      url: 'https://api.openai.com/v1/chat/completions',
-      model: env.ai.openAi.model,
-      headers: {
-        Authorization: `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  }
-
-  return null
 }
 
-async function callChatCompletions(prompt) {
-  const provider = resolveProvider()
-  if (!provider) return null
+function openRouterProvider() {
+  const apiKey = env.ai.openRouter.apiKey
+  if (!apiKey) return null
+  return {
+    name: 'openrouter',
+    kind: 'openai',
+    apiKey,
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    model: env.ai.openRouter.model,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': env.apiUrl,
+      'X-Title': 'CONSTRUPRECO',
+    },
+  }
+}
 
+function openAiProvider() {
+  const apiKey = env.ai.openAi.apiKey
+  if (!apiKey) return null
+  return {
+    name: 'openai',
+    kind: 'openai',
+    apiKey,
+    url: 'https://api.openai.com/v1/chat/completions',
+    model: env.ai.openAi.model,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  }
+}
+
+/**
+ * Prod → Gemini first. Dev → OpenRouter first.
+ * Remaining configured providers are fallbacks.
+ */
+function resolveProvider() {
+  if (isProduction) {
+    return geminiProvider() || openAiProvider() || openRouterProvider()
+  }
+  return openRouterProvider() || geminiProvider() || openAiProvider()
+}
+
+async function callGemini(provider, prompt, field, { thinkingConfig } = {}) {
+  const model = encodeURIComponent(provider.model)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+  const thinking = thinkingConfig || geminiThinkingConfig(provider.model)
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': provider.apiKey,
+    },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: SYSTEM_PROMPT }],
+      },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.5,
+        maxOutputTokens: maxOutputTokensFor(field),
+        thinkingConfig: thinking,
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    if (
+      res.status === 400 &&
+      thinking.thinkingLevel === 'MINIMAL' &&
+      /thinking/i.test(text)
+    ) {
+      return callGemini(provider, prompt, field, {
+        thinkingConfig: { thinkingLevel: 'LOW' },
+      })
+    }
+    if (
+      res.status === 400 &&
+      thinking.thinkingBudget === 0 &&
+      /thinking|invalid/i.test(text)
+    ) {
+      return callGemini(provider, prompt, field, {
+        thinkingConfig: { thinkingLevel: 'MINIMAL' },
+      })
+    }
+    const err = new Error(
+      `${provider.name} request failed (${res.status}): ${text.slice(0, 200)}`,
+    )
+    err.status = 502
+    err.code = 'AiProviderError'
+    throw err
+  }
+
+  const data = await res.json()
+  const parts = data?.candidates?.[0]?.content?.parts
+  const content = Array.isArray(parts)
+    ? parts
+        .filter((p) => !p?.thought)
+        .map((p) => p?.text || '')
+        .join('')
+        .trim()
+    : ''
+  return content ? { content, provider: provider.name } : null
+}
+
+async function callOpenAiCompatible(provider, prompt) {
   const res = await fetch(provider.url, {
     method: 'POST',
     headers: provider.headers,
     body: JSON.stringify({
       model: provider.model,
-      temperature: 0.7,
+      temperature: 0.5,
+      max_tokens: 220,
       messages: [
-        {
-          role: 'system',
-          content:
-            'You write concise construction marketplace product copy in clear English. Avoid markdown headings and marketing fluff.',
-        },
+        { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: prompt },
       ],
     }),
@@ -133,6 +245,16 @@ async function callChatCompletions(prompt) {
   return content
     ? { content: String(content).trim(), provider: provider.name }
     : null
+}
+
+async function callProvider(prompt, field) {
+  const provider = resolveProvider()
+  if (!provider) return null
+
+  if (provider.kind === 'gemini') {
+    return callGemini(provider, prompt, field)
+  }
+  return callOpenAiCompatible(provider, prompt)
 }
 
 /**
@@ -159,7 +281,7 @@ export async function generateProductCopy({ title, field }) {
   const configured = resolveProvider()
 
   try {
-    const fromAi = await callChatCompletions(prompt)
+    const fromAi = await callProvider(prompt, field)
     if (fromAi) {
       return { field, content: fromAi.content, provider: fromAi.provider }
     }

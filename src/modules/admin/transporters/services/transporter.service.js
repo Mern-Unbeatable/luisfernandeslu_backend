@@ -62,12 +62,44 @@ function pendingFilter() {
           is: { verificationStatus: { in: ['UNVERIFIED', 'PENDING_REVIEW'] } },
         },
       },
+      {
+        insurancePolicies: {
+          some: { status: 'PENDING' },
+        },
+      },
     ],
   }
 }
 
 function suspendedFilter() {
   return { status: { in: ['SUSPENDED', 'BLOCKED'] } }
+}
+
+function insuranceApiKind(kind) {
+  return String(kind).toUpperCase() === 'CARGO' ? 'cargo' : 'civil'
+}
+
+function mapInsurancePolicy(row, baseUrl) {
+  const docs = parseStoredUrls(row.documentUrl, baseUrl)
+  const documentUrl = Array.isArray(docs) ? docs[0] : docs
+  const expired =
+    row.expiryDate && new Date(row.expiryDate) < new Date(new Date().toDateString())
+  return {
+    id: row.id,
+    type: insuranceApiKind(row.kind),
+    status: expired ? 'expired' : String(row.status).toLowerCase(),
+    provider: row.provider,
+    policyNumber: row.policyNumber,
+    coverageAmount: Number(row.coverageAmount),
+    startDate: row.startDate
+      ? new Date(row.startDate).toISOString().slice(0, 10)
+      : null,
+    expiryDate: row.expiryDate
+      ? new Date(row.expiryDate).toISOString().slice(0, 10)
+      : null,
+    documentUrl: documentUrl || null,
+    updatedAt: row.updatedAt,
+  }
 }
 
 function mapListRow(user) {
@@ -80,6 +112,9 @@ function mapListRow(user) {
     commissionPercent: Number(user.vatRate || 0),
     status: statusLabel(user.status),
     statusCode: user.status,
+    pendingInsurance: Boolean(
+      (user.insurancePolicies || []).some((p) => p.status === 'PENDING'),
+    ),
   }
 }
 
@@ -96,6 +131,9 @@ function mapDetails(user, baseUrl) {
     registered: user.createdAt.toLocaleDateString('en-CA'),
     address: formatAddressLine(pickPrimaryAddress(user)),
     documents: docsFromProfile(profile, baseUrl),
+    insurance: (user.insurancePolicies || []).map((row) =>
+      mapInsurancePolicy(row, baseUrl),
+    ),
     rejectionReason: profile?.rejectionReason || null,
   }
 }
@@ -105,6 +143,7 @@ async function findTransporter(id) {
     where: { id, role: 'TRANSPORTER' },
     include: {
       profile: true,
+      insurancePolicies: { orderBy: { kind: 'asc' } },
       addresses: {
         include: { address: true },
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
@@ -157,6 +196,10 @@ class AdminTransporterService {
           status: true,
           vatRate: true,
           createdAt: true,
+          insurancePolicies: {
+            where: { status: 'PENDING' },
+            select: { id: true, status: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -193,6 +236,15 @@ class AdminTransporterService {
       where: { userId: transporterId },
       data: { verificationStatus: 'APPROVED', rejectionReason: null },
     })
+    // Approve any pending insurance policies that are not expired
+    await prisma.transporterInsurance.updateMany({
+      where: {
+        userId: transporterId,
+        status: 'PENDING',
+        expiryDate: { gte: new Date() },
+      },
+      data: { status: 'VERIFIED' },
+    })
     return { status: 200, body: { id: transporterId, message: 'Transporter approved' } }
   }
 
@@ -207,6 +259,79 @@ class AdminTransporterService {
       data: { verificationStatus: 'REJECTED', rejectionReason },
     })
     return { status: 200, body: { id: transporterId, message: 'Transporter rejected' } }
+  }
+
+  async verifyInsurance(auth, transporterId, kindRaw, req) {
+    assertAdmin(auth)
+    await findTransporter(transporterId)
+    const kind = String(kindRaw).toUpperCase() === 'CARGO' ? 'CARGO' : 'CIVIL'
+    const policy = await prisma.transporterInsurance.findUnique({
+      where: { userId_kind: { userId: transporterId, kind } },
+    })
+    if (!policy) throw httpError('Insurance policy not found', 404, 'NotFound')
+    if (new Date(policy.expiryDate) < new Date(new Date().toDateString())) {
+      throw httpError(
+        'Cannot verify an expired insurance policy',
+        400,
+        'InsuranceExpired',
+      )
+    }
+
+    const updated = await prisma.transporterInsurance.update({
+      where: { id: policy.id },
+      data: { status: 'VERIFIED' },
+    })
+
+    const pendingLeft = await prisma.transporterInsurance.count({
+      where: { userId: transporterId, status: 'PENDING' },
+    })
+    if (pendingLeft === 0) {
+      await prisma.businessProfile.updateMany({
+        where: { userId: transporterId },
+        data: { verificationStatus: 'APPROVED', rejectionReason: null },
+      })
+    }
+
+    const baseUrl = resolveRequestBaseUrl(req)
+    return {
+      status: 200,
+      body: {
+        insurance: mapInsurancePolicy(updated, baseUrl),
+        message: 'Insurance verified',
+      },
+    }
+  }
+
+  async rejectInsurance(auth, transporterId, kindRaw, body = {}, req) {
+    assertAdmin(auth)
+    await findTransporter(transporterId)
+    const kind = String(kindRaw).toUpperCase() === 'CARGO' ? 'CARGO' : 'CIVIL'
+    const policy = await prisma.transporterInsurance.findUnique({
+      where: { userId_kind: { userId: transporterId, kind } },
+    })
+    if (!policy) throw httpError('Insurance policy not found', 404, 'NotFound')
+
+    const reason = body.reason ? String(body.reason).trim() : null
+    const updated = await prisma.transporterInsurance.update({
+      where: { id: policy.id },
+      data: { status: 'REJECTED' },
+    })
+    await prisma.businessProfile.updateMany({
+      where: { userId: transporterId },
+      data: {
+        verificationStatus: 'PENDING_REVIEW',
+        ...(reason ? { rejectionReason: reason } : {}),
+      },
+    })
+
+    const baseUrl = resolveRequestBaseUrl(req)
+    return {
+      status: 200,
+      body: {
+        insurance: mapInsurancePolicy(updated, baseUrl),
+        message: 'Insurance rejected',
+      },
+    }
   }
 
   async updateStatus(auth, transporterId, body) {

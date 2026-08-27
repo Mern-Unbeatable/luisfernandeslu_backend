@@ -66,6 +66,8 @@ import transporterAuctionRoutes from './modules/auctions/routes/transporter-auct
 import transporterDeliveryRoutes from './modules/auctions/routes/transporter-delivery.routes.js'
 import transporterInsuranceRoutes from './modules/transporter-insurance/routes/insurance.routes.js'
 import buyerOrderRoutes from './modules/orders/routes/buyer-order.routes.js'
+import companyBuyerOrderRoutes from './modules/orders/routes/company-buyer-order.routes.js'
+import companyProjectRoutes from './modules/projects/routes/company-project.routes.js'
 import { UPLOAD_ROOT } from './shared/storage.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
@@ -164,6 +166,8 @@ app.use('/api/transporter/insurance', transporterInsuranceRoutes)
 app.use('/api/transporter/profile', transporterProfileRoutes)
 app.use('/api/transporter/payments-payouts', transporterPaymentsRoutes)
 app.use('/api/customer/orders', buyerOrderRoutes)
+app.use('/api/company/orders', companyBuyerOrderRoutes)
+app.use('/api/company/projects', companyProjectRoutes)
 app.use('/api/customer/profile', buyerProfileRoutes)
 app.use('/api/company/profile', buyerProfileRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)

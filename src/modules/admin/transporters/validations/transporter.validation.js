@@ -4,6 +4,11 @@ export const adminTransporterIdParamSchema = z.object({
   id: z.string().trim().min(1, 'Invalid id'),
 })
 
+export const adminTransporterInsuranceParamSchema = z.object({
+  id: z.string().trim().min(1, 'Invalid id'),
+  kind: z.enum(['civil', 'cargo', 'CIVIL', 'CARGO']),
+})
+
 export const listAdminTransportersQuerySchema = z.object({
   status: z
     .enum(['all', 'pending', 'suspended', 'ALL', 'PENDING', 'SUSPENDED'])
@@ -37,4 +42,8 @@ export const rejectAdminTransporterBodySchema = z.object({
     )
     .optional()
     .default([]),
+})
+
+export const rejectAdminInsuranceBodySchema = z.object({
+  reason: z.string().trim().min(3, 'Reason is required').optional(),
 })

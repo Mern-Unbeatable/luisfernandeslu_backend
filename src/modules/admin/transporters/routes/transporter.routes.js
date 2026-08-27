@@ -2,8 +2,10 @@ import { Router } from 'express'
 import adminTransporterController from '../controllers/transporter.controller.js'
 import {
   adminTransporterIdParamSchema,
+  adminTransporterInsuranceParamSchema,
   listAdminTransportersQuerySchema,
   rejectAdminTransporterBodySchema,
+  rejectAdminInsuranceBodySchema,
   updateAdminTransporterCommissionBodySchema,
   updateAdminTransporterStatusBodySchema,
 } from '../validations/transporter.validation.js'
@@ -50,6 +52,21 @@ class AdminTransporterRoutes {
       validate(adminTransporterIdParamSchema, 'params'),
       validate(rejectAdminTransporterBodySchema, 'body'),
       (req, res, next) => adminTransporterController.reject(req, res, next),
+    )
+
+    this.router.post(
+      '/:id/insurance/:kind/verify',
+      validate(adminTransporterInsuranceParamSchema, 'params'),
+      (req, res, next) =>
+        adminTransporterController.verifyInsurance(req, res, next),
+    )
+
+    this.router.post(
+      '/:id/insurance/:kind/reject',
+      validate(adminTransporterInsuranceParamSchema, 'params'),
+      validate(rejectAdminInsuranceBodySchema, 'body'),
+      (req, res, next) =>
+        adminTransporterController.rejectInsurance(req, res, next),
     )
 
     this.router.patch(

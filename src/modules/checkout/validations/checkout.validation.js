@@ -33,6 +33,7 @@ export const placeCheckoutBodySchema = z
     sameAsBilling: z.boolean().optional().default(false),
     projectName: z.string().trim().max(200).optional().nullable(),
     projectLocation: z.string().trim().max(500).optional().nullable(),
+    projectId: z.string().uuid().optional().nullable(),
     unloadingType: z.string().trim().max(120).optional().nullable(),
     unloadingLocationDescription: z
       .string()

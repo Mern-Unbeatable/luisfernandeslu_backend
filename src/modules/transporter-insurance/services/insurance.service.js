@@ -45,12 +45,18 @@ function parseDate(raw) {
   return d
 }
 
-function resolveStatus(expiryDate) {
+function isExpired(expiryDate) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const expiry = new Date(expiryDate)
   expiry.setHours(0, 0, 0, 0)
-  return expiry < today ? 'EXPIRED' : 'VERIFIED'
+  return expiry < today
+}
+
+/** API status from DB + expiry. Upload/renew always leave DB as PENDING until admin verifies. */
+function displayStatus(row) {
+  if (isExpired(row.expiryDate)) return 'expired'
+  return String(row.status || 'PENDING').toLowerCase()
 }
 
 function storeDocuments(urls) {
@@ -72,7 +78,7 @@ function firstDocumentPath(stored) {
 
 function mapPolicy(row, baseUrl) {
   const type = apiKind(row.kind)
-  const status = String(resolveStatus(row.expiryDate)).toLowerCase()
+  const status = displayStatus(row)
   const docs = parseStoredUrls(row.documentUrl, baseUrl)
   const documentUrl = Array.isArray(docs) ? docs[0] : docs
   return {
@@ -97,14 +103,18 @@ async function loadPolicies(userId) {
 function requirementsMet(rows) {
   const byKind = new Set(rows.map((row) => String(row.kind)))
   if (!byKind.has('CIVIL') || !byKind.has('CARGO')) return false
-  return rows.every((row) => resolveStatus(row.expiryDate) === 'VERIFIED')
+  return rows.every(
+    (row) =>
+      !isExpired(row.expiryDate) && String(row.status) === 'VERIFIED',
+  )
 }
 
 async function upsertPolicy(userId, kindApi, body, documentUrls) {
   const kind = KIND[kindApi]
   const expiryDate = parseDate(body.expiryDate)
   const startDate = body.startDate ? parseDate(body.startDate) : null
-  const status = resolveStatus(expiryDate)
+  // New upload / renew always needs admin verification again
+  const status = isExpired(expiryDate) ? 'EXPIRED' : 'PENDING'
   const coverageAmount = money(body.coverageAmount)
   const existing = await prisma.transporterInsurance.findUnique({
     where: { userId_kind: { userId, kind } },
@@ -112,36 +122,48 @@ async function upsertPolicy(userId, kindApi, body, documentUrls) {
   const documentUrl =
     storeDocuments(documentUrls) || existing?.documentUrl || null
 
-  const row = await prisma.transporterInsurance.upsert({
-    where: { userId_kind: { userId, kind } },
-    create: {
-      userId,
-      kind,
-      provider: String(body.provider).trim(),
-      policyNumber: String(body.policyNumber).trim(),
-      coverageAmount,
-      startDate,
-      expiryDate,
-      documentUrl,
-      status,
-    },
-    update: {
-      provider: String(body.provider).trim(),
-      policyNumber: String(body.policyNumber).trim(),
-      coverageAmount,
-      startDate,
-      expiryDate,
-      documentUrl,
-      status,
-    },
-  })
+  const row = await prisma.$transaction(async (tx) => {
+    const policy = await tx.transporterInsurance.upsert({
+      where: { userId_kind: { userId, kind } },
+      create: {
+        userId,
+        kind,
+        provider: String(body.provider).trim(),
+        policyNumber: String(body.policyNumber).trim(),
+        coverageAmount,
+        startDate,
+        expiryDate,
+        documentUrl,
+        status,
+      },
+      update: {
+        provider: String(body.provider).trim(),
+        policyNumber: String(body.policyNumber).trim(),
+        coverageAmount,
+        startDate,
+        expiryDate,
+        documentUrl,
+        status,
+      },
+    })
 
-  const profileField =
-    kindApi === 'civil' ? 'insuranceDocumentUrl' : 'transporterInsuranceUrl'
-  await prisma.businessProfile.upsert({
-    where: { userId },
-    create: { userId, [profileField]: documentUrl },
-    update: { [profileField]: documentUrl },
+    const profileField =
+      kindApi === 'civil' ? 'insuranceDocumentUrl' : 'transporterInsuranceUrl'
+    await tx.businessProfile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        [profileField]: documentUrl,
+        verificationStatus: 'PENDING_REVIEW',
+      },
+      update: {
+        [profileField]: documentUrl,
+        verificationStatus: 'PENDING_REVIEW',
+        rejectionReason: null,
+      },
+    })
+
+    return policy
   })
 
   return row
@@ -177,7 +199,9 @@ export class TransporterInsuranceService {
       status: created ? 201 : 200,
       body: {
         ...mapPolicy(row, baseUrl),
-        message: created ? 'Insurance uploaded' : 'Insurance policy renewed',
+        message: created
+          ? 'Insurance uploaded — pending admin verification'
+          : 'Insurance renewed — pending admin verification',
       },
     }
   }
@@ -208,7 +232,7 @@ export class TransporterInsuranceService {
       coverageAmount: row.coverageAmount,
       startDate: dateOnly(row.startDate),
       expiryDate: dateOnly(row.expiryDate),
-      status: String(row.status).toLowerCase(),
+      status: displayStatus(row),
       currency: env.currency,
     })
     return {

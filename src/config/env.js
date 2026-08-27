@@ -76,10 +76,17 @@ export const env = {
   },
 
   ai: {
+    /** Production primary (product USE AI). */
+    gemini: {
+      apiKey: str('GEMINI_API_KEY'),
+      model: str('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+    },
+    /** Development primary (free/dev models). */
     openRouter: {
       apiKey: str('OPENROUTER_API_KEY'),
       model: str('OPENROUTER_MODEL', 'meta-llama/llama-3.2-3b-instruct:free'),
     },
+    /** Optional fallback. */
     openAi: {
       apiKey: str('OPENAI_API_KEY'),
       model: str('OPENAI_MODEL', 'gpt-4o-mini'),
