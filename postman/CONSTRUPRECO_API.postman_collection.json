@@ -7241,8 +7241,47 @@
         },
         {
           "name": "Transporter",
-          "description": "Transporter auction APIs.",
+          "description": "Transporter APIs: dashboard, auctions, deliveries, profile, payments.",
           "item": [
+            {
+              "name": "Dashboard",
+              "description": "Dashboard Overview.\\nGET /api/transporter/dashboard?period=thisYear|lastYear|2026\\nstats + actions + revenue chart (money as numbers).",
+              "item": [
+                {
+                  "name": "Get Dashboard",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "description": "Login as transporter.\\nperiod: thisYear | lastYear | YYYY\\nReturns welcomeName, stats cards, action counts, revenue.points[12].",
+                    "url": {
+                      "raw": "{{baseUrl}}/api/transporter/dashboard?period=thisYear",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "transporter",
+                        "dashboard"
+                      ],
+                      "query": [
+                        {
+                          "key": "period",
+                          "value": "thisYear",
+                          "description": "thisYear | lastYear | 2026"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
             {
               "name": "Shipment Auctions",
               "item": [

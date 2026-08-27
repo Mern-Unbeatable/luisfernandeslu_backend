@@ -266,3 +266,5 @@ export class TransporterPaymentsService {
 }
 
 export default new TransporterPaymentsService()
+
+export { buildLedger, resolveYear, niceMax, netPayout, commissionPercentOf }
