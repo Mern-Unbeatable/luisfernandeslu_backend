@@ -13210,7 +13210,7 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/api/admin/promotions?status=pending&search=&page=1&limit=12",
+                      "raw": "{{baseUrl}}/api/admin/promotions?status=pending&featured=&search=&page=1&limit=12",
                       "host": [
                         "{{baseUrl}}"
                       ],
@@ -13223,7 +13223,12 @@
                         {
                           "key": "status",
                           "value": "pending",
-                          "description": "pending | active | completed | rejected | all (unpaid never included)"
+                          "description": "pending | active | featured | completed | rejected | all (unpaid never included)"
+                        },
+                        {
+                          "key": "featured",
+                          "value": "",
+                          "description": "optional: true | false — filter product.isFeatured"
                         },
                         {
                           "key": "search",

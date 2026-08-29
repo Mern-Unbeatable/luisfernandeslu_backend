@@ -30,6 +30,7 @@ function resolveMarketingStatus(row, now = new Date()) {
 function normalizeMarketingStatus(raw) {
   const s = String(raw || 'pending').trim().toLowerCase()
   if (s === 'active') return 'active'
+  if (s === 'featured') return 'featured'
   if (s === 'completed') return 'completed'
   if (s === 'rejected') return 'rejected'
   if (s === 'all') return 'all'
@@ -54,6 +55,14 @@ function marketingStatusWhere(status, now) {
       ...paidOnly,
       approvalStatus: 'APPROVED',
       endDate: { gt: now },
+    }
+  }
+  if (status === 'featured') {
+    return {
+      ...paidOnly,
+      approvalStatus: 'APPROVED',
+      endDate: { gt: now },
+      product: { isFeatured: true },
     }
   }
   if (status === 'completed') {
@@ -107,13 +116,26 @@ function mapPromotion(row, { forAdmin = false } = {}) {
   return base
 }
 
+function daysLeftLabel(endDate, now = new Date()) {
+  if (!endDate) return null
+  const end = new Date(endDate)
+  if (Number.isNaN(end.getTime()) || end <= now) return null
+  const days = Math.max(
+    1,
+    Math.ceil((end.getTime() - now.getTime()) / 86_400_000),
+  )
+  return `${days} day${days === 1 ? '' : 's'} left`
+}
+
 /** Marketing Management card fields only (Accept / Reject grid). */
 function mapAdminMarketingCard(row, baseUrl) {
   const product = row.product
   const { bannerImage, images } = mapProductMedia(product || {}, baseUrl)
+  const status = resolveMarketingStatus(row)
+  const isFeatured = Boolean(product?.isFeatured)
   return {
     id: row.id,
-    status: resolveMarketingStatus(row),
+    status: status === 'active' && isFeatured ? 'featured' : status,
     image: bannerImage?.url || images[0]?.url || null,
     name: product?.title || null,
     description: product?.shortDescription || null,
@@ -123,6 +145,9 @@ function mapAdminMarketingCard(row, baseUrl) {
     boostTier: Number(row.amountPaid ?? row.plan?.price ?? 0),
     durationDays: row.durationDays,
     currency: row.plan?.currency || 'USD',
+    isFeatured,
+    endDate: row.endDate || null,
+    timeLeft: daysLeftLabel(row.endDate),
   }
 }
 
@@ -333,8 +358,14 @@ export class PromotionService {
     const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const status = normalizeMarketingStatus(query.status)
     const search = query.search?.trim() || ''
+    const featured =
+      typeof query.featured === 'boolean' ? query.featured : undefined
     const now = new Date()
     const and = [marketingStatusWhere(status, now)]
+
+    if (featured !== undefined) {
+      and.push({ product: { isFeatured: featured } })
+    }
 
     if (search) {
       and.push({
@@ -365,6 +396,7 @@ export class PromotionService {
               basePrice: true,
               unitOfMeasure: true,
               weightKg: true,
+              isFeatured: true,
               media: { orderBy: { sortOrder: 'asc' } },
             },
           },
@@ -380,7 +412,11 @@ export class PromotionService {
       body: {
         promotions: rows.map((r) => mapAdminMarketingCard(r, baseUrl)),
         pagination: paginationMeta({ page, limit, total }),
-        filters: { status, search: search || null },
+        filters: {
+          status,
+          featured: featured ?? null,
+          search: search || null,
+        },
         message: 'Promotions fetched',
       },
     }

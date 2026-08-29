@@ -17,16 +17,37 @@ export const adminPromotionListQuerySchema = z.object({
       'all',
       'pending',
       'active',
+      'featured',
       'completed',
       'rejected',
       'ALL',
       'PENDING',
       'ACTIVE',
+      'FEATURED',
       'COMPLETED',
       'REJECTED',
     ])
     .optional()
     .default('pending'),
+  /** Optional extra filter on product.isFeatured (true|false). Empty ignored. */
+  featured: z
+    .preprocess(
+      (v) => (v === '' || v == null ? undefined : v),
+      z
+        .union([
+          z.boolean(),
+          z.enum(['true', 'false', '1', '0', 'yes', 'no']),
+        ])
+        .optional(),
+    )
+    .transform((v) => {
+      if (v == null) return undefined
+      if (typeof v === 'boolean') return v
+      const s = String(v).toLowerCase()
+      if (['true', '1', 'yes'].includes(s)) return true
+      if (['false', '0', 'no'].includes(s)) return false
+      return undefined
+    }),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(50).optional().default(12),
   search: z.string().trim().optional(),
