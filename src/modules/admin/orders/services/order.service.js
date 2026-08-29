@@ -1,9 +1,14 @@
 import prisma from '../../../../../lib/prisma.js'
+import fs from 'node:fs'
+import path from 'node:path'
 import { httpError } from '../../../../shared/errors.js'
 import { money } from '../../../../shared/money.js'
 import { formatAddressLine } from '../../../../shared/address.js'
 import { parsePagination, paginationMeta } from '../../../../shared/pagination.js'
 import { companyDisplayName, partyName } from '../../../../shared/party.js'
+import { absolutizeUrl } from '../../../../lib/requestUrl.js'
+import { env } from '../../../../config/env.js'
+import { UPLOAD_ROOT } from '../../../../shared/storage.js'
 import { normalizeStatusFilter } from '../../../orders/status-rules.js'
 import {
   factoryStatusLabel,
@@ -12,9 +17,24 @@ import {
 import {
   mapProducts,
   mapBuyerContact,
-  mapInvoiceSummary,
   CURRENCY,
 } from '../../../orders/mappers.js'
+import {
+  invoiceOrderInclude,
+  renderInvoicePdf,
+} from '../../../invoicing/generate.js'
+import { ensureInvoice } from '../../../invoicing/pdf-store.js'
+
+function invoicePdfExists(pdfUrl) {
+  if (!pdfUrl) return false
+  const relative = String(pdfUrl).replace(/^https?:\/\/[^/]+/i, '')
+  const marker = '/uploads/'
+  const idx = relative.indexOf(marker)
+  if (idx === -1) return false
+  const disk = path.resolve(UPLOAD_ROOT, relative.slice(idx + marker.length))
+  if (!disk.startsWith(path.resolve(UPLOAD_ROOT))) return false
+  return fs.existsSync(disk)
+}
 
 const ADMIN_CANCEL_PREFIX = 'Cancelled by admin'
 
@@ -251,7 +271,7 @@ class AdminOrderService {
     }
   }
 
-  async getById(auth, orderId) {
+  async getById(auth, orderId, baseUrl) {
     assertAdmin(auth)
     const order = await prisma.order.findFirst({
       where: {
@@ -286,7 +306,9 @@ class AdminOrderService {
           select: { commissionAmount: true, status: true, affiliateId: true },
         },
         invoices: {
-          take: 4,
+          where: { audience: 'CUSTOMER' },
+          take: 1,
+          orderBy: { issueDate: 'desc' },
           select: {
             id: true,
             invoiceNumber: true,
@@ -357,8 +379,57 @@ class AdminOrderService {
 
     if (!order) throw httpError('Order not found', 404, 'NotFound')
 
+    // Fast path: reuse existing PDF. Generate only when missing (one-time cost).
+    let invoiceRow = order.invoices?.[0] || null
+    if (
+      order.orderStatus !== 'NEW' &&
+      (!invoiceRow?.pdfUrl || !invoicePdfExists(invoiceRow.pdfUrl))
+    ) {
+      try {
+        const full = await prisma.order.findFirst({
+          where: { id: order.id },
+          include: {
+            ...invoiceOrderInclude,
+            invoices: { where: { audience: 'CUSTOMER' }, take: 1 },
+          },
+        })
+        if (full?.sellerId) {
+          const ensured = await ensureInvoice(full, 'CUSTOMER')
+          if (ensured.pdfUrl && invoicePdfExists(ensured.pdfUrl)) {
+            invoiceRow = ensured
+          } else {
+            const file = await renderInvoicePdf(
+              full,
+              ensured,
+              { showShippingVat: true, totalMode: 'grand' },
+              { sellerId: full.sellerId },
+            )
+            invoiceRow = {
+              id: ensured.id,
+              invoiceNumber: ensured.invoiceNumber,
+              issueDate: ensured.issueDate,
+              audience: 'CUSTOMER',
+              pdfUrl: file.publicPath,
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[admin orders] invoice pdf:', err.message)
+      }
+    }
+
     const factory = isFactoryOrder(order)
     const products = mapProducts(order.orderLineItems)
+    const invoiceMapped = invoiceRow
+      ? {
+          id: invoiceRow.id,
+          invoiceNumber: invoiceRow.invoiceNumber,
+          issueDate: invoiceRow.issueDate,
+          pdfUrl: invoiceRow.pdfUrl
+            ? absolutizeUrl(invoiceRow.pdfUrl, baseUrl || env.apiUrl)
+            : null,
+        }
+      : null
     const details = {
       id: order.id,
       orderId: order.orderNumber,
@@ -391,7 +462,7 @@ class AdminOrderService {
       billingAddress: formatAddressLine(order.billingAddress),
       project: order.project,
       products,
-      invoices: order.invoices.map(mapInvoiceSummary),
+      invoice: invoiceMapped,
       shipment: order.shipment,
       statusHistory: order.statusHistory.map((h) => ({
         status: factory

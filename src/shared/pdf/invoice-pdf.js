@@ -96,15 +96,9 @@ export async function buildSupplierInvoicePdf(data) {
     const right = pageW - 48
     const contentW = right - left
 
-    // ——— Header: seller address only (left) + INVOICE meta (right) ———
+    // ——— Header: brand + INVOICE meta ———
     let y = 48
-    doc.font(bodyFont).fontSize(9).fillColor(muted)
-
-    const sellerAddress = data.seller?.address || null
-    if (sellerAddress) {
-      doc.text(sellerAddress, left, y, { width: contentW * 0.48 })
-    }
-
+    doc.font(boldFont).fontSize(14).fillColor(dark).text('CONSTRUPRECO', left, y)
     doc
       .font(boldFont)
       .fontSize(28)
@@ -135,58 +129,89 @@ export async function buildSupplierInvoicePdf(data) {
       metaY += 16
     })
 
-    const leftHeaderH = sellerAddress
-      ? doc.heightOfString(sellerAddress, { width: contentW * 0.48 })
-      : 0
-    y = Math.max(y + leftHeaderH, metaY) + 28
+    y = Math.max(y + 20, metaY) + 16
     doc
       .moveTo(left, y)
       .lineTo(right, y)
       .strokeColor(line)
       .lineWidth(1)
       .stroke()
-    y += 24
+    y += 20
 
-    // ——— Customer + Order details ———
+    // ——— Seller (supplier/factory) + Buyer (customer/company) ———
     const colW = contentW / 2 - 12
-    doc.font(boldFont).fontSize(11).fillColor(accent).text('Customer Details', left, y)
-    doc.font(boldFont).fontSize(11).fillColor(accent).text('Order Details', left + colW + 24, y)
+    const sellerTitle = `Seller (${data.seller?.roleLabel || 'Supplier'})`
+    const buyerTitle = `Buyer (${data.customer?.roleLabel || 'Customer'})`
+    doc.font(boldFont).fontSize(11).fillColor(accent).text(sellerTitle, left, y)
+    doc
+      .font(boldFont)
+      .fontSize(11)
+      .fillColor(accent)
+      .text(buyerTitle, left + colW + 24, y)
     y += 18
 
-    const custY = y
-    doc.font(boldFont).fontSize(11).fillColor(dark).text(data.customer?.name || '—', left, custY)
-    let cy = custY + 16
-    doc.font(bodyFont).fontSize(9).fillColor(muted)
-    if (data.customer?.email) {
-      doc.text(data.customer.email, left, cy, { width: colW })
-      cy += 14
-    }
-    if (data.customer?.phone) {
-      doc.text(data.customer.phone, left, cy, { width: colW })
-      cy += 14
-    }
-    if (data.customer?.address) {
-      doc.text(data.customer.address, left, cy, { width: colW })
-      cy += 28
+    function partyBlock(party, x, startY) {
+      let py = startY
+      doc
+        .font(boldFont)
+        .fontSize(11)
+        .fillColor(dark)
+        .text(party?.companyName || party?.name || '—', x, py, { width: colW })
+      py += 16
+      doc.font(bodyFont).fontSize(9).fillColor(muted)
+      if (party?.email) {
+        doc.text(party.email, x, py, { width: colW })
+        py += 14
+      }
+      if (party?.phone) {
+        doc.text(party.phone, x, py, { width: colW })
+        py += 14
+      }
+      if (party?.address) {
+        doc.text(party.address, x, py, { width: colW })
+        py += doc.heightOfString(party.address, { width: colW }) + 4
+      }
+      return py
     }
 
-    let oy = custY
+    const sellerParty = {
+      companyName: data.seller?.companyName,
+      name: data.seller?.companyName,
+      email: data.seller?.email,
+      phone: data.seller?.phone,
+      address: data.seller?.address,
+    }
+    const buyerParty = {
+      companyName: data.customer?.name,
+      name: data.customer?.name,
+      email: data.customer?.email,
+      phone: data.customer?.phone,
+      address: data.customer?.address,
+    }
+    const sellerBottom = partyBlock(sellerParty, left, y)
+    const buyerBottom = partyBlock(buyerParty, left + colW + 24, y)
+    y = Math.max(sellerBottom, buyerBottom) + 16
+
+    // ——— Order details ———
+    doc.font(boldFont).fontSize(11).fillColor(accent).text('Order Details', left, y)
+    y += 16
     const orderMeta = [
       ['Order ID', data.orderNumber],
       ['Order Date', fmtDate(data.orderDate)],
       ['Payment Method', paymentLabel(data.paymentMethod)],
     ]
     orderMeta.forEach(([label, value]) => {
-      doc.font(bodyFont).fontSize(9).fillColor(muted).text(label, left + colW + 24, oy)
+      doc.font(bodyFont).fontSize(9).fillColor(muted).text(label, left, y, {
+        width: 120,
+      })
       doc
         .font(boldFont)
         .fontSize(10)
         .fillColor(dark)
-        .text(String(value), left + colW + 24 + 100, oy, { width: colW - 100 })
-      oy += 16
+        .text(String(value), left + 120, y)
+      y += 16
     })
-
-    y = Math.max(cy, oy) + 16
+    y += 8
 
     // ——— Items ———
     doc.font(boldFont).fontSize(12).fillColor(accent).text('Items', left, y)

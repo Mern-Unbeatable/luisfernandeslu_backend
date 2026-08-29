@@ -1,5 +1,6 @@
 import adminOrderService from '../services/order.service.js'
 import { sendServiceResult } from '../../../../utils/apiResponse.js'
+import { resolveRequestBaseUrl } from '../../../../lib/requestUrl.js'
 
 class AdminOrderController {
   async list(req, res, next) {
@@ -14,7 +15,11 @@ class AdminOrderController {
     try {
       return sendServiceResult(
         res,
-        await adminOrderService.getById(req.auth, req.params.id),
+        await adminOrderService.getById(
+          req.auth,
+          req.params.id,
+          resolveRequestBaseUrl(req),
+        ),
       )
     } catch (err) {
       next(err)

@@ -68,6 +68,7 @@ export function mapInvoiceSummary(invoice) {
     invoiceNumber: invoice.invoiceNumber,
     pdfUrl: invoice.pdfUrl,
     issueDate: invoice.issueDate,
+    audience: invoice.audience || null,
   }
 }
 

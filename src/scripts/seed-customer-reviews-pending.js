@@ -3,8 +3,25 @@
  * Run: node src/scripts/seed-customer-reviews-pending.js
  */
 import prisma from '../../lib/prisma.js'
+import { invoiceNumber } from '../shared/numbering.js'
 
 const PASSWORD_HINT = 'Password123!'
+
+async function ensureOrderInvoices(order) {
+  // Buyer invoice only — admin / download UI expects a single invoice
+  await prisma.invoice.upsert({
+    where: {
+      orderId_audience: { orderId: order.id, audience: 'CUSTOMER' },
+    },
+    create: {
+      orderId: order.id,
+      audience: 'CUSTOMER',
+      invoiceNumber: invoiceNumber(order.orderNumber, { audience: 'CUSTOMER' }),
+      issueDate: order.createdAt || new Date(),
+    },
+    update: {},
+  })
+}
 
 async function main() {
   const customer = await prisma.user.findFirst({
@@ -60,6 +77,7 @@ async function main() {
           },
         })
       }
+      await ensureOrderInvoices(existing)
       created += 1
       continue
     }
@@ -99,11 +117,12 @@ async function main() {
         },
       },
     })
+    await ensureOrderInvoices(order)
     created += 1
     console.log(`Created ${order.orderNumber} → ${product.title}`)
   }
 
-  console.log(`\nDone. ${created} customer completed order(s) ready for review.`)
+  console.log(`\nDone. ${created} customer completed order(s) ready for review (+ invoices).`)
   console.log(`Login: customer@test.local / ${PASSWORD_HINT}`)
   console.log('GET /api/customer/reviews/pending')
 }

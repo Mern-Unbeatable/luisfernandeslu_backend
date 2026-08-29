@@ -22,15 +22,17 @@ export const invoiceOrderInclude = {
       name: true,
       email: true,
       phoneNumber: true,
+      role: true,
       profile: { select: { companyName: true, nifNumber: true } },
       addresses: {
-        where: { addressType: 'WAREHOUSE', isDefault: true },
-        take: 1,
+        where: { addressType: { in: ['WAREHOUSE', 'BILLING', 'SHIPPING'] } },
+        take: 3,
         include: { address: true },
       },
     },
   },
   shippingAddress: true,
+  billingAddress: true,
   checkoutSession: {
     select: {
       firstName: true,

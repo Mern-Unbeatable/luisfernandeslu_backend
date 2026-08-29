@@ -27,7 +27,9 @@ export function absolutizeUrl(pathOrUrl, baseUrl) {
   if (pathOrUrl == null || pathOrUrl === '') return pathOrUrl
   const value = String(pathOrUrl)
   if (/^https?:\/\//i.test(value)) return value
-  const base = String(baseUrl || '').replace(/\/$/, '')
+  const base = String(baseUrl || env.apiUrl || '')
+    .replace(/\/$/, '')
+  if (!base) return value.startsWith('/') ? value : `/${value}`
   return `${base}${value.startsWith('/') ? '' : '/'}${value}`
 }
 

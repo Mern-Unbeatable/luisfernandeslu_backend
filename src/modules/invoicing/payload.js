@@ -44,12 +44,19 @@ export function buildInvoicePayload(order, invoice, options = {}) {
 
   const session = order.checkoutSession
   const ship = order.shippingAddress
-  const sellerAddr = order.seller?.addresses?.[0]?.address
+  const sellerBridges = order.seller?.addresses || []
+  const sellerAddr =
+    sellerBridges.find((b) => b.addressType === 'WAREHOUSE')?.address ||
+    sellerBridges.find((b) => b.addressType === 'BILLING')?.address ||
+    sellerBridges[0]?.address ||
+    null
   const plan = order.paymentPlan
   const isChat = order.orderSource === 'QUOTE_CONVERSION'
   const netSubtotal = money(order.subTotal)
   const discount = money(order.discountAmount)
   const attachPlan = includeInstallments && isChat && plan
+  const sellerRole = String(order.seller?.role || '').toUpperCase()
+  const buyerRole = String(order.customer?.role || '').toUpperCase()
 
   return {
     invoiceNumber: invoice.invoiceNumber,
@@ -61,19 +68,25 @@ export function buildInvoicePayload(order, invoice, options = {}) {
     currency: CURRENCY,
     showShippingVat: Boolean(showShippingVat),
     seller: {
-      companyName: order.seller?.profile?.companyName || order.seller?.name,
-      email: order.seller?.email,
-      phone: order.seller?.phoneNumber,
+      companyName:
+        order.seller?.profile?.companyName || order.seller?.name || null,
+      email: order.seller?.email || null,
+      phone: order.seller?.phoneNumber || null,
       address: formatAddressLine(sellerAddr),
+      role: sellerRole || null,
+      roleLabel: sellerRole === 'FACTORY' ? 'Factory' : 'Supplier',
     },
     customer: {
       name:
         typeof customerName === 'function'
           ? customerName(order, session)
           : customerName || defaultBuyerName(order, session),
-      email: session?.email || order.customer?.email,
-      phone: session?.phone || order.customer?.phoneNumber,
-      address: formatAddressLine(ship),
+      email: session?.email || order.customer?.email || null,
+      phone: session?.phone || order.customer?.phoneNumber || null,
+      address:
+        formatAddressLine(ship) || formatAddressLine(order.billingAddress),
+      role: buyerRole || null,
+      roleLabel: buyerRole === 'COMPANY' ? 'Company' : 'Customer',
     },
     items: (order.orderLineItems || []).map((li) => ({
       title: li.product?.title || 'Product',
