@@ -30,14 +30,17 @@ export const env = {
   apiUrl: trimTrailingSlash(str('BETTER_AUTH_URL', 'http://localhost:8080')),
 
   currency: str('CART_CURRENCY', 'EUR'),
-  /** Fallback only — cart flat fee until checkout has distance + vehicle type. */
-  shippingFee: num('CART_SHIPPING_FEE', 20),
+  /**
+   * Legacy unused by cart/checkout. Shipping = distance × admin vehicleRates.
+   * Kept only so old .env keys do not break boot.
+   */
+  shippingFee: num('CART_SHIPPING_FEE', 0),
   /** Fallback only when buyer has no vatRate and admin settings are unset. */
   vatFixed: num('CART_VAT_FIXED', 4),
   /** Fallback auction duration before admin settings are saved. */
   auctionDurationMinutes: Math.max(1, num('AUCTION_DURATION_MINUTES', 2)),
   auctionEndedVisibleMinutes: Math.max(1, num('AUCTION_ENDED_VISIBLE_MINUTES', 5)),
-  /** Fallback per-km rate before admin settings are saved. */
+  /** Fallback per-km rate before admin settings / vehicleRates are saved. */
   transportPricePerKm: num('TRANSPORT_PRICE_PER_KM', 2.5),
 
   jwt: {

@@ -14,6 +14,11 @@ import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
 import { mapAddress, formatAddressLine } from '../../../shared/address.js'
 import { checkoutNumber, orderNumber } from '../../../shared/numbering.js'
+import {
+  assertUnloadingVehicle,
+  quoteShippingForSellers,
+} from '../../../shared/shipping-quote.js'
+import { env } from '../../../config/env.js'
 
 function methodEnum(method) {
   const m = String(method || 'multibanco').toLowerCase()
@@ -395,8 +400,117 @@ class CheckoutService {
     })
   }
 
+  /** VAT shared by merchandise; shipping set per seller from distance × per-km quote. */
+  applyQuotedShipping(buckets, vat, quote) {
+    const totalMerch = money(
+      buckets.reduce((s, b) => s + b.merchandise, 0),
+    )
+    let vatLeft = vat
+    return buckets.map((b, idx) => {
+      const isLast = idx === buckets.length - 1
+      let vatShare = 0
+      if (isLast) {
+        vatShare = money(vatLeft)
+      } else if (totalMerch > 0) {
+        vatShare = money((vat * b.merchandise) / totalMerch)
+        vatLeft = money(vatLeft - vatShare)
+      }
+      const leg = quote.bySeller.get(b.sellerId)
+      const shippingFee = money(leg?.shippingFee || 0)
+      return {
+        ...b,
+        shippingFee,
+        vatAmount: vatShare,
+        distanceKm: leg?.distanceKm ?? null,
+        grandTotal: money(b.merchandise + shippingFee + vatShare),
+      }
+    })
+  }
+
+  async resolveDeliveryAddressForQuote(userId, body) {
+    if (body.sameAsBilling) {
+      if (body.billingAddressId) {
+        const addr = await this.assertOwnedAddressRow(userId, body.billingAddressId)
+        return addr
+      }
+      if (body.billingAddress) return body.billingAddress
+    }
+    if (body.shippingAddressId) {
+      return this.assertOwnedAddressRow(userId, body.shippingAddressId)
+    }
+    if (body.shippingAddress) return body.shippingAddress
+    throw httpError(
+      'Provide shippingAddressId, shippingAddress, or sameAsBilling',
+      400,
+      'ShippingRequired',
+    )
+  }
+
+  async assertOwnedAddressRow(userId, addressId) {
+    const bridge = await prisma.userAddressBridge.findFirst({
+      where: { userId, addressId },
+      include: { address: true },
+    })
+    if (!bridge?.address) {
+      throw httpError('Address not found', 404, 'AddressNotFound')
+    }
+    return bridge.address
+  }
+
+  async quoteShipping(auth, body) {
+    this.assertBuyer(auth)
+    const vehicleId = assertUnloadingVehicle(body.unloadingType)
+    const role = String(auth.role || '').toLowerCase()
+    const vatRate = await this.loadVatRate(auth.id)
+    const priced = await cartService.priceSelection(
+      auth.id,
+      role,
+      body.cartItemIds,
+      vatRate,
+      null,
+    )
+    const buckets = this.buildSellerBuckets(priced.items)
+    const deliveryAddress = await this.resolveDeliveryAddressForQuote(
+      auth.id,
+      body,
+    )
+    const quote = await quoteShippingForSellers({
+      sellerIds: buckets.map((b) => b.sellerId),
+      deliveryAddress,
+      unloadingType: vehicleId,
+    })
+    const shipping = quote.shipping
+    const vat = priced.totals.vat
+    const subtotal = priced.totals.subtotal
+    const total = money(subtotal + shipping + vat)
+
+    return {
+      status: 200,
+      body: {
+        message: 'Shipping quoted',
+        unloadingType: quote.unloadingType,
+        pricePerKm: quote.pricePerKm,
+        distanceKm: quote.distanceKm,
+        shipping,
+        subtotal,
+        vat,
+        total,
+        currency: priced.totals.currency,
+        legs: quote.legs,
+        fees: {
+          shipping,
+          shippingQuoted: true,
+          vat,
+          vatRate,
+          currency: priced.totals.currency,
+        },
+      },
+    }
+  }
+
   async place(auth, body, baseUrl) {
     const role = this.assertBuyer(auth)
+    const vehicleId = assertUnloadingVehicle(body.unloadingType)
 
     if (role === 'company') {
       const hasProjectId = Boolean(body.projectId)
@@ -432,10 +546,21 @@ class CheckoutService {
     )
 
     let buckets = this.buildSellerBuckets(priced.items)
-    buckets = this.allocateSharedFees(
-      buckets,
-      priced.totals.shipping,
-      priced.totals.vat,
+
+    const deliveryAddress = await this.resolveDeliveryAddressForQuote(
+      auth.id,
+      body,
+    )
+    const quote = await quoteShippingForSellers({
+      sellerIds: buckets.map((b) => b.sellerId),
+      deliveryAddress,
+      unloadingType: vehicleId,
+    })
+    buckets = this.applyQuotedShipping(buckets, priced.totals.vat, quote)
+
+    const shippingTotal = quote.shipping
+    const grandTotal = money(
+      priced.totals.subtotal + shippingTotal + priced.totals.vat,
     )
 
     const sellerIds = buckets.map((b) => b.sellerId)
@@ -483,7 +608,6 @@ class CheckoutService {
       })
     }
 
-    const grandTotal = priced.totals.total
     const adminAmount = money(grandTotal - sellerPayoutSum)
     if (adminAmount < 0) {
       throw httpError('Invalid payment split amounts', 500, 'SplitError')
@@ -526,14 +650,14 @@ class CheckoutService {
           billingAddressId,
           shippingAddressId,
           projectId,
-          unloadingType: body.unloadingType || null,
+          unloadingType: vehicleId,
           unloadingLocationDescription:
             body.unloadingLocationDescription || null,
           accessConditions: body.accessConditions || null,
           additionalNotes: body.additionalNotes || null,
           subTotal: priced.totals.subtotal,
           vatAmount: priced.totals.vat,
-          shippingFee: priced.totals.shipping,
+          shippingFee: shippingTotal,
           discountAmount: priced.totals.discount,
           grandTotal,
           currency: priced.totals.currency,
@@ -569,7 +693,7 @@ class CheckoutService {
             shippingFee: b.shippingFee,
             discountAmount: b.discount,
             grandTotal: b.grandTotal,
-            unloadingType: body.unloadingType || null,
+            unloadingType: vehicleId,
             siteConditions,
             orderLineItems: {
               create: b.items.map((item) => ({

@@ -43,6 +43,7 @@ import supplierDocumentRoutes from './modules/invoicing/routes/document.routes.j
 import supplierAnalyticsRoutes from './modules/analytics/routes/supplier-analytics.routes.js'
 import supplierOverviewRoutes from './modules/overview/routes/supplier-overview.routes.js'
 import transporterOverviewRoutes from './modules/overview/routes/transporter-overview.routes.js'
+import factoryOverviewRoutes from './modules/overview/routes/factory-overview.routes.js'
 import supplierProfileRoutes from './modules/profile/routes/supplier-profile.routes.js'
 import transporterProfileRoutes from './modules/profile/routes/transporter-profile.routes.js'
 import factoryProfileRoutes from './modules/profile/routes/factory-profile.routes.js'
@@ -144,6 +145,7 @@ app.use('/api/supplier/documents', supplierDocumentRoutes)
 app.use('/api/supplier/profile', supplierProfileRoutes)
 app.use('/api/supplier/overview', supplierOverviewRoutes)
 app.use('/api/transporter/dashboard', transporterOverviewRoutes)
+app.use('/api/factory/dashboard', factoryOverviewRoutes)
 app.use('/api/supplier/analytics', supplierAnalyticsRoutes)
 app.use('/api/supplier/reviews', supplierReviewsRoutes)
 app.use('/api/supplier/return-requests', supplierReturnRoutes)

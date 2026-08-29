@@ -3,6 +3,7 @@ import checkoutController from '../controllers/checkout.controller.js'
 import {
   placeCheckoutBodySchema,
   checkoutIdParamSchema,
+  shippingQuoteBodySchema,
 } from '../validations/checkout.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
@@ -22,6 +23,12 @@ class CheckoutRoutes {
     )
 
     this.router.use(requireAccessToken, requireRoles('customer', 'company'))
+
+    this.router.post(
+      '/shipping-quote',
+      validate(shippingQuoteBodySchema, 'body'),
+      (req, res, next) => checkoutController.quoteShipping(req, res, next),
+    )
 
     this.router.post(
       '/',

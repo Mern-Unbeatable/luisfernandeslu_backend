@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VEHICLE_TYPE_IDS } from '../../admin/settings/catalog.js'
 
 const uuid = z.string().uuid('Invalid id')
 
@@ -13,9 +14,48 @@ const addressInlineSchema = z.object({
   longitude: z.coerce.number().optional().nullable(),
 })
 
+const unloadingTypeSchema = z
+  .string()
+  .trim()
+  .min(1, 'unloadingType is required')
+  .refine((v) => VEHICLE_TYPE_IDS.includes(v), {
+    message: `unloadingType must be one of: ${VEHICLE_TYPE_IDS.join(', ')}`,
+  })
+
 export const checkoutIdParamSchema = z.object({
   id: uuid,
 })
+
+export const shippingQuoteBodySchema = z
+  .object({
+    cartItemIds: z.array(uuid).min(1, 'Select at least one cart item'),
+    unloadingType: unloadingTypeSchema,
+    shippingAddressId: uuid.optional(),
+    shippingAddress: addressInlineSchema.optional(),
+    billingAddressId: uuid.optional(),
+    billingAddress: addressInlineSchema.optional(),
+    sameAsBilling: z.boolean().optional().default(false),
+  })
+  .superRefine((data, ctx) => {
+    if (data.sameAsBilling) {
+      if (!data.billingAddressId && !data.billingAddress) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Provide billingAddressId or billingAddress when sameAsBilling',
+          path: ['billingAddressId'],
+        })
+      }
+      return
+    }
+    if (!data.shippingAddressId && !data.shippingAddress) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide shippingAddressId, shippingAddress, or sameAsBilling',
+        path: ['shippingAddressId'],
+      })
+    }
+  })
 
 export const placeCheckoutBodySchema = z
   .object({
@@ -34,7 +74,7 @@ export const placeCheckoutBodySchema = z
     projectName: z.string().trim().max(200).optional().nullable(),
     projectLocation: z.string().trim().max(500).optional().nullable(),
     projectId: z.string().uuid().optional().nullable(),
-    unloadingType: z.string().trim().max(120).optional().nullable(),
+    unloadingType: unloadingTypeSchema,
     unloadingLocationDescription: z
       .string()
       .trim()

@@ -436,6 +436,7 @@ class AuctionService {
 
     const durationMs = auctionDurationMinutes(await loadPlatformSettings()) * 60 * 1000
     const expiresAt = new Date(Date.now() + durationMs)
+    const bidStartPrice = money(order.shippingFee)
 
     const shipment = await prisma.shipment.upsert({
       where: { orderId: order.id },
@@ -475,6 +476,7 @@ class AuctionService {
           requiredVehicleType: body.requiredVehicleType,
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
+          bidStartPrice,
         },
       })
     } else {
@@ -498,6 +500,7 @@ class AuctionService {
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
           auctionCode: code,
+          bidStartPrice,
           createdAt: new Date(),
         },
       })
@@ -508,6 +511,7 @@ class AuctionService {
       body: {
         id: auction.id,
         auctionId: auction.auctionCode,
+        bidStartPrice,
         message: 'Shipment auction created',
       },
     }

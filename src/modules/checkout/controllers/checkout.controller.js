@@ -8,6 +8,17 @@ function sendResult(res, result) {
 }
 
 export class CheckoutController {
+  async quoteShipping(req, res, next) {
+    try {
+      return sendResult(
+        res,
+        await checkoutService.quoteShipping(req.auth, req.body),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async place(req, res, next) {
     try {
       return sendResult(

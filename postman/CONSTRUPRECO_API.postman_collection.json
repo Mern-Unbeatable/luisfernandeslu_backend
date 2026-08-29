@@ -2991,7 +2991,7 @@
         },
         {
           "name": "Checkout",
-          "description": "Place order from selected cart items.\n\nPAYMENT_PROVIDER=mock (default): no EuPago — after place, call POST /api/checkout/:id/pay.\nPAYMENT_PROVIDER=eupago: real Split Pay — needs EUPAGO_API_KEY, EUPAGO_ADMIN_EXTERN_KEY, seller eupagoExternKey + webhook.\n\nCart page: select items on FE from GET /api/cart (item.subtotal + fees.shipping/vat). No preview endpoint.",
+          "description": "Place order from selected cart items.\n\nShipping = Mapbox distance × admin settings vehicleRates for chosen unloadingType (crane-12|crane-24|tipper|forklift|manual).\nPOST /shipping-quote before place to preview.\nGET /api/cart fees.shipping is 0 until quote.\n\nPAYMENT_PROVIDER=mock (default): after place, call POST /api/checkout/:id/pay.\nPAYMENT_PROVIDER=eupago: real Split Pay.",
           "item": [
             {
               "name": "Suggest Projects (Checkout)",
@@ -3081,6 +3081,34 @@
               "response": []
             },
             {
+              "name": "Quote Shipping (Checkout)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"unloadingType\": \"tipper\",\n  \"billingAddressId\": \"{{addressId}}\",\n  \"sameAsBilling\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/checkout/shipping-quote",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "checkout", "shipping-quote"]
+                },
+                "description": "Preview shipping = Mapbox distance (seller warehouse → delivery) × admin perKm for unloadingType.\nIds: crane-12 | crane-24 | tipper | forklift | manual.\nSame formula is applied on POST /api/checkout (required)."
+              },
+              "response": []
+            },
+            {
               "name": "Place Checkout (Multibanco)",
               "request": {
                 "method": "POST",
@@ -3097,7 +3125,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"firstName\": \"Luis\",\n  \"lastName\": \"Fernandes\",\n  \"email\": \"buyer@example.com\",\n  \"phone\": \"912345678\",\n  \"billingAddressId\": \"{{addressId}}\",\n  \"sameAsBilling\": true,\n  \"paymentMethod\": \"multibanco\",\n  \"projectName\": \"Site A\",\n  \"projectLocation\": \"Lisbon Yard\",\n  \"unloadingType\": \"Forklift\",\n  \"unloadingLocationDescription\": \"Warehouse yard\",\n  \"accessConditions\": \"Wide gate\",\n  \"additionalNotes\": \"Call on arrival\"\n}"
+                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"firstName\": \"Luis\",\n  \"lastName\": \"Fernandes\",\n  \"email\": \"buyer@example.com\",\n  \"phone\": \"912345678\",\n  \"billingAddressId\": \"{{addressId}}\",\n  \"sameAsBilling\": true,\n  \"paymentMethod\": \"multibanco\",\n  \"projectName\": \"Site A\",\n  \"projectLocation\": \"Lisbon Yard\",\n  \"unloadingType\": \"forklift\",\n  \"unloadingLocationDescription\": \"Warehouse yard\",\n  \"accessConditions\": \"Wide gate\",\n  \"additionalNotes\": \"Call on arrival\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout",
@@ -3109,7 +3137,7 @@
                     "checkout"
                   ]
                 },
-                "description": "Creates CheckoutSession + per-seller Orders, calls EuPago split-payments/multibanco. Returns entity/reference for payment."
+                "description": "Creates CheckoutSession + per-seller Orders. Shipping recalculated server-side from unloadingType + delivery address (admin vehicleRates). Returns entity/reference for payment."
               },
               "response": [],
               "event": [
@@ -3145,7 +3173,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"firstName\": \"Luis\",\n  \"lastName\": \"Fernandes\",\n  \"email\": \"buyer@example.com\",\n  \"phone\": \"912345678\",\n  \"billingAddress\": {\n    \"streetAddress\": \"Rua Temp 9\",\n    \"city\": \"Lisbon\",\n    \"state\": \"Lisboa\",\n    \"zipCode\": \"1000-002\",\n    \"country\": \"Portugal\"\n  },\n  \"saveBillingAddress\": false,\n  \"sameAsBilling\": true,\n  \"paymentMethod\": \"multibanco\"\n}"
+                  "raw": "{\n  \"cartItemIds\": [\"{{cartItemId}}\"],\n  \"firstName\": \"Luis\",\n  \"lastName\": \"Fernandes\",\n  \"email\": \"buyer@example.com\",\n  \"phone\": \"912345678\",\n  \"billingAddress\": {\n    \"streetAddress\": \"Rua Temp 9\",\n    \"city\": \"Lisbon\",\n    \"state\": \"Lisboa\",\n    \"zipCode\": \"1000-002\",\n    \"country\": \"Portugal\"\n  },\n  \"saveBillingAddress\": false,\n  \"sameAsBilling\": true,\n  \"unloadingType\": \"tipper\",\n  \"paymentMethod\": \"multibanco\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/checkout",
@@ -3157,7 +3185,7 @@
                     "checkout"
                   ]
                 },
-                "description": "Uses inline address for this order only (optional saveBillingAddress)."
+                "description": "Uses inline address for this order only (optional saveBillingAddress). unloadingType required for shipping quote."
               },
               "response": []
             },
@@ -8192,6 +8220,26 @@
           "name": "Factory",
           "description": "Factory dashboard APIs. Login as Factory first.",
           "item": [
+            {
+              "name": "Dashboard Overview",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "description": "Factory Dashboard Overview.\nStats cards + revenue for the current year (monthly) + order status donut (thisMonth/thisWeek).\nAuth: factory. Orders scoped to FACTORY_CONVERSION where factory is seller.",
+                "url": {
+                  "raw": "{{baseUrl}}/api/factory/dashboard",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "factory", "dashboard"]
+                }
+              },
+              "response": []
+            },
             {
               "name": "Profile",
               "description": "Customer/company My Profile.\\nGET / — full profile\\nPATCH / — account settings; multipart form-data can include file field avatar|image\\nPOST /password\\nPUT /iban\\nPUT /billing-address\\nPUT /shipping-address\\nPOST /avatar (optional dedicated)\\nDELETE /avatar",

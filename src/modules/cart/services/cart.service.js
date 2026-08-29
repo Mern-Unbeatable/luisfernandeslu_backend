@@ -5,7 +5,7 @@ import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
 import { resolveVatRate } from '../../admin/settings/settings.store.js'
 
-const SHIPPING_FEE = env.shippingFee
+/** Flat env fee removed — shipping = distance × admin vehicle rate at checkout. */
 const VAT_FIXED = env.vatFixed
 const CURRENCY = env.currency
 
@@ -87,7 +87,8 @@ function computeTotals(mappedItems, vatRate = 0) {
   )
   const subtotal = money(subtotalBeforeDiscount - discountAmount)
   const hasItems = mappedItems.length > 0
-  const shipping = hasItems ? money(SHIPPING_FEE) : 0
+  // Shipping quoted at checkout (vehicle + distance × admin per-km).
+  const shipping = 0
   const vat = hasItems
     ? vatRate > 0
       ? money((subtotal * Number(vatRate)) / 100)
@@ -107,12 +108,13 @@ function computeTotals(mappedItems, vatRate = 0) {
   }
 }
 
-/** Cart GET response: item-level prices only; FE sums selected lines. */
+/** Cart GET: shipping is 0 until checkout quote (vehicle + delivery address). */
 function cartFees(mappedItems, vatRate = 0) {
   const hasItems = mappedItems.length > 0
   const rate = Number(vatRate) || 0
   return {
-    shipping: hasItems ? money(SHIPPING_FEE) : 0,
+    shipping: 0,
+    shippingQuoted: false,
     // When vatRate > 0, FE applies % on selected subtotal; `vat` is only the fixed fallback amount.
     vat: hasItems && rate <= 0 ? money(VAT_FIXED) : 0,
     vatRate: rate,
