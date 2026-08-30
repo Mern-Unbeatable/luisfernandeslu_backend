@@ -3,6 +3,31 @@ import { httpError, conflict } from '../../../shared/errors.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import { mapProductMedia } from '../../listings/read.js'
 
+/** Homepage sponsored grid has a fixed number of public slots. */
+export const MAX_SPONSORED_SLOTS = 8
+
+async function countSponsoredSlots() {
+  return prisma.product.count({ where: { isSponsored: true } })
+}
+
+async function assertSponsoredSlotAvailable(productId) {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { isSponsored: true },
+  })
+  if (product?.isSponsored) return
+
+  const used = await countSponsoredSlots()
+  if (used >= MAX_SPONSORED_SLOTS) {
+    throw httpError(
+      `All ${MAX_SPONSORED_SLOTS} sponsored product slots are full. Wait for a slot to free up, or contact admin.`,
+      400,
+      'SponsoredSlotsFull',
+      { maxSlots: MAX_SPONSORED_SLOTS, usedSlots: used },
+    )
+  }
+}
+
 function mapPlan(plan) {
   return {
     id: plan.id,
@@ -266,6 +291,8 @@ export class PromotionService {
     }
     if (!plan) throw httpError('Promotion plan not found', 404, 'PlanNotFound')
 
+    await assertSponsoredSlotAvailable(productId)
+
     const activeOrPending = await prisma.productPromotion.findFirst({
       where: {
         productId,
@@ -425,6 +452,7 @@ export class PromotionService {
   async adminModerate(promotionId, body) {
     const next = String(body.status || '').toLowerCase()
     if (next === 'approved') return this.approvePromotion(promotionId)
+    if (next === 'removed') return this.removeSponsored(promotionId)
     return this.rejectPromotion(promotionId, body.reason)
   }
 
@@ -444,6 +472,8 @@ export class PromotionService {
     if (promotion.paymentStatus !== 'PAID') {
       throw httpError('Promotion is not paid', 400, 'NotPaid')
     }
+
+    await assertSponsoredSlotAvailable(promotion.productId)
 
     const startDate = new Date()
     const endDate = new Date(startDate)
@@ -472,6 +502,54 @@ export class PromotionService {
       body: {
         id: updated.id,
         message: 'Promotion approved. Product is now active/featured.',
+      },
+    }
+  }
+
+  /**
+   * Admin can free a sponsored slot before the plan endDate.
+   * Marks the promotion expired and clears product sponsored/featured flags.
+   */
+  async removeSponsored(promotionId) {
+    const promotion = await prisma.productPromotion.findUnique({
+      where: { id: promotionId },
+      include: { product: { select: { id: true, isSponsored: true } } },
+    })
+    if (!promotion) throw httpError('Promotion not found', 404, 'NotFound')
+
+    const now = new Date()
+    const isLiveApproved =
+      promotion.approvalStatus === 'APPROVED' &&
+      (!promotion.endDate || new Date(promotion.endDate) > now)
+
+    if (!isLiveApproved && !promotion.product?.isSponsored) {
+      throw httpError(
+        'Only active sponsored promotions can be removed early',
+        400,
+        'InvalidStatus',
+      )
+    }
+
+    await prisma.$transaction([
+      prisma.productPromotion.update({
+        where: { id: promotionId },
+        data: {
+          approvalStatus: 'EXPIRED',
+          endDate: now,
+          reviewedAt: now,
+        },
+      }),
+      prisma.product.update({
+        where: { id: promotion.productId },
+        data: { isFeatured: false, isSponsored: false },
+      }),
+    ])
+
+    return {
+      status: 200,
+      body: {
+        id: promotionId,
+        message: 'Sponsored product removed. Slot is now free.',
       },
     }
   }

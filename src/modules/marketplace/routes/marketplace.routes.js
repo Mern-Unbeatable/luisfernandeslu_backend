@@ -4,6 +4,7 @@ import {
   marketplaceListQuerySchema,
   marketplaceProductSlugParamSchema,
   marketplaceSimpleListQuerySchema,
+  marketplaceSponsoredListQuerySchema,
 } from '../validations/marketplace.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import { optionalAccessToken } from '../../../middlewares/auth.middleware.js'
@@ -20,7 +21,7 @@ class MarketplaceRoutes {
 
     this.router.get(
       '/sponsored',
-      validate(marketplaceSimpleListQuerySchema, 'query'),
+      validate(marketplaceSponsoredListQuerySchema, 'query'),
       (req, res, next) => marketplaceController.listSponsored(req, res, next),
     )
 

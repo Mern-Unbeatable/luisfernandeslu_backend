@@ -16,16 +16,79 @@
  */
 import 'dotenv/config'
 import crypto from 'node:crypto'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { auth } from '../auth/auth.js'
 import prisma from '../../lib/prisma.js'
 import { invoiceNumber, formatAuctionCode } from '../shared/numbering.js'
+import { addMonths } from '../shared/dates.js'
 import { seedAdminFilterProducts } from './seed-admin-products.js'
+import { resolveSeedMediaUrl } from './seed-product-images.js'
 
 const PASSWORD = 'Password123!'
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@construpreco.local')
   .trim()
   .toLowerCase()
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'AdminDemo123!'
+
+/** Homepage sponsored grid capacity (matches MAX_SPONSORED_SLOTS). */
+const SPONSORED_SLOT_COUNT = 8
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const UPLOAD_ROOT = path.resolve(__dirname, '../../uploads')
+const SEED_DIR = path.join(UPLOAD_ROOT, 'seed')
+
+/**
+ * Seed media URLs point at /uploads/seed/*.jpg — create real files so the
+ * static server does not 404 (broken images on the homepage).
+ */
+function ensureSeedImageFiles() {
+  fs.mkdirSync(SEED_DIR, { recursive: true })
+
+  const fallbackSources = []
+  for (const root of [
+    path.join(UPLOAD_ROOT, 'products'),
+    path.join(UPLOAD_ROOT, 'disputes'),
+  ]) {
+    if (!fs.existsSync(root)) continue
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name)
+        if (entry.isDirectory()) walk(full)
+        else if (/\.(jpe?g|png|webp)$/i.test(entry.name)) {
+          fallbackSources.push(full)
+        }
+      }
+    }
+    walk(root)
+  }
+
+  /** Tiny valid JPEG (1×1) used when no real product photos exist yet. */
+  const tinyJpeg = Buffer.from(
+    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=',
+    'base64',
+  )
+
+  const names = [
+    'cement-banner.jpg',
+    'cement-1.jpg',
+    'mortar-banner.jpg',
+    'factory-cement.jpg',
+    ...Array.from({ length: 16 }, (_, i) => `mkt-${i + 1}.jpg`),
+  ]
+
+  for (let i = 0; i < names.length; i += 1) {
+    const dest = path.join(SEED_DIR, names[i])
+    if (fs.existsSync(dest) && fs.statSync(dest).size > 100) continue
+    const src = fallbackSources[i % Math.max(fallbackSources.length, 1)]
+    if (src && fs.existsSync(src)) {
+      fs.copyFileSync(src, dest)
+    } else {
+      fs.writeFileSync(dest, tinyJpeg)
+    }
+  }
+}
 
 const PT = {
   lisbon: {
@@ -217,6 +280,7 @@ async function ensureProduct(data) {
         approvalStatus: data.approvalStatus,
         warehouseLocation: data.warehouseLocation,
         isFeatured: data.isFeatured || false,
+        isSponsored: data.isSponsored || false,
         averageRating: data.averageRating || 0,
         reviewCount: data.reviewCount || 0,
         categoryId: data.categoryId,
@@ -232,7 +296,7 @@ async function ensureMedia(productId, bannerUrl, extras = []) {
   await prisma.productMedia.create({
     data: {
       productId,
-      mediaUrl: bannerUrl,
+      mediaUrl: resolveSeedMediaUrl(bannerUrl),
       isBanner: true,
       sortOrder: 0,
     },
@@ -241,7 +305,7 @@ async function ensureMedia(productId, bannerUrl, extras = []) {
     await prisma.productMedia.create({
       data: {
         productId,
-        mediaUrl: extras[i],
+        mediaUrl: resolveSeedMediaUrl(extras[i]),
         isBanner: false,
         sortOrder: i + 1,
       },
@@ -288,6 +352,66 @@ async function ensureOrder(data) {
   })
   if (existing) return existing
   return prisma.order.create({ data })
+}
+
+function splitInstallmentAmounts(total, parts) {
+  const n = Math.max(1, parts)
+  const base = Math.floor((Number(total) / n) * 100) / 100
+  const amounts = Array.from({ length: n - 1 }, () => base)
+  const used = base * (n - 1)
+  amounts.push(Math.round((Number(total) - used) * 100) / 100)
+  return amounts
+}
+
+/**
+ * Idempotent payment plan for demo orders (company project installment UI).
+ */
+async function ensureOrderPaymentPlan(orderId, { termMonths = 3, allPaid = false } = {}) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, grandTotal: true, createdAt: true },
+  })
+  if (!order) return
+
+  const existing = await prisma.paymentPlan.findUnique({
+    where: { orderId: order.id },
+    select: { id: true },
+  })
+  if (existing) {
+    await prisma.installmentSchedule.deleteMany({
+      where: { paymentPlanId: existing.id },
+    })
+    await prisma.paymentPlan.delete({ where: { id: existing.id } })
+  }
+
+  const totalAmount = Number(order.grandTotal) || 0
+  const amounts = splitInstallmentAmounts(totalAmount, termMonths)
+  const anchor = order.createdAt || new Date()
+  const rows = amounts.map((amount, index) => {
+    const dueDate = addMonths(anchor, index)
+    const paid = allPaid || index === 0
+    return {
+      installmentNumber: index + 1,
+      amount,
+      dueDate,
+      status: paid ? 'COMPLETED' : 'PENDING',
+      paidAt: paid ? addMonths(anchor, index) : null,
+    }
+  })
+  const paidAmount = rows
+    .filter((row) => row.status === 'COMPLETED')
+    .reduce((sum, row) => sum + Number(row.amount || 0), 0)
+
+  await prisma.paymentPlan.create({
+    data: {
+      orderId: order.id,
+      totalAmount,
+      downPayment: rows[0]?.amount ?? totalAmount,
+      remainingBalance: Math.round((totalAmount - paidAmount) * 100) / 100,
+      termMonths,
+      installments: { create: rows },
+    },
+  })
 }
 
 const AFFILIATE_DIRECTORY = [
@@ -507,6 +631,8 @@ async function seedAffiliateDirectory({
 }
 
 async function main() {
+  ensureSeedImageFiles()
+
   const category = await leafCategory()
 
   const plan7 = await prisma.promotionPlan.upsert({
@@ -898,8 +1024,20 @@ async function main() {
       OR: [
         { productId: supplierProduct.id },
         { product: { sku: { startsWith: 'MKT-DEMO-' } } },
+        { product: { sku: { startsWith: 'MKT-SLOT-' } } },
       ],
     },
+  })
+  // Clear leftover slot flags from previous seeds
+  await prisma.product.updateMany({
+    where: {
+      OR: [
+        { sku: { startsWith: 'MKT-DEMO-' } },
+        { sku: { startsWith: 'MKT-SLOT-' } },
+        { id: supplierProduct.id },
+      ],
+    },
+    data: { isSponsored: false, isFeatured: false },
   })
 
   const marketingSpecs = [
@@ -966,6 +1104,45 @@ async function main() {
       shortDescription: 'Should NOT appear in Marketing Management.',
       status: 'unpaid',
       plan: plan7,
+    },
+  ]
+
+  /** Extra live sponsored SKUs so homepage fills all 8 slots (cement + 2 active + these). */
+  const sponsoredSlotSpecs = [
+    {
+      sku: 'MKT-SLOT-001',
+      title: 'Sponsored Rebar Pack',
+      slug: 'mkt-slot-rebar-demo',
+      shortDescription: 'Homepage sponsored slot 1.',
+      plan: plan15,
+    },
+    {
+      sku: 'MKT-SLOT-002',
+      title: 'Sponsored Insulation Board',
+      slug: 'mkt-slot-insulation-demo',
+      shortDescription: 'Homepage sponsored slot 2.',
+      plan: plan30,
+    },
+    {
+      sku: 'MKT-SLOT-003',
+      title: 'Sponsored Drywall Sheets',
+      slug: 'mkt-slot-drywall-demo',
+      shortDescription: 'Homepage sponsored slot 3.',
+      plan: plan7,
+    },
+    {
+      sku: 'MKT-SLOT-004',
+      title: 'Sponsored Roof Membrane',
+      slug: 'mkt-slot-roof-demo',
+      shortDescription: 'Homepage sponsored slot 4.',
+      plan: plan15,
+    },
+    {
+      sku: 'MKT-SLOT-005',
+      title: 'Sponsored Concrete Additive',
+      slug: 'mkt-slot-additive-demo',
+      shortDescription: 'Homepage sponsored slot 5.',
+      plan: plan30,
     },
   ]
 
@@ -1048,7 +1225,59 @@ async function main() {
     })
   }
 
-  // Keep main demo product featured/active as well
+  // Fill remaining homepage sponsored slots (8 total with main cement product).
+  for (let i = 0; i < sponsoredSlotSpecs.length; i += 1) {
+    const spec = sponsoredSlotSpecs[i]
+    const product = await ensureProduct({
+      sellerId: supplier.id,
+      categoryId: category.id,
+      sku: spec.sku,
+      title: spec.title,
+      slug: spec.slug,
+      shortDescription: spec.shortDescription,
+      longDescription: `${spec.title} — sponsored homepage slot seed.`,
+      specifications: 'Demo sponsored slot SKU',
+      factoryName: 'Cimento do Tejo',
+      basePrice: 14 + i,
+      b2bPrice: 12 + i,
+      minOrderQuantity: 5,
+      unitOfMeasure: 'bags',
+      weightKg: 25,
+      marketplaceTier: 'RETAIL',
+      approvalStatus: 'APPROVED',
+      warehouseLocation: 'Rua de Campolide 88, Lisbon, Portugal',
+      isFeatured: true,
+      isSponsored: true,
+    })
+    await ensureInventory(product.id, 200)
+    await ensureMedia(product.id, `/uploads/seed/mkt-${9 + i}.jpg`)
+
+    const startDate = new Date(now.getTime() - 2 * 86400000)
+    const endDate = new Date(now.getTime() + spec.plan.durationDays * 86400000)
+
+    await prisma.productPromotion.create({
+      data: {
+        productId: product.id,
+        planId: spec.plan.id,
+        amountPaid: spec.plan.price,
+        durationDays: spec.plan.durationDays,
+        paymentStatus: 'PAID',
+        paymentRef: `SEED-SLOT-${spec.sku}`,
+        approvalStatus: 'APPROVED',
+        startDate,
+        endDate,
+        paidAt: new Date(now.getTime() - 5 * 86400000),
+        reviewedAt: new Date(now.getTime() - 3 * 86400000),
+      },
+    })
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { isSponsored: true, isFeatured: true },
+    })
+  }
+
+  // Keep main demo product featured/active as well (8th sponsored slot)
   await prisma.productPromotion.create({
     data: {
       productId: supplierProduct.id,
@@ -1069,6 +1298,16 @@ async function main() {
     data: { isSponsored: true, isFeatured: true },
   })
 
+  const sponsoredCount = await prisma.product.count({
+    where: { isSponsored: true },
+  })
+  if (sponsoredCount !== SPONSORED_SLOT_COUNT) {
+    console.warn(
+      `Expected ${SPONSORED_SLOT_COUNT} sponsored products, got ${sponsoredCount}`,
+    )
+  } else {
+    console.log(`Sponsored slots filled: ${sponsoredCount}/${SPONSORED_SLOT_COUNT}`)
+  }
   const promo = await prisma.promoCode.upsert({
     where: { code: 'DEMO10' },
     create: {
@@ -1084,6 +1323,17 @@ async function main() {
     },
     update: { sellerId: supplier.id, isActive: true },
   })
+  // Promo must target products/categories or no cart line is eligible.
+  await prisma.promoCodeProductBridge.upsert({
+    where: {
+      promoCodeId_productId: {
+        promoCodeId: promo.id,
+        productId: supplierProduct.id,
+      },
+    },
+    create: { promoCodeId: promo.id, productId: supplierProduct.id },
+    update: {},
+  })
 
   const cart = await prisma.cart.upsert({
     where: { userId: customer.id },
@@ -1093,6 +1343,28 @@ async function main() {
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } })
   await prisma.cartItem.create({
     data: { cartId: cart.id, productId: supplierProduct.id, quantity: 12 },
+  })
+  await prisma.cartPromoCode.deleteMany({ where: { cartId: cart.id } })
+  await prisma.cartPromoCode.create({
+    data: { cartId: cart.id, promoCodeId: promo.id },
+  })
+
+  const companyCart = await prisma.cart.upsert({
+    where: { userId: company.id },
+    create: { userId: company.id },
+    update: {},
+  })
+  await prisma.cartItem.deleteMany({ where: { cartId: companyCart.id } })
+  await prisma.cartItem.create({
+    data: {
+      cartId: companyCart.id,
+      productId: supplierProduct.id,
+      quantity: 12,
+    },
+  })
+  await prisma.cartPromoCode.deleteMany({ where: { cartId: companyCart.id } })
+  await prisma.cartPromoCode.create({
+    data: { cartId: companyCart.id, promoCodeId: promo.id },
   })
 
   const vehicle = await prisma.vehicle.upsert({
@@ -1571,6 +1843,7 @@ async function main() {
     shippingFee: 21,
     projectId: project.id,
   })
+  await ensureOrderPaymentPlan(doneCement.id, { termMonths: 3, allPaid: true })
   const doneFactory = await makeOrder({
     orderNumber: 'ORD-DEMO-TR-DONE-002',
     customerId: supplier.id,

@@ -54,7 +54,14 @@ export const adminPromotionListQuerySchema = z.object({
 })
 
 export const adminModeratePromotionBodySchema = z.object({
-  status: z.enum(['approved', 'rejected', 'APPROVED', 'REJECTED']),
+  status: z.enum([
+    'approved',
+    'rejected',
+    'removed',
+    'APPROVED',
+    'REJECTED',
+    'REMOVED',
+  ]),
   reason: z.string().trim().min(2).max(2000).optional(),
 })
 

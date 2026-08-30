@@ -82,7 +82,7 @@ class MarketplaceService {
 
   async listSponsored(auth, query, baseUrl) {
     const buyer = resolveBuyerView(auth)
-    const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
+    const { page, limit, skip } = parsePagination(query, { defaultLimit: 8 })
     const { where } = this.buildCatalogWhere(query, { forceSponsored: true })
 
     const [total, rows] = await Promise.all([
