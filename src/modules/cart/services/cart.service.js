@@ -422,7 +422,7 @@ class CartService {
       prisma.cartItem.findMany({
         where: { cartId },
         include: itemInclude,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       }),
       this.loadCartPromos(cartId),
     ])
@@ -492,7 +492,7 @@ class CartService {
     const items = await prisma.cartItem.findMany({
       where: { cartId: cart.id },
       include: itemInclude,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
     if (!items.length) {
       throw httpError('Cart is empty', 400, 'EmptyCart')
@@ -735,7 +735,7 @@ class CartService {
     const items = await prisma.cartItem.findMany({
       where: { cartId: cart.id, id: { in: ids } },
       include: itemInclude,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
 
     if (items.length !== ids.length) {
