@@ -30,6 +30,14 @@ function mapBulkOptions(product) {
   }))
 }
 
+function hasVisibleBulkOption(product, buyer) {
+  const basePrice = money(product.basePrice)
+  const allBulk = mapBulkOptions(product)
+  if (!allBulk.length) return false
+  if (buyer.isCompany) return true
+  return allBulk.some((tier) => tier.price >= basePrice)
+}
+
 export function resolveBuyerView(auth) {
   const role = String(auth?.role || '').toLowerCase()
   const isCompany = role === 'company'
@@ -100,7 +108,7 @@ export function mapMarketplaceListProduct(product, baseUrl, buyer) {
     rating: Number(product.averageRating ?? 0),
     isSponsored: Boolean(product.isSponsored),
     minOrder,
-    hasBulkOption: (product.pricingTiers || []).length > 0,
+    hasBulkOption: hasVisibleBulkOption(product, buyer),
   }
 
   return row
@@ -188,7 +196,7 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
       : null,
     minOrder: minQty != null ? `${minQty} ${unit}` : null,
     minOrderLabel:
-      minQty != null ? `Minimum Order ${minQty} PCS` : null,
+      minQty != null ? `Minimum Order ${minQty} ${unit}` : null,
     minB2bQuantity: minQty,
     showMinimumOrder: minQty != null,
   }
