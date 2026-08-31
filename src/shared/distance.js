@@ -49,7 +49,7 @@ export async function suggestPlaces(query, opts = {}) {
     autocomplete: 'true',
     limit: String(limit),
     country,
-    types: 'address,poi,place,locality,neighborhood,district,region',
+    types: 'address,poi,place,locality,neighborhood,district,region,postcode',
     language: 'en',
   })
 
@@ -71,16 +71,26 @@ export async function suggestPlaces(query, opts = {}) {
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null
       const placeName = String(f.place_name || f.text || '').trim()
       if (!placeName) return null
+      
+      const featureIdStr = String(f.id || '')
+      const isPlace = featureIdStr.startsWith('place.')
+      const isRegion = featureIdStr.startsWith('region.')
+      const isPostcode = featureIdStr.startsWith('postcode.')
+      const isLocality = featureIdStr.startsWith('locality.') || featureIdStr.startsWith('neighborhood.')
+      
+      const textVal = String(f.text || '').trim()
+      
       return {
         id: String(f.id || `${longitude},${latitude}`),
         label: placeName,
         placeName,
-        text: String(f.text || '').trim() || placeName,
+        text: textVal || placeName,
         latitude: Number(latitude),
         longitude: Number(longitude),
-        country: contextValue(f, 'country.') || null,
-        region: contextValue(f, 'region.') || null,
-        place: contextValue(f, 'place.') || null,
+        country: contextValue(f, 'country.'),
+        region: isRegion ? textVal : (contextValue(f, 'region.') || null),
+        place: isPlace ? textVal : (contextValue(f, 'place.') || (isLocality ? textVal : null)),
+        postcode: isPostcode ? textVal : (contextValue(f, 'postcode.') || null),
       }
     })
     .filter(Boolean)
