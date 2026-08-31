@@ -70,6 +70,17 @@ export class CheckoutController {
       next(err)
     }
   }
+
+  async suggestLocations(req, res, next) {
+    try {
+      return sendResult(
+        res,
+        await checkoutService.suggestLocations(req.auth, req.query),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new CheckoutController()

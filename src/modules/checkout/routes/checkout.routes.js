@@ -24,6 +24,11 @@ class CheckoutRoutes {
 
     this.router.use(requireAccessToken, requireRoles('customer', 'company'))
 
+    this.router.get(
+      '/suggest-locations',
+      (req, res, next) => checkoutController.suggestLocations(req, res, next),
+    )
+
     this.router.post(
       '/shipping-quote',
       validate(shippingQuoteBodySchema, 'body'),

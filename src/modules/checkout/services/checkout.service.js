@@ -18,6 +18,7 @@ import {
   assertUnloadingVehicle,
   quoteShippingForSellers,
 } from '../../../shared/shipping-quote.js'
+import { hasMapboxToken, suggestPlaces } from '../../../shared/distance.js'
 import { env } from '../../../config/env.js'
 
 function methodEnum(method) {
@@ -979,6 +980,47 @@ class CheckoutService {
         id: session.id,
         paymentStatus: 'PAID',
         message: 'Payment confirmed',
+      },
+    }
+  }
+
+  async suggestLocations(auth, query) {
+    this.assertBuyer(auth)
+    const term = String(query.q || query.search || '').trim()
+    const limit = Math.min(15, Math.max(1, Number(query.limit) || 8))
+
+    if (term.length < 2) {
+      return {
+        status: 200,
+        body: {
+          locations: [],
+          message: 'Type at least 2 characters',
+        },
+      }
+    }
+
+    let locations = []
+    if (hasMapboxToken()) {
+      try {
+        locations = await suggestPlaces(term, {
+          limit,
+          country: 'pt',
+        })
+      } catch (err) {
+        console.error('[suggestLocations] Mapbox:', err.message)
+        throw httpError(
+          'Location suggestions unavailable',
+          502,
+          'MapboxSuggestFailed',
+        )
+      }
+    }
+
+    return {
+      status: 200,
+      body: {
+        locations,
+        message: 'Location suggestions fetched',
       },
     }
   }
