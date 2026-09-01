@@ -214,42 +214,58 @@ class QuoteService {
       : quantityNote
 
     const quote = await prisma.$transaction(async (tx) => {
-      const created = await tx.quoteRequest.create({
-        data: {
-          buyerId: auth.id,
-          sellerId: product.sellerId,
-          status: 'PENDING',
-          proposedBudget: body.budget,
-          message: combinedMessage,
-          quoteItems: {
-            create: {
-              productId: product.id,
-              quantity: quantityAmount,
-              offeredUnitPrice,
+        const created = await tx.quoteRequest.create({
+          data: {
+            buyerId: auth.id,
+            sellerId: product.sellerId,
+            status: 'PENDING',
+            proposedBudget: body.budget,
+            message: combinedMessage,
+            quoteItems: {
+              create: {
+                productId: product.id,
+                quantity: quantityAmount,
+                offeredUnitPrice,
+              },
             },
           },
-        },
-      })
+        })
 
-      await tx.chatMessage.create({
-        data: {
-          senderId: auth.id,
-          quoteRequestId: created.id,
-          messageType: 'SYSTEM',
-          messageText: `Quote request sent for "${product.title}". Budget: ${formatMoney(body.budget)}. ${quantityNote}.`,
-        },
-      })
+        const thread = await tx.chatThread.create({
+          data: {
+            type: 'QUOTE',
+            quoteRequestId: created.id,
+            participants: {
+              create: [
+                { userId: auth.id },
+                { userId: product.sellerId },
+              ],
+            },
+          },
+        })
 
-      if (userMessage) {
         await tx.chatMessage.create({
           data: {
             senderId: auth.id,
             quoteRequestId: created.id,
-            messageType: 'TEXT',
-            messageText: userMessage,
+            chatThreadId: thread.id,
+            messageType: 'SYSTEM',
+            messageText: `Quote request sent for "${product.title}". Budget: ${formatMoney(body.budget)}. 
+${quantityNote}.`,
           },
         })
-      }
+
+        if (userMessage) {
+          await tx.chatMessage.create({
+            data: {
+              senderId: auth.id,
+              quoteRequestId: created.id,
+              chatThreadId: thread.id,
+              messageType: 'TEXT',
+              messageText: userMessage,
+            },
+          })
+        }
 
       return tx.quoteRequest.findUnique({
         where: { id: created.id },
