@@ -65,6 +65,7 @@ export async function suggestPlaces(query, opts = {}) {
   const data = await res.json()
   const features = Array.isArray(data?.features) ? data.features : []
 
+  
   return features
     .map((f) => {
       const [longitude, latitude] = Array.isArray(f.center) ? f.center : []
