@@ -715,6 +715,14 @@ class CheckoutService {
         b.orderId = order.id
         b.orderNumber = order.orderNumber
       }
+      if (priced.items.length) {
+        await tx.cartItem.deleteMany({
+          where: {
+            id: { in: priced.items.map((i) => i.id) },
+            cart: { userId: auth.id },
+          },
+        })
+      }
 
       return created
     })
@@ -828,15 +836,6 @@ class CheckoutService {
             orderId: order.id,
             status: 'NEW',
             note: note || 'Payment confirmed — awaiting supplier acceptance',
-          },
-        })
-      }
-
-      if (session.cartItemIds?.length) {
-        await tx.cartItem.deleteMany({
-          where: {
-            id: { in: session.cartItemIds },
-            cart: { userId: session.customerId },
           },
         })
       }
