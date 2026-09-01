@@ -205,6 +205,33 @@ class CheckoutService {
     return resolveVatRate(user?.vatRate)
   }
 
+  async quoteDirectBuy(auth, body, baseUrl) {
+    const role = this.assertBuyer(auth)
+    const vatRate = await this.loadVatRate(auth.id)
+    const { directBuy, promos } = body
+
+    const priced = await cartService.priceDirectBuy(
+      auth.id,
+      role,
+      directBuy,
+      vatRate,
+      baseUrl,
+      promos || []
+    )
+
+    return {
+      status: 200,
+      body: {
+        cart: {
+          id: priced.cartId, // usually null for direct buy
+          promos: priced.promos,
+          items: priced.items,
+          fees: cartService.buildCartPayload(priced.cartId, priced.itemsRaw, role, vatRate, baseUrl, priced.promos).fees
+        }
+      }
+    }
+  }
+
   async assertOwnedAddress(userId, addressId) {
     const bridge = await prisma.userAddressBridge.findFirst({
       where: { userId, addressId },
@@ -458,18 +485,61 @@ class CheckoutService {
     return bridge.address
   }
 
+  async quoteDirectBuy(auth, body, baseUrl) {
+    this.assertBuyer(auth)
+    const role = String(auth.role || '').toLowerCase()
+    const vatRate = await this.loadVatRate(auth.id)
+    
+    if (!body.directBuy || !body.directBuy.productId) {
+      throw httpError('Missing directBuy product details', 400, 'InvalidDirectBuy')
+    }
+
+    const priced = await cartService.priceDirectBuy(
+      auth.id,
+      role,
+      body.directBuy,
+      vatRate,
+      baseUrl,
+      body.promos || []
+    )
+
+    return {
+      status: 200,
+      body: {
+        cart: {
+          id: priced.cartId,
+          promos: priced.promos,
+          items: priced.items,
+          fees: cartService.buildCartPayload(priced.cartId, priced.itemsRaw, role, vatRate, baseUrl, priced.promos).fees
+        }
+      }
+    }
+  }
+
   async quoteShipping(auth, body) {
     this.assertBuyer(auth)
     const vehicleId = assertUnloadingVehicle(body.unloadingType)
     const role = String(auth.role || '').toLowerCase()
     const vatRate = await this.loadVatRate(auth.id)
-    const priced = await cartService.priceSelection(
-      auth.id,
-      role,
-      body.cartItemIds,
-      vatRate,
-      null,
-    )
+    let priced
+    if (body.directBuy) {
+      priced = await cartService.priceDirectBuy(
+        auth.id,
+        role,
+        body.directBuy,
+        vatRate,
+        null,
+        body.promos || []
+      )
+    } else {
+      priced = await cartService.priceSelection(
+        auth.id,
+        role,
+        body.cartItemIds,
+        vatRate,
+        null,
+      )
+    }
     const buckets = this.buildSellerBuckets(priced.items)
     const deliveryAddress = await this.resolveDeliveryAddressForQuote(
       auth.id,
@@ -511,7 +581,11 @@ class CheckoutService {
 
   async place(auth, body, baseUrl) {
     const role = this.assertBuyer(auth)
-    const vehicleId = assertUnloadingVehicle(body.unloadingType)
+    const { cartItemIds, directBuy, promos, ...details } = body
+    
+    if (!directBuy && (!cartItemIds || !cartItemIds.length)) {
+      throw httpError('Cart items required for checkout', 400, 'MissingCartItems')
+    }
 
     if (role === 'company') {
       const hasProjectId = Boolean(body.projectId)
@@ -538,13 +612,25 @@ class CheckoutService {
     }
 
     const vatRate = await this.loadVatRate(auth.id)
-    const priced = await cartService.priceSelection(
-      auth.id,
-      role,
-      body.cartItemIds,
-      vatRate,
-      baseUrl,
-    )
+    let priced
+    if (directBuy) {
+      priced = await cartService.priceDirectBuy(
+        auth.id,
+        role,
+        directBuy,
+        vatRate,
+        baseUrl,
+        promos || []
+      )
+    } else {
+      priced = await cartService.priceSelection(
+        auth.id,
+        role,
+        cartItemIds,
+        vatRate,
+        baseUrl,
+      )
+    }
 
     let buckets = this.buildSellerBuckets(priced.items)
 
@@ -552,6 +638,7 @@ class CheckoutService {
       auth.id,
       body,
     )
+    const vehicleId = assertUnloadingVehicle(body.unloadingType)
     const quote = await quoteShippingForSellers({
       sellerIds: buckets.map((b) => b.sellerId),
       deliveryAddress,
@@ -715,7 +802,7 @@ class CheckoutService {
         b.orderId = order.id
         b.orderNumber = order.orderNumber
       }
-      if (priced.items.length) {
+      if (priced.items.length && !directBuy) {
         await tx.cartItem.deleteMany({
           where: {
             id: { in: priced.items.map((i) => i.id) },

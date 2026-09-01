@@ -4,6 +4,7 @@ import {
   placeCheckoutBodySchema,
   checkoutIdParamSchema,
   shippingQuoteBodySchema,
+  directBuyQuoteBodySchema,
 } from '../validations/checkout.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
@@ -27,6 +28,12 @@ class CheckoutRoutes {
     this.router.get(
       '/suggest-locations',
       (req, res, next) => checkoutController.suggestLocations(req, res, next),
+    )
+
+    this.router.post(
+      '/direct-buy/quote',
+      validate(directBuyQuoteBodySchema, 'body'),
+      (req, res, next) => checkoutController.quoteDirectBuy(req, res, next),
     )
 
     this.router.post(

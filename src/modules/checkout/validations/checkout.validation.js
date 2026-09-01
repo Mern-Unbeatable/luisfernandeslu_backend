@@ -26,9 +26,21 @@ export const checkoutIdParamSchema = z.object({
   id: uuid,
 })
 
+const directBuySchema = z.object({
+  productId: uuid,
+  quantity: z.number().int().min(1),
+})
+
+export const directBuyQuoteBodySchema = z.object({
+  directBuy: directBuySchema,
+  promos: z.array(z.string()).optional(),
+})
+
 export const shippingQuoteBodySchema = z
   .object({
-    cartItemIds: z.array(uuid).min(1, 'Select at least one cart item'),
+    cartItemIds: z.array(uuid).optional(),
+    directBuy: directBuySchema.optional(),
+    promos: z.array(z.string()).optional(),
     unloadingType: unloadingTypeSchema,
     shippingAddressId: uuid.optional(),
     shippingAddress: addressInlineSchema.optional(),
@@ -37,6 +49,13 @@ export const shippingQuoteBodySchema = z
     sameAsBilling: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
+    if (!data.cartItemIds?.length && !data.directBuy) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide cartItemIds or directBuy',
+        path: ['cartItemIds'],
+      })
+    }
     if (data.sameAsBilling) {
       if (!data.billingAddressId && !data.billingAddress) {
         ctx.addIssue({
@@ -59,7 +78,9 @@ export const shippingQuoteBodySchema = z
 
 export const placeCheckoutBodySchema = z
   .object({
-    cartItemIds: z.array(uuid).min(1, 'Select at least one cart item'),
+    cartItemIds: z.array(uuid).optional(),
+    directBuy: directBuySchema.optional(),
+    promos: z.array(z.string()).optional(),
     firstName: z.string().trim().min(1).max(80),
     lastName: z.string().trim().min(1).max(80),
     email: z.string().trim().email(),
@@ -90,6 +111,13 @@ export const placeCheckoutBodySchema = z
     mbwayPhone: z.string().trim().min(5).max(40).optional().nullable(),
   })
   .superRefine((data, ctx) => {
+    if (!data.cartItemIds?.length && !data.directBuy) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide cartItemIds or directBuy',
+        path: ['cartItemIds'],
+      })
+    }
     if (!data.billingAddressId && !data.billingAddress) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

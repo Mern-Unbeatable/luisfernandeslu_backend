@@ -783,6 +783,76 @@ class CartService {
       totals: computeTotals(mapped, vatRate),
     }
   }
+
+  /**
+   * Evaluates a single item for a direct checkout flow, bypassing the Cart schema.
+   */
+  async priceDirectBuy(userId, role, { productId, quantity }, vatRate, baseUrl, promoCodes = []) {
+    if (!productId || quantity < 1) {
+      throw httpError('Invalid direct buy parameters', 400, 'InvalidDirectBuy')
+    }
+
+    const product = await prisma.product.findFirst({
+      where: {
+        id: productId,
+        approvalStatus: 'APPROVED',
+      },
+      select: productCartSelect,
+    })
+
+    if (!product) {
+      throw httpError('Product not found or not available', 404, 'ProductUnavailable')
+    }
+
+    const maxQty = maxSellable(product.inventory)
+    if (quantity > maxQty) {
+      throw httpError(
+        `Only ${maxQty} unit(s) available for ${product.title}`,
+        400,
+        'InsufficientStock',
+        { productId: product.id, maxQuantity: maxQty },
+      )
+    }
+
+    // Mock cart item row structure expected by mapCartItem
+    const mockRow = {
+      id: `direct-buy-${product.id}`,
+      productId: product.id,
+      quantity,
+      product,
+    }
+
+    const baseMapped = [mapCartItem(mockRow, role, baseUrl)]
+    
+    // Process promos if provided
+    let appliedPromos = []
+    let mapped = baseMapped
+    
+    if (promoCodes.length > 0) {
+      const dbPromos = await prisma.promoCode.findMany({
+        where: { code: { in: promoCodes, mode: 'insensitive' } },
+        include: promoInclude,
+      })
+      
+      const res = applyPromosToItems(
+        baseMapped,
+        [mockRow],
+        dbPromos,
+        role,
+        baseUrl,
+      )
+      mapped = res.mapped
+      appliedPromos = res.appliedPromos
+    }
+
+    return {
+      cartId: 'direct-buy-session', // Dummy ID since there is no cart
+      itemsRaw: [mockRow],
+      items: mapped,
+      promos: appliedPromos,
+      totals: computeTotals(mapped, vatRate),
+    }
+  }
 }
 
 export default new CartService()
