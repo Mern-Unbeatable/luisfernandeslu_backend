@@ -410,6 +410,22 @@ ${quantityNote}.`,
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Create project for buyer if it doesn't exist
+      if (body.projectName) {
+        const existingProject = await tx.project.findFirst({
+          where: { userId: quote.buyerId, projectName: body.projectName.trim() }
+        })
+        if (!existingProject) {
+          await tx.project.create({
+            data: {
+              userId: quote.buyerId,
+              projectName: body.projectName.trim(),
+              location: body.deliveryLocation?.trim() || body.warehouseLocation?.trim() || 'N/A'
+            }
+          })
+        }
+      }
+
       const offer = await tx.quoteOffer.create({
         data: offerCreateData(body, {
           quoteRequestId: quoteId,
@@ -601,6 +617,34 @@ ${quantityNote}.`,
       context: quotePayContext,
       extra: { quote, quoteId },
     })
+  }
+
+  async getBuyerProjects(auth, quoteId) {
+    const quote = await prisma.quoteRequest.findUnique({
+      where: { id: quoteId },
+      select: { buyerId: true, sellerId: true },
+    })
+    if (!quote) throw httpError('Quote not found', 404)
+    if (quote.sellerId !== auth.id) {
+      throw httpError('Access denied', 403)
+    }
+
+    const projects = await prisma.project.findMany({
+      where: { userId: quote.buyerId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        projectName: true,
+        location: true,
+      },
+    })
+
+    return {
+      status: 200,
+      body: {
+        projects,
+      },
+    }
   }
 }
 

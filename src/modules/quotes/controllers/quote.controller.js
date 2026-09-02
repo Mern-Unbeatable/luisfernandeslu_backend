@@ -48,6 +48,18 @@ export class QuoteController {
     }
   }
 
+  async getBuyerProjects(req, res, next) {
+    try {
+      const result = await quoteService.getBuyerProjects(
+        req.auth,
+        req.params.id,
+      )
+      return sendResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async listMessages(req, res, next) {
     try {
       const result = await quoteService.listMessages(

@@ -8,7 +8,7 @@ export const listProductsQuerySchema = z.object({
     .optional()
     .default('all'),
   page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().max(50).optional().default(12),
+  limit: z.coerce.number().int().positive().max(1000).optional().default(12),
   /** Root / sub / product-type UUID — matches any level of the catalog path */
   categoryId: uuid.optional(),
   /** Optional display name (case-insensitive), resolved to categoryId */

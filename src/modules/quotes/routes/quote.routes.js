@@ -59,6 +59,13 @@ class QuoteRoutes {
       (req, res, next) => quoteController.createOffer(req, res, next),
     )
 
+    this.router.get(
+      '/:id/buyer-projects',
+      requireRoles('supplier'),
+      validate(quoteIdParamSchema, 'params'),
+      (req, res, next) => quoteController.getBuyerProjects(req, res, next),
+    )
+
     // Company respond to offer
     this.router.post(
       '/:id/offers/:offerId/negotiate',
