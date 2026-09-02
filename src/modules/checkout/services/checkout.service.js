@@ -522,7 +522,28 @@ class CheckoutService {
     const role = String(auth.role || '').toLowerCase()
     const vatRate = await this.loadVatRate(auth.id)
     let priced
-    if (body.directBuy) {
+    if (body.directBuy?.offerId) {
+      const offer = await prisma.quoteOffer.findUnique({
+        where: { id: body.directBuy.offerId },
+      })
+      if (!offer) throw httpError('Offer not found', 404, 'NotFound')
+      
+      const subtotal = Number(offer.totalPrice) || 0
+      const vat = money(subtotal * (vatRate / 100))
+      
+      priced = {
+        items: [{
+          sellerId: offer.createdById,
+          subtotal: subtotal,
+          promo: null,
+        }],
+        totals: {
+          subtotal,
+          vat,
+          currency: 'EUR'
+        }
+      }
+    } else if (body.directBuy) {
       priced = await cartService.priceDirectBuy(
         auth.id,
         role,

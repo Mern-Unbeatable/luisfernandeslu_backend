@@ -26,10 +26,15 @@ export const checkoutIdParamSchema = z.object({
   id: uuid,
 })
 
-const directBuySchema = z.object({
-  productId: uuid,
-  quantity: z.number().int().min(1),
-})
+const directBuySchema = z.union([
+  z.object({
+    productId: uuid,
+    quantity: z.number().int().min(1),
+  }),
+  z.object({
+    offerId: uuid,
+  }),
+])
 
 export const directBuyQuoteBodySchema = z.object({
   directBuy: directBuySchema,
@@ -49,7 +54,7 @@ export const shippingQuoteBodySchema = z
     sameAsBilling: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
-    if (!data.cartItemIds?.length && !data.directBuy) {
+    if (!data.cartItemIds?.length && !data.directBuy && !data.offerId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Provide cartItemIds or directBuy',
