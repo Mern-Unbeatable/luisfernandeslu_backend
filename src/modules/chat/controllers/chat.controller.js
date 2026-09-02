@@ -1,6 +1,7 @@
 import prisma from '../../../../lib/prisma.js'
 import { mapThreadSummary } from '../mappers.js'
 import { getThreadForUser } from '../threads.js'
+import { isUserOnline } from '../../../socket/chatPresence.js'
 
 export default {
   async listThreads(req, res, next) {
@@ -32,6 +33,7 @@ export default {
                     name: true,
                     email: true,
                     role: true,
+                    image: true,
                     profile: {
                       select: { companyName: true },
                     },
@@ -53,7 +55,7 @@ export default {
       res.status(200).json({
         success: true,
         data: {
-          threads: threads.map(mapThreadSummary),
+          threads: threads.map((thread) => mapThreadSummary(thread, isUserOnline)),
         },
         pagination: {
           total,

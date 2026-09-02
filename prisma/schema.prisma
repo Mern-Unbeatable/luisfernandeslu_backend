@@ -872,6 +872,8 @@ model ChatMessage {
   messageText    String
   attachmentUrl  String?
   offerId        String?
+  isDeleted      Boolean         @default(false)
+  editedAt       DateTime?
   createdAt      DateTime        @default(now())
 
   sender         User            @relation("SentMessages", fields: [senderId], references: [id])

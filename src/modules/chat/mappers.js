@@ -1,8 +1,10 @@
-export function mapThreadSummary(thread) {
+export function mapThreadSummary(thread, isUserOnline = (id) => false) {
   const participants = (thread.participants || []).map((p) => ({
     id: p.userId,
     name: p.user?.profile?.companyName || p.user?.name || p.user?.email || 'Unknown User',
     role: p.user?.role || 'Unknown',
+    image: p.user?.image || null,
+    online: isUserOnline(p.userId)
   }))
 
   return {

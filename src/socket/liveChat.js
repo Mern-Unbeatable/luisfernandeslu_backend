@@ -70,6 +70,22 @@ function emitPresenceToThread(socket, threadId, status) {
   })
 }
 
+import { getIO } from './io.js'
+
+async function broadcastToThreadParticipants(threadId, event, payload) {
+  const participations = await prisma.chatThreadParticipant.findMany({
+    where: { threadId },
+    select: { userId: true },
+  })
+  const rooms = [chatRoom(threadId)]
+  participations.forEach(p => rooms.push(`user:${p.userId}`))
+  
+  const io = getIO()
+  if (io) {
+    io.to(rooms).emit(event, payload)
+  }
+}
+
 /**
  * @param {import('socket.io').Server} io
  */
@@ -196,9 +212,7 @@ export function registerLiveChatSocket(io) {
         )
 
         const eventPayload = { threadId, chatMessage }
-        emitToChat(threadId, 'chat:message', eventPayload)
-        // Also emit to self if not in room yet
-        socket.emit('chat:message', eventPayload)
+        await broadcastToThreadParticipants(threadId, 'chat:message', eventPayload)
 
         if (thread.quoteRequestId) {
           emitToChat(threadId, 'quote:message', {
@@ -214,6 +228,71 @@ export function registerLiveChatSocket(io) {
           ack({ ok: false, message, code: err.code })
         }
         socket.emit('chat:error', { message, code: err.code })
+      }
+    })
+
+    socket.on('chat:edit', async (payload = {}, ack) => {
+      console.log('--- chat:edit received ---', payload, 'User:', socket.user)
+      try {
+        const { messageId, text } = payload
+        if (!messageId) throw new Error('messageId is required')
+        if (!text?.trim()) throw new Error('text is required')
+
+        // Verify ownership
+        const existing = await prisma.chatMessage.findUnique({
+          where: { id: messageId },
+          select: { id: true, senderId: true, chatThreadId: true, isDeleted: true },
+        })
+        if (!existing) throw new Error('Message not found')
+        if (existing.senderId !== socket.user.id) throw new Error('Cannot edit another user\'s message')
+        if (existing.isDeleted) throw new Error('Cannot edit a deleted message')
+
+        const updated = await prisma.chatMessage.update({
+          where: { id: messageId },
+          data: { messageText: text.trim(), editedAt: new Date() },
+          select: {
+            id: true, senderId: true, chatThreadId: true, messageType: true,
+            messageText: true, editedAt: true, createdAt: true,
+          },
+        })
+
+        const eventPayload = { threadId: existing.chatThreadId, chatMessage: updated, event: 'edited' }
+        await broadcastToThreadParticipants(existing.chatThreadId, 'chat:edited', eventPayload)
+
+        if (typeof ack === 'function') ack({ ok: true, chatMessage: updated })
+      } catch (err) {
+        console.error('--- chat:edit error ---', err)
+        const message = err.message || 'Failed to edit message'
+        if (typeof ack === 'function') ack({ ok: false, message })
+        socket.emit('chat:error', { message })
+      }
+    })
+
+    socket.on('chat:delete', async (payload = {}, ack) => {
+      try {
+        const { messageId } = payload
+        if (!messageId) throw new Error('messageId is required')
+
+        const existing = await prisma.chatMessage.findUnique({
+          where: { id: messageId },
+          select: { id: true, senderId: true, chatThreadId: true },
+        })
+        if (!existing) throw new Error('Message not found')
+        if (existing.senderId !== socket.user.id) throw new Error('Cannot delete another user\'s message')
+
+        await prisma.chatMessage.update({
+          where: { id: messageId },
+          data: { isDeleted: true, messageText: '' },
+        })
+
+        const eventPayload = { threadId: existing.chatThreadId, messageId, event: 'deleted' }
+        await broadcastToThreadParticipants(existing.chatThreadId, 'chat:deleted', eventPayload)
+
+        if (typeof ack === 'function') ack({ ok: true })
+      } catch (err) {
+        const message = err.message || 'Failed to delete message'
+        if (typeof ack === 'function') ack({ ok: false, message })
+        socket.emit('chat:error', { message })
       }
     })
 

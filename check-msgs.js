@@ -1,7 +1,12 @@
-import prisma from './lib/prisma.js';
-async function run() {
-  const msgs = await prisma.chatMessage.findMany();
-  console.log(msgs);
-  process.exit(0);
+import prisma from './src/lib/prisma.ts';
+
+async function main() {
+  const messages = await prisma.chatMessage.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
+  console.log(messages.map(m => ({ id: m.id, text: m.messageText, editedAt: m.editedAt, isDeleted: m.isDeleted })));
+  await prisma.$disconnect();
 }
-run().catch(console.error);
+
+main().catch(console.error);
