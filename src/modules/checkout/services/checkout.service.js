@@ -867,7 +867,7 @@ class CheckoutService {
       where: { id: session.id },
       data: {
         eupagoEntity: eupago.entity,
-        eupagoReference: eupago.reference,
+        eupagoReference: eupago.reference || eupago.raw?.url || eupago.raw?.redirectUrl || null,
         eupagoTransactionId:
           eupago.raw?.transactionID ||
           eupago.raw?.transactionId ||
@@ -888,6 +888,12 @@ class CheckoutService {
       provider: getPaymentProvider(),
       entity: updated.eupagoEntity,
       reference: updated.eupagoReference,
+    }
+
+    if (eupago && (eupago.raw?.redirectUrl || eupago.raw?.url)) {
+      payment.url = eupago.raw.redirectUrl || eupago.raw.url
+    } else {
+      payment.url = updated.eupagoReference // fallback
     }
     if (mock) {
       payment.confirmPath = `/api/checkout/${updated.id}/pay`

@@ -110,7 +110,7 @@ export const placeCheckoutBodySchema = z
     accessConditions: z.string().trim().max(500).optional().nullable(),
     additionalNotes: z.string().trim().max(2000).optional().nullable(),
     paymentMethod: z
-      .enum(['multibanco', 'mbway', 'creditcard'])
+      .enum(['multibanco', 'mbway', 'creditcard', 'payshop'])
       .optional()
       .default('multibanco'),
     mbwayPhone: z.string().trim().min(5).max(40).optional().nullable(),

@@ -86,6 +86,23 @@ export async function createSplitPayment({
 
   if (adminCallback) body.adminCallback = adminCallback
   if (method === 'mbway' && alias) body.alias = String(alias)
+  
+  if (method === 'creditcard') {
+    // Eupago requires a valid public URL (usually HTTPS) for credit card transactions.
+    // Localhost is often rejected with "URL_INVALID".
+    const success = 'https://google.com/success'
+    const cancel = 'https://google.com/cancel'
+    
+    body.successUrl = success
+    body.cancelUrl = cancel
+    body.failUrl = cancel
+    body.backUrl = cancel
+    body.returnUrl = success
+    body.url = success
+    body.success_url = success
+    body.cancel_url = cancel
+    body.return_url = success
+  }
 
   const res = await fetch(url, {
     method: 'POST',
@@ -99,6 +116,7 @@ export async function createSplitPayment({
   let data = null
   try {
     data = await res.json()
+    console.log('--- EUPAGO RESPONSE ---', JSON.stringify(data, null, 2))
   } catch {
     data = null
   }
