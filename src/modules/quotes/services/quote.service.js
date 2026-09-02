@@ -435,11 +435,19 @@ ${quantityNote}.`,
         }),
         include: offerInstallmentsInclude,
       })
+      
+      const { ensureQuoteThread } = await import('../../chat/threads.js')
+      const thread = await ensureQuoteThread(tx, {
+        quoteRequestId: quoteId,
+        buyerId: quote.buyerId,
+        sellerId: quote.sellerId,
+      })
 
       const chatMessage = await tx.chatMessage.create({
         data: {
           senderId: auth.id,
           quoteRequestId: quoteId,
+          chatThreadId: thread.id,
           messageType: 'OFFER',
           messageText: `Offer Card: ${offer.productName}`,
           offerId: offer.id,
@@ -452,20 +460,30 @@ ${quantityNote}.`,
         data: { status: 'IN_CHAT' },
       })
 
-      return { offer, chatMessage }
+      return { offer, chatMessage, threadId: thread.id }
     })
 
     const offerCard = mapOfferCard(result.offer)
     const chatMessage = mapMessage(result.chatMessage, auth.id, baseUrl)
-    broadcastQuoteEvent(quoteId, 'quote:offer', {
-      quoteId,
-      offer: offerCard,
-      chatMessage: mapMessage(result.chatMessage, null, baseUrl),
-    })
-    broadcastQuoteEvent(quoteId, 'quote:message', {
-      quoteId,
-      chatMessage: mapMessage(result.chatMessage, null, baseUrl),
-    })
+    
+    // Broadcast using the new socket logic
+    const { getIO } = await import('../../../socket/io.js')
+    const io = getIO()
+    if (io) {
+      const participations = await prisma.chatThreadParticipant.findMany({
+        where: { threadId: result.threadId },
+        select: { userId: true },
+      })
+      const rooms = [`chat:${result.threadId}`]
+      participations.forEach(p => rooms.push(`user:${p.userId}`))
+      
+      const payload = {
+        threadId: result.threadId,
+        chatMessage: mapMessage(result.chatMessage, null, baseUrl),
+      }
+      
+      io.to(rooms).emit('chat:message', payload)
+    }
 
     return {
       status: 201,

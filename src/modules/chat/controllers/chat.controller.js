@@ -91,16 +91,24 @@ export default {
         where.id = { lt: cursor } // Assuming we want messages before the cursor
       }
 
+      const { mapMessage, messageInclude } = await import('../../offers/mappers.js')
+      const { absolutizeUrl } = await import('../../../lib/requestUrl.js')
+      
+      const baseUrl = absolutizeUrl('/', req)
+      
       const messages = await prisma.chatMessage.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: limit,
+        include: messageInclude,
       })
+
+      const reversed = messages.reverse()
 
       res.status(200).json({
         success: true,
         data: {
-          messages: messages.reverse(), // Return in chronological order
+          messages: reversed.map(m => mapMessage(m, user.id, baseUrl)), // Return mapped in chronological order
         },
       })
     } catch (err) {
