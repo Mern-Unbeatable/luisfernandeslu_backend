@@ -611,19 +611,6 @@ ${quantityNote}.`,
     if (!offer) throw httpError('Offer not found', 404, 'NotFound')
     assertOfferPayable(offer, { rejectRejected: true })
 
-    const existingOrder = await prisma.order.findFirst({
-      where: { quoteRequestId: quoteId, orderSource: 'QUOTE_CONVERSION' },
-      select: { id: true, orderNumber: true },
-    })
-    if (existingOrder) {
-      throw httpError(
-        'This quote was already converted to an order',
-        409,
-        'AlreadyConverted',
-        { orderId: existingOrder.id, orderNumber: existingOrder.orderNumber },
-      )
-    }
-
     const productId = offer.productId || quote.quoteItems?.[0]?.productId || null
 
     return payConvertedOffer({
