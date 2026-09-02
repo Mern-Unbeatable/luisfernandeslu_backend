@@ -55,7 +55,26 @@ export default {
       res.status(200).json({
         success: true,
         data: {
-          threads: threads.map((thread) => mapThreadSummary(thread, isUserOnline)),
+          threads: await Promise.all(threads.map(async (thread) => {
+            const myParticipant = thread.participants.find(p => p.userId === user.id)
+            let unreadCount = 0
+            
+            if (myParticipant) {
+              const lastReadAt = myParticipant.lastReadAt || new Date(0) // Default to epoch if never read
+              unreadCount = await prisma.chatMessage.count({
+                where: {
+                  chatThreadId: thread.id,
+                  createdAt: { gt: lastReadAt },
+                  senderId: { not: user.id } // Don't count my own messages
+                }
+              })
+            }
+            
+            return {
+              ...mapThreadSummary(thread, isUserOnline),
+              unreadCount
+            }
+          })),
         },
         pagination: {
           total,
@@ -115,4 +134,25 @@ export default {
       next(err)
     }
   },
+
+  async markAsRead(req, res, next) {
+    try {
+      const { id } = req.params
+      const user = req.user
+
+      const thread = await getThreadForUser(id, user)
+      if (!thread) {
+        return res.status(404).json({ success: false, error: 'ThreadNotFound' })
+      }
+
+      await prisma.chatThreadParticipant.update({
+        where: { threadId_userId: { threadId: id, userId: user.id } },
+        data: { lastReadAt: new Date() }
+      })
+
+      res.status(200).json({ success: true, message: 'Thread marked as read' })
+    } catch (error) {
+      next(error)
+    }
+  }
 }

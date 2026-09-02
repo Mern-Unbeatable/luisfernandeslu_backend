@@ -773,6 +773,7 @@ model ChatThreadParticipant {
   threadId   String
   userId     String
   joinedAt   DateTime @default(now())
+  lastReadAt DateTime?
 
   thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)

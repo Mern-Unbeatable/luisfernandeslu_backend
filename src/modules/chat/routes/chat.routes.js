@@ -11,5 +11,6 @@ router.use(requireAccessTokenWithUser)
 
 router.get('/threads', ChatController.listThreads)
 router.get('/threads/:threadId/messages', ChatController.listMessages)
+router.post('/threads/:id/read', ChatController.markAsRead)
 
 export default router
