@@ -111,7 +111,7 @@ export function registerLiveChatSocket(io) {
     socket.on('chat:open', async (payload = {}, ack) => {
       try {
         const thread = await openOrGetThread(socket.user, payload)
-        const summary = mapThreadSummary(thread)
+        const summary = mapThreadSummary(thread, isUserOnline)
         if (typeof ack === 'function') {
           ack({
             ok: true,
@@ -161,7 +161,7 @@ export function registerLiveChatSocket(io) {
             ok: true,
             threadId,
             room: chatRoom(threadId),
-            thread: mapThreadSummary(thread),
+            thread: mapThreadSummary(thread, isUserOnline),
           })
         }
 

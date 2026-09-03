@@ -1098,7 +1098,6 @@ class CheckoutService {
   }
 
   async suggestLocations(auth, query) {
-    this.assertBuyer(auth)
     const term = String(query.q || query.search || '').trim()
     const limit = Math.min(15, Math.max(1, Number(query.limit) || 8))
 

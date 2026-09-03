@@ -23,12 +23,14 @@ class CheckoutRoutes {
       checkoutController.eupagoWebhook(req, res, next),
     )
 
-    this.router.use(requireAccessToken, requireRoles('customer', 'company'))
+    this.router.use(requireAccessToken)
 
     this.router.get(
       '/suggest-locations',
       (req, res, next) => checkoutController.suggestLocations(req, res, next),
     )
+
+    this.router.use(requireRoles('customer', 'company'))
 
     this.router.post(
       '/direct-buy/quote',
