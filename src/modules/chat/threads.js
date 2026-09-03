@@ -93,7 +93,10 @@ export async function openOrGetThread(user, payload) {
   if (type === 'FACTORY_SUPPLIER') {
     return findOrCreateTypedThread({
       type,
-      where: { productId: meta.productId },
+      where: {
+        productId: meta.productId,
+        participants: { some: { userId: allowedUserIds[1] } },
+      },
       data: { productId: meta.productId },
       allowedUserIds,
     })
