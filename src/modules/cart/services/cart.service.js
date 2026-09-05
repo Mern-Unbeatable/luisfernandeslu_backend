@@ -346,9 +346,9 @@ class CartService {
   assertBuyer(auth) {
     if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
     const role = String(auth.role || '').toLowerCase()
-    if (role !== 'customer' && role !== 'company') {
+    if (role !== 'customer' && role !== 'company' && role !== 'supplier') {
       throw httpError(
-        'Only customer or company can manage cart',
+        'Only customer, company, or supplier can checkout',
         403,
         'Forbidden',
       )

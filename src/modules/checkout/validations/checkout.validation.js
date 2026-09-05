@@ -6,9 +6,9 @@ const uuid = z.string().uuid('Invalid id')
 const addressInlineSchema = z.object({
   title: z.string().trim().max(120).optional().nullable(),
   streetAddress: z.string().trim().min(1).max(500),
-  city: z.string().trim().min(1).max(120),
-  state: z.string().trim().min(1).max(120),
-  zipCode: z.string().trim().min(1).max(32),
+  city: z.string().trim().max(120).optional().default(''),
+  state: z.string().trim().max(120).optional().default(''),
+  zipCode: z.string().trim().max(32).optional().default(''),
   country: z.string().trim().min(1).max(120).default('Portugal'),
   latitude: z.coerce.number().optional().nullable(),
   longitude: z.coerce.number().optional().nullable(),

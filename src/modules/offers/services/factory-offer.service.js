@@ -73,11 +73,27 @@ class FactoryOfferService {
       throw httpError('supplierId must be a supplier user', 400, 'InvalidSupplier')
     }
 
-    const thread = await openOrGetThread(auth, {
-      type: 'FACTORY_SUPPLIER',
-      productId,
-      supplierId: body.supplierId,
-    })
+    let thread;
+    if (body.threadId) {
+      thread = await prisma.chatThread.findUnique({
+        where: { id: body.threadId },
+        include: { participants: true },
+      })
+      if (!thread || thread.type !== 'FACTORY_SUPPLIER') {
+        throw httpError('Invalid thread', 400, 'InvalidThread')
+      }
+      const hasAuth = thread.participants.some(p => p.userId === auth.id)
+      const hasSupplier = thread.participants.some(p => p.userId === body.supplierId)
+      if (!hasAuth || !hasSupplier) {
+        throw httpError('Invalid thread participants', 400, 'InvalidThread')
+      }
+    } else {
+      thread = await openOrGetThread(auth, {
+        type: 'FACTORY_SUPPLIER',
+        productId,
+        supplierId: body.supplierId,
+      })
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const offer = await tx.quoteOffer.create({
@@ -171,7 +187,7 @@ class FactoryOfferService {
     return factoryOrderService.list(auth, query)
   }
 
-  async pay(auth, offerId, baseUrl) {
+  async pay(auth, offerId, baseUrl, shippingFee = 0, paymentMethod = 'multibanco', mbwayPhone) {
     this.assertSupplier(auth)
 
     const offer = await prisma.quoteOffer.findFirst({
@@ -199,6 +215,9 @@ class FactoryOfferService {
       offerId,
       baseUrl,
       context: factoryPayContext,
+      shippingFee,
+      paymentMethod,
+      mbwayPhone,
     })
   }
 }

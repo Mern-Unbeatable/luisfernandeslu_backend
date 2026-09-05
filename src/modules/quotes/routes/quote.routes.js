@@ -83,7 +83,7 @@ class QuoteRoutes {
 
     this.router.post(
       '/:id/offers/:offerId/pay',
-      requireRoles('company'),
+      requireRoles('company', 'supplier'),
       validate(offerIdParamSchema, 'params'),
       (req, res, next) => quoteController.payOffer(req, res, next),
     )

@@ -35,6 +35,7 @@ export const listMessagesQuerySchema = z.object({
 /** Same fields as supplier → company offer card, plus who the offer is for. */
 export const createFactoryOfferBodySchema = z
   .object({
+    threadId: uuid.optional(),
     supplierId: userId,
     productId: uuid,
     warehouseLocation: z.string().trim().optional(),
@@ -43,7 +44,7 @@ export const createFactoryOfferBodySchema = z
     product: z.string().trim().optional(),
     totalQuantity: z.coerce.number().positive('Total quantity is required'),
     quantityUnit: z.string().trim().optional().default('bags'),
-    projectName: z.string().trim().min(1, 'Project name is required'),
+    projectName: z.string().trim().optional(),
     deliveryLocation: z.string().trim().min(1, 'Delivery location is required'),
     unloadingType: z.string().trim().min(1, 'Unloading type is required'),
     accessConditions: z.string().trim().min(1, 'Access conditions are required'),

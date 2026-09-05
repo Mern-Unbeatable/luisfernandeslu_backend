@@ -80,6 +80,7 @@ export function requireRoles(...roles) {
       return sendError(res, 401, 'Not authenticated', { error: 'Unauthorized' })
     }
     if (!allowed.includes(req.auth.role)) {
+      console.log(`[AUTH FAILED] User role '${req.auth.role}' is not in allowed roles: [${allowed.join(', ')}] for path ${req.originalUrl}`);
       return sendError(res, 403, 'Insufficient role permissions', {
         error: 'Forbidden',
       })

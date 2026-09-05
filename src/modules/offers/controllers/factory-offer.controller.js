@@ -27,6 +27,9 @@ export class FactoryOfferController {
         req.auth,
         req.params.offerId,
         resolveRequestBaseUrl(req),
+        Number(req.body?.shippingFee) || 0,
+        req.body?.paymentMethod || 'multibanco',
+        req.body?.mbwayPhone,
       )
       return sendResult(res, result)
     } catch (err) {

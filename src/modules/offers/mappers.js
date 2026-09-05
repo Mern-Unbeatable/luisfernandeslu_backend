@@ -44,7 +44,8 @@ export function mapOfferCard(offer) {
     ? Math.max(0, money(offer.totalPrice) - first.amount)
     : money(offer.totalPrice)
   const months = offer.installmentMonths || 0
-  const monthly = months > 0 ? money(remaining / months) : null
+  const remainingMonths = first ? Math.max(0, months - 1) : months
+  const monthly = remainingMonths > 0 ? money(remaining / remainingMonths) : null
 
   const pricing = [
     { label: 'Total Price', value: formatMoney(offer.totalPrice), icon: 'dollar' },
@@ -79,8 +80,8 @@ export function mapOfferCard(offer) {
       firstInstallment: first ? first.amountLabel : null,
       remainingBalance: formatMoney(remaining),
       note:
-        monthly != null && months > 0
-          ? `Pay ${formatMoney(monthly)}/month for ${months} months`
+        monthly != null && remainingMonths > 0
+          ? `Pay ${formatMoney(monthly)}/month for ${remainingMonths} month${remainingMonths === 1 ? '' : 's'}`
           : null,
     },
     createdAt: offer.createdAt,

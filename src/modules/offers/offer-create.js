@@ -32,7 +32,7 @@ export function offerCreateData(body, {
     productName: String(productName).trim(),
     totalQuantity: body.totalQuantity,
     quantityUnit: body.quantityUnit || 'bags',
-    projectName: body.projectName.trim(),
+    projectName: (body.projectName || 'N/A').trim(),
     deliveryLocation: body.deliveryLocation.trim(),
     unloadingType: body.unloadingType.trim(),
     accessConditions: body.accessConditions.trim(),

@@ -30,7 +30,7 @@ class CheckoutRoutes {
       (req, res, next) => checkoutController.suggestLocations(req, res, next),
     )
 
-    this.router.use(requireRoles('customer', 'company'))
+    this.router.use(requireRoles('customer', 'company', 'supplier'))
 
     this.router.post(
       '/direct-buy/quote',

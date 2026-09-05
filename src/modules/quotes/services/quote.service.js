@@ -597,11 +597,11 @@ ${quantityNote}.`,
   /**
    * Company → Pay offer (demo/mock). Creates QUOTE_CONVERSION chat order.
    */
-  async payOffer(auth, quoteId, offerId, baseUrl) {
-    this.assertCompany(auth)
+  async payOffer(auth, quoteId, offerId, baseUrl, shippingFee = 0, paymentMethod = 'multibanco', mbwayPhone) {
+    const role = this.assertParticipantRole(auth)
     const quote = await this.getAccessibleQuote(auth, quoteId)
-    if (quote.buyerId !== auth.id) {
-      throw httpError('Only the company buyer can pay this offer', 403, 'Forbidden')
+    if (quote.buyerId !== auth.id && quote.sellerId !== auth.id) {
+      throw httpError('Only quote participants can pay this offer', 403, 'Forbidden')
     }
 
     const offer = await prisma.quoteOffer.findFirst({
@@ -621,6 +621,9 @@ ${quantityNote}.`,
       baseUrl,
       context: quotePayContext,
       extra: { quote, quoteId },
+      shippingFee,
+      paymentMethod,
+      mbwayPhone,
     })
   }
 

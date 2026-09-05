@@ -6,6 +6,8 @@ import { splitName } from '../../shared/party.js'
 import { addMonths } from '../../shared/dates.js'
 import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
 import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
+import eupagoClient, { getAdminExternKey, getCommissionPercent, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
+import { resolveVatRate } from '../admin/settings/settings.store.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
   if (offer.status === 'PAID') {
@@ -24,12 +26,21 @@ async function loadBuyer(userId) {
       name: true,
       email: true,
       phoneNumber: true,
+      vatRate: true,
       addresses: {
         include: { address: true },
         orderBy: { createdAt: 'desc' },
       },
     },
   })
+}
+
+async function loadBuyerVatRate(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { vatRate: true },
+  })
+  return resolveVatRate(user?.vatRate)
 }
 
 async function createConversionRecords(tx, {
@@ -39,6 +50,10 @@ async function createConversionRecords(tx, {
   buyer,
   context,
   extra,
+  shippingFee = 0,
+  vatAmount = 0,
+  paymentMethod = 'multibanco',
+  mbwayPhone,
 }) {
   const quantity = Math.max(1, Math.round(Number(offer.totalQuantity) || 1))
   const total = money(offer.totalPrice)
@@ -84,7 +99,7 @@ async function createConversionRecords(tx, {
       checkoutNumber: checkoutNumber(),
       customerId: auth.id,
       paymentStatus: 'PAID',
-      paymentMethod: 'MULTIBANCO',
+      paymentMethod: String(paymentMethod || 'multibanco').toUpperCase(),
       firstName,
       lastName,
       email,
@@ -96,10 +111,10 @@ async function createConversionRecords(tx, {
       accessConditions: offer.accessConditions || null,
       additionalNotes: context.sessionNotes(offer),
       subTotal: total,
-      vatAmount: 0,
-      shippingFee: 0,
+      vatAmount: money(vatAmount),
+      shippingFee: money(shippingFee),
       discountAmount: 0,
-      grandTotal: total,
+      grandTotal: money(total + shippingFee + vatAmount),
       currency: env.currency,
       paidAt: now,
     },
@@ -120,10 +135,10 @@ async function createConversionRecords(tx, {
       orderStatus: 'NEW',
       orderSource: context.orderSource,
       subTotal: total,
-      vatAmount: 0,
-      shippingFee: 0,
+      vatAmount: money(vatAmount),
+      shippingFee: money(shippingFee),
       discountAmount: 0,
-      grandTotal: total,
+      grandTotal: money(total + shippingFee + vatAmount),
       unloadingType: offer.unloadingType || null,
       siteConditions: offer.accessConditions || null,
       orderLineItems: {
@@ -144,13 +159,14 @@ async function createConversionRecords(tx, {
   const offerInstallments = offer.installments?.length
     ? offer.installments
     : [{ installmentNumber: 1, amount: total, quantity }]
+  const grandTotal = money(total + shippingFee + vatAmount)
   const firstAmount = money(offerInstallments[0]?.amount || total)
-  const remaining = money(Math.max(0, total - firstAmount))
+  const remaining = money(Math.max(0, grandTotal - firstAmount))
 
   await tx.paymentPlan.create({
     data: {
       orderId: order.id,
-      totalAmount: total,
+      totalAmount: grandTotal,
       downPayment: firstAmount,
       remainingBalance: remaining,
       termMonths: offer.installmentMonths || offerInstallments.length || 1,
@@ -187,6 +203,9 @@ export async function payConvertedOffer({
   baseUrl,
   context,
   extra = {},
+  shippingFee = 0,
+  paymentMethod = 'multibanco',
+  mbwayPhone,
 }) {
   if (!productId) {
     throw httpError(
@@ -197,6 +216,10 @@ export async function payConvertedOffer({
   }
 
   const buyer = await loadBuyer(auth.id)
+  const vatRate = await loadBuyerVatRate(auth.id)
+  const subtotal = money(Number(offer.totalPrice) || 0)
+  const vatAmount = money(subtotal * (vatRate / 100))
+
   const result = await prisma.$transaction(async (tx) => {
     const converted = await createConversionRecords(tx, {
       auth,
@@ -205,6 +228,10 @@ export async function payConvertedOffer({
       buyer,
       context,
       extra,
+      shippingFee,
+      vatAmount,
+      paymentMethod,
+      mbwayPhone,
     })
     const followUp = await context.afterPaid(tx, {
       auth,
@@ -215,6 +242,93 @@ export async function payConvertedOffer({
     })
     return { ...converted, ...followUp }
   })
+
+  const mock = isMockPayments()
+  const adminExternKey = getAdminExternKey()
+
+  const sellerId = context.sellerId({ offer, extra })
+  const seller = await prisma.user.findUnique({
+    where: { id: sellerId },
+    select: {
+      id: true,
+      profile: { select: { eupagoExternKey: true, companyName: true } },
+    },
+  })
+  const sellerExternKey = seller?.profile?.eupagoExternKey?.trim()
+  if (!sellerExternKey && !mock) {
+    throw httpError(
+      'Seller payment is not configured',
+      400,
+      'SellerPaymentNotConfigured',
+    )
+  }
+
+  const commissionPercent = getCommissionPercent()
+  const grandTotal = money(result.order.grandTotal)
+  const sellerPayout = money(grandTotal * (1 - commissionPercent / 100))
+  const adminAmount = money(grandTotal - sellerPayout)
+
+  const splits = [
+    {
+      beneficiaryType: 'SELLER',
+      sellerId,
+      amount: sellerPayout,
+      externKey: sellerExternKey || `MOCK-SELLER-${sellerId}`,
+      identifier: `seller-${sellerId}`,
+    },
+    {
+      beneficiaryType: 'ADMIN',
+      sellerId: null,
+      amount: adminAmount,
+      externKey: adminExternKey || 'MOCK-ADMIN',
+      identifier: 'admin-commission',
+    },
+  ]
+
+  let eupagoUrl = null
+  const method = String(paymentMethod || 'multibanco').toLowerCase()
+  try {
+    const eupago = await eupagoClient.createSplitPayment({
+      paymentMethod: method,
+      amount: grandTotal,
+      identifier: result.session.checkoutNumber,
+      alias: method === 'mbway' ? mbwayPhone : undefined,
+      adminCallback: env.payments.eupago.callbackUrl || undefined,
+      beneficiaries: splits.map((s) => ({
+        externKey: s.externKey,
+        amount: s.amount,
+        identifier: `${result.session.checkoutNumber}-${s.identifier}`,
+        immediatePayment: false,
+      })),
+    })
+
+    await prisma.checkoutSession.update({
+      where: { id: result.session.id },
+      data: {
+        eupagoEntity: eupago.entity,
+        eupagoReference: eupago.reference || eupago.raw?.url || eupago.raw?.redirectUrl || null,
+      },
+    })
+
+    if (eupago.url) {
+      eupagoUrl = eupago.url
+    } else if (eupago.raw?.redirectUrl || eupago.raw?.url) {
+      eupagoUrl = eupago.raw.redirectUrl || eupago.raw.url
+    }
+  } catch (err) {
+    console.error('EuPago split payment failed, using mock fallback:', err.message)
+    const mockResult = createMockSplitPayment({ amount: grandTotal, identifier: result.session.checkoutNumber, paymentMethod: method })
+    await prisma.checkoutSession.update({
+      where: { id: result.session.id },
+      data: {
+        eupagoEntity: mockResult.entity,
+        eupagoReference: mockResult.reference,
+      },
+    })
+    if (mockResult.url) {
+      eupagoUrl = `${env.frontendUrl || 'http://localhost:5173'}/order/confirmation?id=${result.session.id}`
+    }
+  }
 
   const offerCard = mapOfferCard(result.offer)
   const chatMessage = mapMessage(result.chatMessage, auth.id, baseUrl)
@@ -233,6 +347,7 @@ export async function payConvertedOffer({
     body: {
       offer: offerCard,
       chatMessage,
+      url: eupagoUrl,
       order: {
         id: result.order.id,
         orderNumber: result.order.orderNumber,

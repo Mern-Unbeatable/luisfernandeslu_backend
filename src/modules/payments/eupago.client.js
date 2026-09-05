@@ -30,9 +30,10 @@ export function getCommissionPercent() {
   return n
 }
 
-export function createMockSplitPayment({ amount, identifier }) {
+export function createMockSplitPayment({ amount, identifier, paymentMethod }) {
   const ref = `MOCK${Date.now().toString().slice(-9)}`
-  return {
+  const method = String(paymentMethod || 'multibanco').toLowerCase()
+  const result = {
     transactionStatus: 'Success',
     entity: '00000',
     reference: ref,
@@ -46,6 +47,13 @@ export function createMockSplitPayment({ amount, identifier }) {
       identifier,
     },
   }
+
+  if (method === 'creditcard') {
+    result.url = `http://localhost:8080/api/checkout/webhook/eupago?mock=1&identifier=${identifier}`
+    result.raw.redirectUrl = result.url
+  }
+
+  return result
 }
 
 export async function createSplitPayment({
@@ -57,7 +65,7 @@ export async function createSplitPayment({
   adminCallback,
 }) {
   if (isMockPayments()) {
-    return createMockSplitPayment({ amount, identifier })
+    return createMockSplitPayment({ amount, identifier, paymentMethod })
   }
 
   const apiKey = env.payments.eupago.apiKey
@@ -137,6 +145,7 @@ export async function createSplitPayment({
     entity: data.entity ?? null,
     reference: data.reference ?? null,
     amount: data.amount != null ? String(data.amount) : String(money(amount)),
+    url: data.url ?? data.paymentUrl ?? data.redirectUrl ?? null,
     raw: data,
   }
 }
