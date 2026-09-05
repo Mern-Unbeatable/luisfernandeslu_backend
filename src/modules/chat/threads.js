@@ -8,6 +8,21 @@ import { mapThreadSummary } from './mappers.js'
 
 export { mapThreadSummary } from './mappers.js'
 
+const participantInclude = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      profile: {
+        select: { companyName: true },
+      },
+    },
+  },
+}
+
 async function syncParticipants(tx, threadId, userIds) {
   const unique = [...new Set(userIds.filter(Boolean))]
   for (const userId of unique) {
@@ -22,7 +37,7 @@ async function syncParticipants(tx, threadId, userIds) {
 async function findOrCreateTypedThread({ type, where, data, allowedUserIds }) {
   let thread = await prisma.chatThread.findFirst({
     where: { type, ...where },
-    include: { participants: true },
+    include: { participants: { include: participantInclude } },
   })
   if (!thread) {
     thread = await prisma.$transaction(async (tx) => {
@@ -30,7 +45,7 @@ async function findOrCreateTypedThread({ type, where, data, allowedUserIds }) {
       await syncParticipants(tx, created.id, allowedUserIds)
       return tx.chatThread.findUniqueOrThrow({
         where: { id: created.id },
-        include: { participants: true },
+        include: { participants: { include: participantInclude } },
       })
     })
   } else {
@@ -57,7 +72,7 @@ export async function openOrGetThread(user, payload) {
   if (type === 'QUOTE') {
     let thread = await prisma.chatThread.findUnique({
       where: { quoteRequestId: meta.quoteRequestId },
-      include: { participants: true },
+      include: { participants: { include: participantInclude } },
     })
     if (!thread) {
       thread = await prisma.$transaction(async (tx) => {
@@ -70,7 +85,7 @@ export async function openOrGetThread(user, payload) {
         await syncParticipants(tx, created.id, allowedUserIds)
         return tx.chatThread.findUniqueOrThrow({
           where: { id: created.id },
-          include: { participants: true },
+          include: { participants: { include: participantInclude } },
         })
       })
     } else {
@@ -141,7 +156,7 @@ export async function ensureQuoteThread(tx, { quoteRequestId, buyerId, sellerId 
 export async function getThreadForUser(threadId, user) {
   const thread = await prisma.chatThread.findUnique({
     where: { id: threadId },
-    include: { participants: true },
+    include: { participants: { include: participantInclude } },
   })
   if (!thread) return null
   const ok = await canAccessThread(user, thread)
