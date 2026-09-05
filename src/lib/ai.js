@@ -58,7 +58,7 @@ function maxOutputTokensFor(field) {
  * Product copy is simple — keep thinking as low as the model allows.
  * gemini-flash-latest defaults to heavy thinking (often 20–50s + hundreds of thought tokens).
  */
-function geminiThinkingConfig(model) {
+export function geminiThinkingConfig(model) {
   const id = String(model || '').toLowerCase()
   if (id.includes('2.5') || id.includes('2.0')) {
     return { thinkingBudget: 0 }
@@ -141,15 +141,14 @@ function openAiProvider() {
 }
 
 /**
- * Prod → Gemini first. Dev → OpenRouter first.
+ * Prod → Gemini first. Dev → Gemini first if available (or OpenRouter/OpenAI).
  * Remaining configured providers are fallbacks.
  */
-function resolveProvider() {
-  if (isProduction) {
-    return geminiProvider() || openAiProvider() || openRouterProvider()
-  }
-  return openRouterProvider() || geminiProvider() || openAiProvider()
+export function resolveProvider() {
+  // If Gemini API key is configured, use Gemini directly for high reliability and speed
+  return geminiProvider() || openRouterProvider() || openAiProvider()
 }
+
 
 async function callGemini(provider, prompt, field, { thinkingConfig } = {}) {
   const model = encodeURIComponent(provider.model)

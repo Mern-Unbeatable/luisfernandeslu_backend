@@ -64,6 +64,10 @@ class MarketplaceService {
         OR: [
           { title: { contains: search, mode: 'insensitive' } },
           { sku: { contains: search, mode: 'insensitive' } },
+          { shortDescription: { contains: search, mode: 'insensitive' } },
+          { category: { name: { contains: search, mode: 'insensitive' } } },
+          { category: { parentCategory: { name: { contains: search, mode: 'insensitive' } } } },
+          { category: { parentCategory: { parentCategory: { name: { contains: search, mode: 'insensitive' } } } } },
         ],
       })
     }
@@ -194,6 +198,89 @@ class MarketplaceService {
     }
   }
 
+  async getSuggestions(auth, query, baseUrl) {
+    const q = String(query.q || query.search || '').trim()
+    if (!q) {
+      return {
+        status: 200,
+        body: {
+          products: [],
+          categories: [],
+          message: 'Empty query',
+        },
+      }
+    }
+
+    const buyer = resolveBuyerView(auth)
+    const and = [
+      liveListingWhere(),
+      {
+        OR: [
+          { title: { contains: q, mode: 'insensitive' } },
+          { sku: { contains: q, mode: 'insensitive' } },
+          { shortDescription: { contains: q, mode: 'insensitive' } },
+          { category: { name: { contains: q, mode: 'insensitive' } } },
+          { category: { parentCategory: { name: { contains: q, mode: 'insensitive' } } } },
+        ],
+      },
+    ]
+
+    const [products, categories] = await Promise.all([
+      prisma.product.findMany({
+        where: { AND: and },
+        include: {
+          media: { orderBy: { sortOrder: 'asc' }, take: 2 },
+          category: { select: { id: true, name: true, slug: true } },
+        },
+        orderBy: [{ isFeatured: 'desc' }, { updatedAt: 'desc' }],
+        take: 5,
+      }),
+      prisma.category.findMany({
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { slug: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+        take: 4,
+      }),
+
+    ])
+
+    const mappedProducts = products.map((p) => {
+      const publicProductSlug = p.slug?.includes('__') ? p.slug.split('__').pop() : p.slug
+      const firstMedia = p.media?.[0]
+      const imageUrl = firstMedia
+        ? (firstMedia.mediaUrl?.startsWith('http') ? firstMedia.mediaUrl : `${baseUrl}${firstMedia.mediaUrl}`)
+        : null
+
+      return {
+        id: p.id,
+        title: p.title,
+        slug: publicProductSlug,
+        sku: p.sku,
+        basePrice: Number(p.basePrice) || 0,
+        unitOfMeasure: p.unitOfMeasure || 'bag',
+        image: imageUrl,
+        category: p.category ? { id: p.category.id, name: p.category.name, slug: p.category.slug } : null,
+      }
+    })
+
+    return {
+      status: 200,
+      body: {
+        products: mappedProducts,
+        categories,
+        message: 'Suggestions fetched',
+      },
+    }
+  }
+
   async getBySlug(auth, slugParam, baseUrl) {
     const buyer = resolveBuyerView(auth)
     const slug = String(slugParam || '')
@@ -229,3 +316,4 @@ class MarketplaceService {
 }
 
 export default new MarketplaceService()
+

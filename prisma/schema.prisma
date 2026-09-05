@@ -139,7 +139,9 @@ enum ChatThreadType {
   ORDER_TRANSPORT
   FACTORY_SUPPLIER
   ADMIN_SUPPORT
+  DISPUTE
 }
+
 
 enum QuoteOfferStatus {
   PENDING_RESPONSE
@@ -291,10 +293,12 @@ model User {
   checkoutSessions   CheckoutSession[]
   erpApiKeys        SupplierErpApiKey[]
   insurancePolicies TransporterInsurance[]
+  assistantMessages  AssistantChatMessage[]
 
   @@index([role, status])
   @@map("user")
 }
+
 
 model SupplierErpApiKey {
   id          String   @id @default(uuid())
@@ -1442,3 +1446,18 @@ model EmailOtp {
   @@index([email])
   @@map("email_otp")
 }
+
+model AssistantChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  role      String   // "user" or "assistant"
+  type      String   @default("text") // "text" or "products"
+  text      String?  @db.Text
+  products  Json?    // JSON array of recommended product cards
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("assistant_chat_message")
+}

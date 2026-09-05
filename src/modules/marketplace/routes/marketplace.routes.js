@@ -5,6 +5,7 @@ import {
   marketplaceProductSlugParamSchema,
   marketplaceSimpleListQuerySchema,
   marketplaceSponsoredListQuerySchema,
+  marketplaceSuggestionsQuerySchema,
 } from '../validations/marketplace.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import { optionalAccessToken } from '../../../middlewares/auth.middleware.js'
@@ -18,6 +19,12 @@ class MarketplaceRoutes {
   initRoutes() {
     // Optional Bearer: guest/customer = retail, company = B2B fields
     this.router.use(optionalAccessToken)
+
+    this.router.get(
+      '/suggestions',
+      validate(marketplaceSuggestionsQuerySchema, 'query'),
+      (req, res, next) => marketplaceController.getSuggestions(req, res, next),
+    )
 
     this.router.get(
       '/sponsored',
@@ -43,6 +50,7 @@ class MarketplaceRoutes {
       (req, res, next) => marketplaceController.getBySlug(req, res, next),
     )
   }
+
 
   getRoutes() {
     return this.router

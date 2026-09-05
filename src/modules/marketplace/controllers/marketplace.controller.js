@@ -51,6 +51,19 @@ export class MarketplaceController {
     }
   }
 
+  async getSuggestions(req, res, next) {
+    try {
+      const result = await marketplaceService.getSuggestions(
+        req.auth,
+        req.query,
+        resolveRequestBaseUrl(req),
+      )
+      return sendResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async getBySlug(req, res, next) {
     try {
       const result = await marketplaceService.getBySlug(
@@ -66,3 +79,4 @@ export class MarketplaceController {
 }
 
 export default new MarketplaceController()
+

@@ -26,6 +26,10 @@ export const marketplaceSponsoredListQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(50).optional().default(8),
 })
 
+export const marketplaceSuggestionsQuerySchema = z.object({
+  q: z.string().trim().optional().default(''),
+})
+
 export const marketplaceProductSlugParamSchema = z.object({
   slug: z
     .string()
@@ -34,3 +38,4 @@ export const marketplaceProductSlugParamSchema = z.object({
     .max(120)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug'),
 })
+
