@@ -17,7 +17,11 @@ import {
   mapThreadSummary,
 } from '../modules/chat/threads.js'
 import { postQuoteTextMessage } from '../modules/chat/messages.js'
-import { chatRoom, quoteRoom, emitToChat } from './io.js'
+import { chatRoom, quoteRoom, disputeRoom, emitToChat, emitToDispute } from './io.js'
+import {
+  addDisputeMessage,
+  getDisputeMessages,
+} from '../modules/disputes/data/disputes.store.js'
 import prisma from '../../lib/prisma.js'
 
 function parseToken(socket) {
@@ -435,6 +439,81 @@ export function registerLiveChatSocket(io) {
       }
     })
 
+    // ——— Dispute Live Chat (Admin, Supplier, Buyer - no sidebar) ———
+    socket.on('dispute:join', async (payload = {}, ack) => {
+      try {
+        const disputeId = payload.disputeId || socket.data.activeDisputeId
+        if (!disputeId) throw new Error('disputeId is required')
+
+        await socket.join(disputeRoom(disputeId))
+        socket.data.activeDisputeId = disputeId
+
+        const messages = getDisputeMessages(disputeId)
+
+        if (typeof ack === 'function') {
+          ack({ ok: true, disputeId, room: disputeRoom(disputeId), messages })
+        }
+
+        socket.to(disputeRoom(disputeId)).emit('dispute:presence', {
+          disputeId,
+          userId: socket.user.id,
+          name: socket.user.name,
+          role: socket.user.role,
+          status: 'joined',
+        })
+      } catch (err) {
+        const message = err.message || 'Failed to join dispute chat'
+        if (typeof ack === 'function') ack({ ok: false, message })
+        socket.emit('dispute:error', { message })
+      }
+    })
+
+    socket.on('dispute:leave', async (payload = {}, ack) => {
+      const disputeId = payload.disputeId || socket.data.activeDisputeId
+      if (disputeId) {
+        await socket.leave(disputeRoom(disputeId))
+        socket.to(disputeRoom(disputeId)).emit('dispute:presence', {
+          disputeId,
+          userId: socket.user.id,
+          status: 'left',
+        })
+        if (socket.data.activeDisputeId === disputeId) {
+          socket.data.activeDisputeId = null
+        }
+      }
+      if (typeof ack === 'function') ack({ ok: true })
+    })
+
+    socket.on('dispute:message', async (payload = {}, ack) => {
+      try {
+        const disputeId = payload.disputeId || socket.data.activeDisputeId
+        const text = payload.text || payload.message
+        if (!disputeId) throw new Error('disputeId is required')
+        if (!text || !String(text).trim()) throw new Error('text is required')
+
+        const message = addDisputeMessage(disputeId, {
+          senderId: socket.user.id,
+          author: socket.user.name,
+          role: socket.user.role,
+          text,
+          attachments: payload.attachments || [],
+        })
+
+        emitToDispute(disputeId, 'dispute:message', {
+          disputeId,
+          message,
+        })
+
+        if (typeof ack === 'function') {
+          ack({ ok: true, disputeId, message })
+        }
+      } catch (err) {
+        const message = err.message || 'Failed to send dispute message'
+        if (typeof ack === 'function') ack({ ok: false, message })
+        socket.emit('dispute:error', { message })
+      }
+    })
+
     socket.on('disconnect', () => {
       markOffline(socket.user.id, socket.id)
       const stillOnline = isUserOnline(socket.user.id)
@@ -452,6 +531,14 @@ export function registerLiveChatSocket(io) {
       if (quoteId) {
         socket.to(quoteRoom(quoteId)).emit('quote:presence', {
           quoteId,
+          userId: socket.user.id,
+          status: stillOnline ? 'left' : 'offline',
+        })
+      }
+      const disputeId = socket.data.activeDisputeId
+      if (disputeId) {
+        socket.to(disputeRoom(disputeId)).emit('dispute:presence', {
+          disputeId,
           userId: socket.user.id,
           status: stillOnline ? 'left' : 'offline',
         })

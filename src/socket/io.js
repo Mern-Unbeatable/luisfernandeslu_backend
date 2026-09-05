@@ -16,6 +16,10 @@ export function chatRoom(threadId) {
   return `chat:${threadId}`
 }
 
+export function disputeRoom(disputeId) {
+  return `dispute:${disputeId}`
+}
+
 /**
  * Emit to quote room. Safe no-op if socket not ready.
  */
@@ -30,6 +34,14 @@ export function emitToQuote(quoteId, event, payload) {
 export function emitToChat(threadId, event, payload) {
   if (!io || !threadId) return
   io.to(chatRoom(threadId)).emit(event, payload)
+}
+
+/**
+ * Emit to dispute room.
+ */
+export function emitToDispute(disputeId, event, payload) {
+  if (!io || !disputeId) return
+  io.to(disputeRoom(disputeId)).emit(event, payload)
 }
 
 /**

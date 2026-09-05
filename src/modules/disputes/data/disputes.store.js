@@ -44,6 +44,7 @@ function seedRow(partial) {
       },
     ],
     createdAt: `${partial.registered}, 2:10 PM`,
+    messages: partial.messages || [],
     ...partial,
   }
 }
@@ -65,7 +66,7 @@ const state = {
       supplier: 'Tech Haven',
       issue: 'Damaged Item',
       registered: '2026-05-01',
-      messageCount: 3,
+      messageCount: 4,
       items: [
         {
           id: 'di1',
@@ -83,6 +84,48 @@ const state = {
         },
       ],
       createdAt: '3/15/2024, 2:10 PM',
+      messages: [
+        {
+          id: 'msg-001',
+          senderId: 'buyer-001',
+          author: 'Alex Johnson',
+          roleLabel: 'Buyer',
+          role: 'buyer',
+          align: 'right',
+          at: '04:30 PM',
+          text: 'received the package today, but the headphones sound like something is loose inside.',
+        },
+        {
+          id: 'msg-002',
+          senderId: 'supp-001',
+          author: 'Tech Haven',
+          roleLabel: 'Seller',
+          role: 'supplier',
+          align: 'left',
+          at: '09:45 PM',
+          text: 'We are sorry to hear that. Could you please provide a video showing the rattling sound?',
+        },
+        {
+          id: 'msg-003',
+          senderId: 'buyer-001',
+          author: 'Alex Johnson',
+          roleLabel: 'Buyer',
+          role: 'buyer',
+          align: 'right',
+          at: '03:10 PM',
+          text: "I've uploaded photos of the box which was slightly crushed. I'll try to record the sound.",
+        },
+        {
+          id: 'msg-004',
+          senderId: 'admin-001',
+          author: 'Tech Haven',
+          roleLabel: 'Admin',
+          role: 'admin',
+          align: 'left',
+          at: '09:45 PM',
+          text: 'We are sorry to hear that. Could you please provide a video showing the rattling sound?',
+        },
+      ],
     }),
     seedRow({
       id: 'disp-002',
@@ -200,6 +243,7 @@ function toDetail(row) {
     description: row.description,
     items: clone(row.items),
     evidence: clone(row.evidence),
+    messages: clone(row.messages || []),
     chat: chatPayload(row.id),
   }
 }
@@ -279,3 +323,50 @@ export function updateDisputeStatus(disputeId, status) {
   row.status = status
   return toStaffListItem(row)
 }
+
+function formatMessageTime(date = new Date()) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date)
+}
+
+export function addDisputeMessage(disputeId, { senderId, author, role, text, attachments = [] }) {
+  const row = findDispute(disputeId)
+  if (!row) throw notFound('Dispute not found')
+  if (!row.messages) row.messages = []
+
+  const isBuyerRole = role === 'customer' || role === 'company' || role === 'buyer'
+  const isSupplierRole = role === 'supplier' || role === 'seller'
+  const isStaffRole = role === 'admin'
+
+  let roleLabel = 'Buyer'
+  if (isSupplierRole) roleLabel = 'Seller'
+  else if (isStaffRole) roleLabel = 'Admin'
+
+  const message = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    disputeId,
+    senderId: senderId || 'unknown',
+    author: author || (isStaffRole ? 'Admin' : isSupplierRole ? (row.supplier || 'Seller') : (row.customer || 'Buyer')),
+    roleLabel,
+    role: isBuyerRole ? 'buyer' : isSupplierRole ? 'supplier' : 'admin',
+    align: isBuyerRole ? 'right' : 'left',
+    at: formatMessageTime(),
+    text: String(text || '').trim(),
+    attachments: Array.isArray(attachments) ? attachments : [],
+    createdAt: new Date().toISOString(),
+  }
+
+  row.messages.push(message)
+  row.messageCount = row.messages.length
+  return message
+}
+
+export function getDisputeMessages(disputeId) {
+  const row = findDispute(disputeId)
+  if (!row) throw notFound('Dispute not found')
+  return clone(row.messages || [])
+}
+

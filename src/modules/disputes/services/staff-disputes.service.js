@@ -3,6 +3,7 @@ import {
   listStaffDisputes,
   updateDisputeStatus,
 } from '../data/disputes.store.js'
+import { emitToDispute } from '../../../socket/io.js'
 
 export class StaffDisputesService {
   async list() {
@@ -14,7 +15,9 @@ export class StaffDisputesService {
   }
 
   async updateStatus(disputeId, status) {
-    return { status: 200, body: updateDisputeStatus(disputeId, status) }
+    const updated = updateDisputeStatus(disputeId, status)
+    emitToDispute(disputeId, 'dispute:status', { disputeId, status })
+    return { status: 200, body: updated }
   }
 }
 
