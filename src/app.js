@@ -18,6 +18,7 @@ import addressRoutes from './modules/addresses/routes/address.routes.js'
 import checkoutRoutes from './modules/checkout/routes/checkout.routes.js'
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js'
 import productRoutes from './modules/products/routes/product.routes.js'
+import adminDashboardRoutes from './modules/admin/dashboard/routes/dashboard.routes.js'
 import adminUserRoutes from './modules/admin/users/routes/user.routes.js'
 import adminSupplierRoutes from './modules/admin/suppliers/routes/supplier.routes.js'
 import adminFactoryRoutes from './modules/admin/factories/routes/factory.routes.js'
@@ -181,6 +182,7 @@ app.use('/api/company/projects', companyProjectRoutes)
 app.use('/api/customer/profile', buyerProfileRoutes)
 app.use('/api/company/profile', buyerProfileRoutes)
 app.use('/api/factory-offers', factoryOfferRoutes)
+app.use('/api/admin/dashboard', adminDashboardRoutes)
 app.use('/api/admin/users', adminUserRoutes)
 app.use('/api/supplier/commission-invoices', partyCommissionInvoiceRoutes('supplier'))
 app.use('/api/factory/commission-invoices', partyCommissionInvoiceRoutes('factory'))
