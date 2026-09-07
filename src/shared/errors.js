@@ -39,16 +39,34 @@ function collectErrorCodes(err) {
   return codes
 }
 
-/** Prisma 7 + pg adapter often wraps a refused DB socket in an empty findUnique message. */
+/** Prisma 7 + pg adapter error mappings. */
 export function mapDatabaseError(err) {
   if (!err) return null
   const codes = collectErrorCodes(err)
-  if (!codes.some((code) => DB_UNREACHABLE_CODES.has(code))) return null
-  return httpError(
-    'Database is unreachable. Check DATABASE_URL and that Postgres is running.',
-    503,
-    'DatabaseUnavailable',
-  )
+  if (codes.some((code) => DB_UNREACHABLE_CODES.has(code))) {
+    return httpError(
+      'Database is unreachable. Check DATABASE_URL and that Postgres is running.',
+      503,
+      'DatabaseUnavailable',
+    )
+  }
+
+  const msg = String(err.message || '')
+  if (
+    codes.includes('P2003') ||
+    codes.includes('23001') ||
+    codes.includes('23503') ||
+    msg.includes('foreign key constraint') ||
+    msg.includes('violates RESTRICT setting')
+  ) {
+    return httpError(
+      'This record cannot be deleted because it is linked to existing orders, transactions, or history in the system. Please suspend or deactivate it instead.',
+      409,
+      'HasRelatedRecords',
+    )
+  }
+
+  return null
 }
 
 export { AppError }

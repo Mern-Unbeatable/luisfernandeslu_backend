@@ -240,9 +240,13 @@ class AdminSupplierService {
     try {
       await prisma.user.delete({ where: { id: supplierId } })
     } catch (err) {
-      if (err?.code === 'P2003') {
+      const isForeignKeyViolation =
+        err?.code === 'P2003' ||
+        err?.message?.includes('foreign key constraint') ||
+        err?.message?.includes('RESTRICT setting')
+      if (isForeignKeyViolation) {
         throw httpError(
-          'Supplier cannot be deleted because related records exist',
+          'Supplier cannot be deleted because related records exist (orders, products, invoices). Please suspend the supplier instead.',
           409,
           'HasRelatedRecords',
         )

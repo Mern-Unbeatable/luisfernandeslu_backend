@@ -225,9 +225,13 @@ class AdminUserService {
     try {
       await prisma.user.delete({ where: { id: userId } })
     } catch (err) {
-      if (err?.code === 'P2003') {
+      const isForeignKeyViolation =
+        err?.code === 'P2003' ||
+        err?.message?.includes('foreign key constraint') ||
+        err?.message?.includes('RESTRICT setting')
+      if (isForeignKeyViolation) {
         throw httpError(
-          'User cannot be deleted because related records exist (orders, chats, etc.)',
+          'User cannot be deleted because they have associated orders or financial records in the database. Please suspend the user instead, or remove their orders first.',
           409,
           'HasRelatedRecords',
         )
