@@ -134,6 +134,7 @@ export function getCorsOrigins() {
         env.frontendUrl,
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'https://luisfernandeslu.maktechgroup.tech',
         'https://dev.luisfernandeslu.maktechgroup.tech',
         env.frontendUrlExtra,
       ]

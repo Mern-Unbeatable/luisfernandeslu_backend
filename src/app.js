@@ -92,7 +92,11 @@ app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true)
-      if (corsOrigins.includes(origin)) return callback(null, true)
+      const allowed =
+        corsOrigins.includes(origin) ||
+        /\.maktechgroup\.tech$/.test(new URL(origin).hostname) ||
+        new URL(origin).hostname === 'maktechgroup.tech'
+      if (allowed) return callback(null, true)
       return callback(new Error(`CORS blocked for origin: ${origin}`))
     },
     credentials: true,
