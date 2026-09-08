@@ -36,12 +36,11 @@ function pickPrimaryAddress(user) {
 function docsFromProfile(profile, baseUrl) {
   if (!profile) return []
   const docs = [
-    ['companyCertificateUrl', 'Company Certificate'],
-    ['commercialRegistrationUrl', 'Commercial Registration'],
-    ['nifDocumentUrl', 'NIF Document'],
+    ['ibanProofUrl', 'IBAN Proof'],
+    ['insuranceDocumentUrl', 'Civil Liability Insurance'],
+    ['transporterInsuranceUrl', 'Transporter Civil Liability Insurance'],
     ['idDocumentUrl', 'ID Proof'],
     ['addressProofUrl', 'Address Proof'],
-    ['ibanProofUrl', 'IBAN Proof'],
   ]
   const out = []
   for (const [key, label] of docs) {

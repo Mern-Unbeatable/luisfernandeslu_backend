@@ -26,6 +26,8 @@ function mapProfile(user, baseUrl) {
     avatarUrl: user.image ? absolutizeUrl(user.image, baseUrl) : null,
     iban: user.profile?.ibanNumber || '',
     ibanPhone: user.profile?.ibanPhone || '',
+    rejectionReason: user.profile?.rejectionReason || null,
+    verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
   }
 }
 
@@ -38,7 +40,15 @@ async function loadUser(userId) {
       email: true,
       phoneNumber: true,
       image: true,
-      profile: { select: { companyName: true, ibanNumber: true, ibanPhone: true } },
+      profile: {
+        select: {
+          companyName: true,
+          ibanNumber: true,
+          ibanPhone: true,
+          rejectionReason: true,
+          verificationStatus: true,
+        },
+      },
     },
   })
   if (!user) throw notFound('Transporter not found')
@@ -212,6 +222,57 @@ export class TransporterProfileService {
 
     const next = await toBody(userId, baseUrl)
     return { status: 200, body: { ...next, message: 'Avatar removed' } }
+  }
+
+  async resubmitDocuments(auth, files) {
+    const userId = assertTransporter(auth, 'Only transporters can re-submit documents')
+    
+    const profile = await prisma.businessProfile.findUnique({
+      where: { userId },
+      select: { verificationStatus: true },
+    })
+
+    if (!profile || profile.verificationStatus !== 'REJECTED') {
+      throw httpError('Only rejected accounts can re-submit documents', 400, 'InvalidStatus')
+    }
+
+    const documentFields = [
+      'ibanProofUrl',
+      'insuranceDocumentUrl',
+      'transporterInsuranceUrl',
+      'idDocumentUrl',
+      'addressProofUrl',
+    ]
+
+    const updateData = { verificationStatus: 'PENDING_REVIEW', rejectionReason: null }
+    const byField = {}
+
+    if (files && Array.isArray(files)) {
+      for (const file of files) {
+        const fieldName = file.fieldname
+        if (!documentFields.includes(fieldName)) continue
+        if (!byField[fieldName]) byField[fieldName] = []
+        byField[fieldName].push(`/uploads/transporter/resubmit/${file.filename}`)
+      }
+    }
+
+    for (const [fieldName, urls] of Object.entries(byField)) {
+      updateData[fieldName] = JSON.stringify(urls)
+    }
+
+    await prisma.businessProfile.update({
+      where: { userId },
+      data: updateData,
+    })
+
+    return {
+      status: 200,
+      body: {
+        message: 'Documents re-submitted for review',
+        verificationStatus: 'PENDING_REVIEW',
+        rejectionReason: null,
+      },
+    }
   }
 }
 

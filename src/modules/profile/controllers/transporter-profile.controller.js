@@ -86,6 +86,17 @@ export class TransporterProfileController {
       next(err)
     }
   }
+
+  async resubmitDocuments(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await transporterProfileService.resubmitDocuments(req.auth, req.files),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new TransporterProfileController()

@@ -69,6 +69,17 @@ export class FactoryProfileController {
       next(err)
     }
   }
+
+  async resubmitDocuments(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await factoryProfileService.resubmitDocuments(req.auth, req.files),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new FactoryProfileController()

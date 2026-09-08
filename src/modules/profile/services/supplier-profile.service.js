@@ -33,6 +33,8 @@ function mapProfile(user, warehouses, baseUrl) {
     warehouses,
     iban: user.profile?.ibanNumber || '',
     ibanPhone: user.phoneNumber || '',
+    rejectionReason: user.profile?.rejectionReason || null,
+    verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
   }
 }
 
@@ -45,7 +47,14 @@ async function loadUser(userId) {
       email: true,
       phoneNumber: true,
       image: true,
-      profile: { select: { companyName: true, ibanNumber: true } },
+      profile: {
+        select: {
+          companyName: true,
+          ibanNumber: true,
+          rejectionReason: true,
+          verificationStatus: true,
+        },
+      },
       addresses: {
         where: { addressType: 'WAREHOUSE' },
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
@@ -282,6 +291,59 @@ export class SupplierProfileService {
 
     const next = await toBody(sellerId, baseUrl)
     return { status: 200, body: { ...next, message: 'IBAN saved' } }
+  }
+
+  async resubmitDocuments(auth, files) {
+    const sellerId = assertSupplier(auth, 'Only suppliers can re-submit documents')
+    
+    const profile = await prisma.businessProfile.findUnique({
+      where: { userId: sellerId },
+      select: { verificationStatus: true },
+    })
+
+    if (!profile || profile.verificationStatus !== 'REJECTED') {
+      throw httpError('Only rejected accounts can re-submit documents', 400, 'InvalidStatus')
+    }
+
+    const documentFields = [
+      'companyCertificateUrl',
+      'commercialRegistrationUrl',
+      'nifDocumentUrl',
+      'idDocumentUrl',
+      'addressProofUrl',
+      'ibanProofUrl',
+    ]
+
+    const updateData = { verificationStatus: 'PENDING_REVIEW', rejectionReason: null }
+    const byField = {}
+
+    if (files && Array.isArray(files)) {
+      for (const file of files) {
+        const fieldName = file.fieldname
+        if (!documentFields.includes(fieldName)) continue
+        if (!byField[fieldName]) byField[fieldName] = []
+        byField[fieldName].push(`/uploads/supplier/resubmit/${file.filename}`)
+      }
+    }
+
+    for (const [fieldName, urls] of Object.entries(byField)) {
+      updateData[fieldName] = JSON.stringify(urls)
+    }
+
+    // Stay SUSPENDED until admin re-approves — only clear rejection + mark pending review
+    await prisma.businessProfile.update({
+      where: { userId: sellerId },
+      data: updateData,
+    })
+
+    return {
+      status: 200,
+      body: {
+        message: 'Documents re-submitted for review',
+        verificationStatus: 'PENDING_REVIEW',
+        rejectionReason: null,
+      },
+    }
   }
 }
 

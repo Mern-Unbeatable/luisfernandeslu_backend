@@ -11,6 +11,10 @@ import {
   urlsJsonForField,
 } from '../upload.js'
 import { formatProfileForResponse } from '../../../lib/requestUrl.js'
+import {
+  accountDisabledMessage,
+  isAuthDeniedStatus,
+} from '../../../lib/accountAccess.js'
 import { signAccessToken, signPasswordResetToken, extractBearerToken, verifyAccessToken } from '../../../lib/jwt.js'
 import { httpError } from '../../../shared/errors.js'
 import { env } from '../../../config/env.js'
@@ -397,9 +401,10 @@ export class AuthService {
       )
     }
 
-    if (existing.status === 'BLOCKED' || existing.status === 'SUSPENDED') {
+    // SUSPENDED is allowed — rejected business accounts must re-upload docs
+    if (isAuthDeniedStatus(existing.status)) {
       throw httpError(
-        `Account is ${String(existing.status).toLowerCase()}`,
+        accountDisabledMessage(existing.status),
         403,
         'AccountDisabled',
       )

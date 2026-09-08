@@ -14,6 +14,7 @@ import {
   avatarUpload,
   AVATAR_FILE_FIELDS,
 } from '../../../shared/upload/evidence-upload.js'
+import { resubmitUpload } from '../upload.js'
 
 class TransporterProfileRoutes {
   constructor() {
@@ -57,6 +58,12 @@ class TransporterProfileRoutes {
 
     this.router.delete('/avatar', (req, res, next) =>
       transporterProfileController.removeAvatar(req, res, next),
+    )
+
+    this.router.post(
+      '/resubmit-documents',
+      resubmitUpload.any(),
+      (req, res, next) => transporterProfileController.resubmitDocuments(req, res, next),
     )
   }
 

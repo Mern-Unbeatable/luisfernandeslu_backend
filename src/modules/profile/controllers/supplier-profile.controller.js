@@ -69,6 +69,17 @@ export class SupplierProfileController {
       next(err)
     }
   }
+
+  async resubmitDocuments(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await supplierProfileService.resubmitDocuments(req.auth, req.files),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new SupplierProfileController()

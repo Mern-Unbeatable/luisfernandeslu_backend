@@ -5,6 +5,10 @@ import {
 import prisma from '../../lib/prisma.js'
 import { sendError } from '../utils/apiResponse.js'
 import { AppError } from '../utils/AppError.js'
+import {
+  accountDisabledMessage,
+  isAuthDeniedStatus,
+} from '../lib/accountAccess.js'
 
 /**
  * Shared auth middleware — use on any protected route:
@@ -113,11 +117,11 @@ export async function requireAccessTokenWithUser(req, res, next) {
         return sendError(res, 401, 'User not found', { error: 'Unauthorized' })
       }
 
-      if (user.status === 'BLOCKED' || user.status === 'SUSPENDED') {
+      if (isAuthDeniedStatus(user.status)) {
         return sendError(
           res,
           403,
-          `Account is ${String(user.status).toLowerCase()}`,
+          accountDisabledMessage(user.status),
           { error: 'AccountDisabled' },
         )
       }

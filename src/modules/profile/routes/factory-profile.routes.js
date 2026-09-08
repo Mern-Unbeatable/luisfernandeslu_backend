@@ -11,6 +11,7 @@ import {
   requireAccessToken,
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
+import { resubmitUpload } from '../upload.js'
 
 class FactoryProfileRoutes {
   constructor() {
@@ -49,6 +50,12 @@ class FactoryProfileRoutes {
       '/iban',
       validate(saveFactoryIbanBodySchema, 'body'),
       (req, res, next) => factoryProfileController.saveIban(req, res, next),
+    )
+
+    this.router.post(
+      '/resubmit-documents',
+      resubmitUpload.any(),
+      (req, res, next) => factoryProfileController.resubmitDocuments(req, res, next),
     )
   }
 

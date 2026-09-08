@@ -11,6 +11,7 @@ import {
   requireAccessToken,
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
+import { resubmitUpload } from '../upload.js'
 
 class SupplierProfileRoutes {
   constructor() {
@@ -49,6 +50,12 @@ class SupplierProfileRoutes {
       '/iban',
       validate(saveSupplierIbanBodySchema, 'body'),
       (req, res, next) => supplierProfileController.saveIban(req, res, next),
+    )
+
+    this.router.post(
+      '/resubmit-documents',
+      resubmitUpload.any(),
+      (req, res, next) => supplierProfileController.resubmitDocuments(req, res, next),
     )
   }
 

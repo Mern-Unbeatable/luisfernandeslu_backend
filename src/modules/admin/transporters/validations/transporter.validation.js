@@ -32,12 +32,11 @@ export const rejectAdminTransporterBodySchema = z.object({
   invalidDocuments: z
     .array(
       z.enum([
-        'companyCertificateUrl',
-        'commercialRegistrationUrl',
-        'nifDocumentUrl',
+        'ibanProofUrl',
+        'insuranceDocumentUrl',
+        'transporterInsuranceUrl',
         'idDocumentUrl',
         'addressProofUrl',
-        'ibanProofUrl',
       ]),
     )
     .optional()

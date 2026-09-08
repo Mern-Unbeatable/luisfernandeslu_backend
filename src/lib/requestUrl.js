@@ -97,6 +97,8 @@ export const ROLE_PROFILE_FIELDS = {
     'ibanProofUrl',
     'insuranceDocumentUrl',
     'transporterInsuranceUrl',
+    'idDocumentUrl',
+    'addressProofUrl',
     'verificationStatus',
     'rejectionReason',
     'createdAt',
