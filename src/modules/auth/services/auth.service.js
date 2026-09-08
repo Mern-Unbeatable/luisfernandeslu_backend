@@ -15,6 +15,10 @@ import {
   accountDisabledMessage,
   isAuthDeniedStatus,
 } from '../../../lib/accountAccess.js'
+import {
+  attachStaffAccessToUser,
+  getAdminStaffAccess,
+} from '../staffAccess.js'
 import { signAccessToken, signPasswordResetToken, extractBearerToken, verifyAccessToken } from '../../../lib/jwt.js'
 import { httpError } from '../../../shared/errors.js'
 import { env } from '../../../config/env.js'
@@ -452,22 +456,30 @@ export class AuthService {
       status: existing.status,
     })
 
+    const baseUser = {
+      id: existing.id,
+      email: user.email || existing.email,
+      name: user.name || existing.name,
+      role,
+      status: existing.status,
+      phoneNumber: existing.phoneNumber,
+      image: existing.image,
+      emailVerified: existing.emailVerified,
+    }
+
+    let responseUser = baseUser
+    if (String(existing.role).toUpperCase() === 'ADMIN' || role === 'admin') {
+      const staffAccess = await getAdminStaffAccess(existing.id)
+      responseUser = attachStaffAccessToUser(baseUser, staffAccess)
+    }
+
     return {
       status: 200,
       cookies: [],
       body: {
         accessToken,
         tokenType: 'Bearer',
-        user: {
-          id: existing.id,
-          email: user.email || existing.email,
-          name: user.name || existing.name,
-          role,
-          status: existing.status,
-          phoneNumber: existing.phoneNumber,
-          image: existing.image,
-          emailVerified: existing.emailVerified,
-        },
+        user: responseUser,
         profile: formatProfileForResponse(
           existing.profile,
           publicBase,
@@ -769,17 +781,25 @@ export class AuthService {
       throw httpError('User not found', 401, 'Unauthorized')
     }
 
+    const baseUser = {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      role: String(dbUser.role).toLowerCase(),
+      status: dbUser.status,
+      phoneNumber: dbUser.phoneNumber,
+      image: dbUser.image,
+      emailVerified: dbUser.emailVerified,
+    }
+
+    let responseUser = baseUser
+    if (String(dbUser.role).toUpperCase() === 'ADMIN') {
+      const staffAccess = await getAdminStaffAccess(dbUser.id)
+      responseUser = attachStaffAccessToUser(baseUser, staffAccess)
+    }
+
     return {
-      user: {
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        role: String(dbUser.role).toLowerCase(),
-        status: dbUser.status,
-        phoneNumber: dbUser.phoneNumber,
-        image: dbUser.image,
-        emailVerified: dbUser.emailVerified,
-      },
+      user: responseUser,
       profile: formatProfileForResponse(
         dbUser.profile || null,
         publicBase,

@@ -1,4 +1,3 @@
-import crypto from 'node:crypto'
 import prisma from '../../../../../lib/prisma.js'
 import { auth } from '../../../../auth/auth.js'
 import { env } from '../../../../config/env.js'
@@ -6,6 +5,7 @@ import { httpError } from '../../../../shared/errors.js'
 import { sendStaffInviteEmail } from '../../../../lib/mail.js'
 import {
   EDIT_MODULES,
+  INVITE_ROLES,
   STAFF_ROLES,
   adminRoleName,
   editCode,
@@ -57,15 +57,6 @@ function ensureCatalog() {
 }
 
 async function seedCatalogIfNeeded() {
-  const existing = await prisma.adminRole.findUnique({
-    where: { name: 'MODERATOR' },
-    select: {
-      id: true,
-      permissions: { take: 1, select: { permissionId: true } },
-    },
-  })
-  if (existing?.permissions?.length) return
-
   const permissionRows = EDIT_MODULES.flatMap((item) => [
     { code: editCode(item.id), description: item.module },
     { code: viewCode(item.id), description: item.module },
@@ -87,7 +78,10 @@ async function seedCatalogIfNeeded() {
   const [moderator, adminRole, allPerms] = await Promise.all([
     prisma.adminRole.findUnique({
       where: { name: 'MODERATOR' },
-      select: { id: true },
+      select: {
+        id: true,
+        permissions: { take: 1, select: { permissionId: true } },
+      },
     }),
     prisma.adminRole.findUnique({
       where: { name: 'ADMIN' },
@@ -101,13 +95,15 @@ async function seedCatalogIfNeeded() {
     }),
   ])
 
-  const defaults = new Set(
-    codesForEnabled(
-      EDIT_MODULES.filter((item) => item.defaultEnabled).map((item) => item.id),
-    ),
-  )
   const ops = []
-  if (moderator) {
+
+  // Seed moderator defaults only when they have no permissions yet
+  if (moderator && !moderator.permissions?.length) {
+    const defaults = new Set(
+      codesForEnabled(
+        EDIT_MODULES.filter((item) => item.defaultEnabled).map((item) => item.id),
+      ),
+    )
     ops.push(
       prisma.adminRolePermissionBridge.createMany({
         data: allPerms
@@ -120,6 +116,7 @@ async function seedCatalogIfNeeded() {
       }),
     )
   }
+
   if (adminRole) {
     ops.push(
       prisma.adminRolePermissionBridge.createMany({
@@ -207,10 +204,6 @@ async function saveRolePermissions(roleName, body = {}) {
   return mapMatrix(perms.map((perm) => perm.code))
 }
 
-function tempPassword() {
-  return `Mod${crypto.randomBytes(6).toString('base64url')}!1`
-}
-
 export class AdminRolesPermissionsService {
   async get(authUser) {
     await ensureCatalog()
@@ -222,7 +215,7 @@ export class AdminRolesPermissionsService {
     return {
       status: 200,
       body: {
-        roles: STAFF_ROLES,
+        roles: INVITE_ROLES,
         ...matrix,
         message: 'Role permissions fetched',
       },
@@ -244,10 +237,16 @@ export class AdminRolesPermissionsService {
   async invite(authUser, body = {}) {
     await Promise.all([assertCanManageStaff(authUser), ensureCatalog()])
     const email = String(body.email || '').trim().toLowerCase()
-    const roleValue = String(body.role || 'moderator').trim().toLowerCase()
+    const password = String(body.password || '')
+    const roleValue = 'moderator'
+
     if (!email) throw httpError('Email is required', 400, 'ValidationError')
-    if (!STAFF_ROLES.some((item) => item.value === roleValue)) {
-      throw httpError('Invalid role', 400, 'ValidationError')
+    if (password.length < 8) {
+      throw httpError(
+        'Password must be at least 8 characters',
+        400,
+        'ValidationError',
+      )
     }
 
     if (body.edit) {
@@ -267,25 +266,31 @@ export class AdminRolesPermissionsService {
     if (!staffRole) throw httpError('Role not found', 404, 'NotFound')
 
     let user = existing
-    let temporaryPassword = null
+    const { hashPassword } = await import('better-auth/crypto')
+    const hashed = await hashPassword(password)
 
     if (existing) {
       if (String(existing.role) !== 'ADMIN') {
         throw httpError('Email is already registered', 409, 'Conflict')
       }
       await prisma.userAdminRoleBridge.deleteMany({ where: { userId: user.id } })
+      await prisma.account.updateMany({
+        where: { userId: user.id, providerId: 'credential' },
+        data: { password: hashed },
+      })
     } else {
-      temporaryPassword = tempPassword()
       const result = await auth.api.signUpEmail({
         body: {
           email,
-          password: temporaryPassword,
+          password,
           name: email.split('@')[0],
           role: 'CUSTOMER',
         },
       })
       const userId = result?.user?.id
-      if (!userId) throw httpError('Could not create staff account', 500, 'InviteFailed')
+      if (!userId) {
+        throw httpError('Could not create staff account', 500, 'InviteFailed')
+      }
       user = await prisma.user.update({
         where: { id: userId },
         data: {
@@ -301,12 +306,12 @@ export class AdminRolesPermissionsService {
       data: { userId: user.id, adminRoleId: staffRole.id },
     })
 
-    const loginUrl = `${env.frontendUrl}/admin/login`
+    const loginUrl = `${env.frontendUrl}/moderator/login`
     void sendStaffInviteEmail({
       email: user.email,
       roleLabel: staffRoleLabel(roleValue),
       loginUrl,
-      temporaryPassword,
+      temporaryPassword: password,
     }).catch((err) => {
       console.error('[roles-permissions] invite email failed:', err.message)
     })
@@ -321,7 +326,7 @@ export class AdminRolesPermissionsService {
           role: roleValue,
           status: 'active',
         },
-        message: 'Invite sent',
+        message: 'Moderator created',
       },
     }
   }
