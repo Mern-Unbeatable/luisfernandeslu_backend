@@ -3,6 +3,7 @@ import prisma from '../../../../lib/prisma.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { formatAddressLine } from '../../../shared/address.js'
 import { httpError, notFound } from '../../../shared/errors.js'
+import { saveSellerEupagoCredentials } from '../../payments/seller-eupago.js'
 
 function assertFactory(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -40,6 +41,11 @@ function mapProfile(user, warehouses, baseUrl) {
     warehouses,
     iban: user.profile?.ibanNumber || '',
     ibanPhone: user.profile?.ibanPhone || '',
+    eupagoApiKey: '',
+    eupagoExternKey: '',
+    hasEupagoCredentials: Boolean(
+      user.profile?.eupagoApiKey && user.profile?.eupagoExternKey,
+    ),
     rejectionReason: user.profile?.rejectionReason || null,
     verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
   }
@@ -59,6 +65,8 @@ async function loadUser(userId) {
           companyName: true,
           ibanNumber: true,
           ibanPhone: true,
+          eupagoApiKey: true,
+          eupagoExternKey: true,
           rejectionReason: true,
           verificationStatus: true,
         },
@@ -304,6 +312,16 @@ export class FactoryProfileService {
 
     const next = await toBody(factoryId, baseUrl)
     return { status: 200, body: { ...next, message: 'IBAN saved' } }
+  }
+
+  async saveEupago(auth, body = {}, baseUrl) {
+    const factoryId = assertFactory(auth, 'Only factories can update EuPago credentials')
+    await saveSellerEupagoCredentials(factoryId, body)
+    const next = await toBody(factoryId, baseUrl)
+    return {
+      status: 200,
+      body: { ...next, message: 'EuPago credentials saved' },
+    }
   }
 
   async resubmitDocuments(auth, files) {

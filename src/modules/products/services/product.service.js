@@ -17,6 +17,7 @@ import {
 import { buildCategoryGuidePdf } from '../../../shared/pdf/catalog-guide-pdf.js'
 import { createProductBodySchema } from '../validations/product.validation.js'
 import { httpError } from '../../../shared/errors.js'
+import { assertSellerEupagoConfigured } from '../../payments/seller-eupago.js'
 import { categoryFilter } from '../../../shared/catalog.js'
 import {
   assertCategoryPath,
@@ -257,6 +258,7 @@ export class ProductService {
    */
   async create(auth, body, files, _baseUrl) {
     this.assertSupplier(auth)
+    await assertSellerEupagoConfigured(auth.id)
 
     const sku = body.sku.trim()
     const requested = Number(body.quantity)
@@ -1180,6 +1182,7 @@ export class ProductService {
    */
   async importCsv(auth, fileBuffer) {
     this.assertSupplier(auth)
+    await assertSellerEupagoConfigured(auth.id)
 
     if (!fileBuffer?.length) {
       throw httpError('CSV file is required', 400, 'CsvRequired')

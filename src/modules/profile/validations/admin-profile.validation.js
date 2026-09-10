@@ -29,12 +29,22 @@ export const changeAdminPasswordBodySchema = z
 
 export const saveAdminIbanBodySchema = z
   .object({
-    iban: z.string().trim().min(5).optional(),
-    ibanNumber: z.string().trim().min(5).optional(),
-    ibanPhone: z.string().trim().min(6).optional(),
-    phone: z.string().trim().min(6).optional(),
-    phoneNumber: z.string().trim().min(6).optional(),
+    iban: z.string().trim().optional(),
+    ibanNumber: z.string().trim().optional(),
+    apiKey: z.string().trim().optional(),
+    eupagoApiKey: z.string().trim().optional(),
+    ibanPhone: z.string().trim().min(1).optional(),
+    eupagoExternKey: z.string().trim().min(1).optional(),
+    externKey: z.string().trim().min(1).optional(),
   })
-  .refine((b) => b.iban || b.ibanNumber, {
-    message: 'iban is required',
-  })
+  .refine(
+    (b) =>
+      Boolean(b.iban?.trim()) ||
+      Boolean(b.ibanNumber?.trim()) ||
+      Boolean(b.apiKey?.trim()) ||
+      Boolean(b.eupagoApiKey?.trim()) ||
+      Boolean(b.ibanPhone?.trim()) ||
+      Boolean(b.eupagoExternKey?.trim()) ||
+      Boolean(b.externKey?.trim()),
+    { message: 'Provide API key or EuPago extern key' },
+  )

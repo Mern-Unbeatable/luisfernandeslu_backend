@@ -8,6 +8,7 @@
 
 import { env } from '../../config/env.js'
 import { moneyNonNegative as money } from '../../shared/money.js'
+import prisma from '../../../lib/prisma.js'
 
 export function getPaymentProvider() {
   return env.payments.provider === 'eupago' ? 'eupago' : 'mock'
@@ -17,11 +18,49 @@ export function isMockPayments() {
   return getPaymentProvider() === 'mock'
 }
 
+/** Env / mock fallback only. Prefer `resolveAdminExternKey()` at payment time. */
 export function getAdminExternKey() {
   const key = env.payments.eupago.adminExternKey
   if (key) return key
   if (isMockPayments()) return 'MOCK-ADMIN'
   return ''
+}
+
+/** Admin profile `eupagoExternKey` first, then env, then mock. */
+export async function resolveAdminExternKey() {
+  try {
+    const admin = await prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      orderBy: { createdAt: 'asc' },
+      select: { profile: { select: { eupagoExternKey: true } } },
+    })
+    const fromProfile = admin?.profile?.eupagoExternKey?.trim()
+    if (fromProfile) return fromProfile
+  } catch {
+    // fall through to env
+  }
+  return getAdminExternKey()
+}
+
+/** Env fallback only. Prefer `resolveEupagoApiKey()` at payment time. */
+export function getEupagoApiKeyFromEnv() {
+  return env.payments.eupago.apiKey || ''
+}
+
+/** Admin profile API key (stored in admin `ibanNumber`) first, then env. */
+export async function resolveEupagoApiKey() {
+  try {
+    const admin = await prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      orderBy: { createdAt: 'asc' },
+      select: { profile: { select: { ibanNumber: true } } },
+    })
+    const fromProfile = admin?.profile?.ibanNumber?.trim()
+    if (fromProfile) return fromProfile
+  } catch {
+    // fall through to env
+  }
+  return getEupagoApiKeyFromEnv()
 }
 
 export function getCommissionPercent() {
@@ -68,7 +107,7 @@ export async function createSplitPayment({
     return createMockSplitPayment({ amount, identifier, paymentMethod })
   }
 
-  const apiKey = env.payments.eupago.apiKey
+  const apiKey = await resolveEupagoApiKey()
   if (!apiKey) {
     const err = new Error('EuPago API key is not configured')
     err.code = 'EupagoNotConfigured'
@@ -154,6 +193,8 @@ export default {
   createSplitPayment,
   createMockSplitPayment,
   getAdminExternKey,
+  resolveAdminExternKey,
+  resolveEupagoApiKey,
   getCommissionPercent,
   getPaymentProvider,
   isMockPayments,

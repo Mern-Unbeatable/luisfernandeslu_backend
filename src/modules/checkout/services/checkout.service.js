@@ -3,7 +3,7 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import cartService from '../../cart/services/cart.service.js'
 import {
   createSplitPayment,
-  getAdminExternKey,
+  resolveAdminExternKey,
   getCommissionPercent,
   getPaymentProvider,
   isMockPayments,
@@ -623,7 +623,7 @@ class CheckoutService {
     }
 
     const mock = isMockPayments()
-    const adminExternKey = getAdminExternKey()
+    const adminExternKey = await resolveAdminExternKey()
     if (!mock && !adminExternKey) {
       throw httpError(
         'Admin EuPago beneficiary is not configured',

@@ -370,6 +370,7 @@ model BusinessProfile {
   ibanNumber                String?
   ibanPhone                 String?
   eupagoExternKey           String?
+  eupagoApiKey              String?
   rcbeNumber                String?
   logoUrl                   String?
   coverImageUrl             String?
@@ -1460,4 +1461,4 @@ model AssistantChatMessage {
 
   @@index([userId, createdAt])
   @@map("assistant_chat_message")
-}
+}

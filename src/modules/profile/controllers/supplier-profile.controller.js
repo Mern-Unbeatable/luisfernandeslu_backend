@@ -70,6 +70,21 @@ export class SupplierProfileController {
     }
   }
 
+  async saveEupago(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await supplierProfileService.saveEupago(
+          req.auth,
+          req.body,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async resubmitDocuments(req, res, next) {
     try {
       return sendServiceResult(

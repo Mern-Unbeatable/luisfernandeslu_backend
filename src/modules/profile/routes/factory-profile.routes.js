@@ -2,6 +2,7 @@ import { Router } from 'express'
 import factoryProfileController from '../controllers/factory-profile.controller.js'
 import {
   changeFactoryPasswordBodySchema,
+  saveFactoryEupagoBodySchema,
   saveFactoryIbanBodySchema,
   saveFactoryWarehousesBodySchema,
   updateFactoryProfileBodySchema,
@@ -50,6 +51,12 @@ class FactoryProfileRoutes {
       '/iban',
       validate(saveFactoryIbanBodySchema, 'body'),
       (req, res, next) => factoryProfileController.saveIban(req, res, next),
+    )
+
+    this.router.put(
+      '/eupago',
+      validate(saveFactoryEupagoBodySchema, 'body'),
+      (req, res, next) => factoryProfileController.saveEupago(req, res, next),
     )
 
     this.router.post(

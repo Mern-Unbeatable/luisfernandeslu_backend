@@ -6,7 +6,7 @@ import { splitName } from '../../shared/party.js'
 import { addMonths } from '../../shared/dates.js'
 import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
 import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
-import eupagoClient, { getAdminExternKey, getCommissionPercent, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
+import eupagoClient, { resolveAdminExternKey, getCommissionPercent, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
@@ -244,7 +244,7 @@ export async function payConvertedOffer({
   })
 
   const mock = isMockPayments()
-  const adminExternKey = getAdminExternKey()
+  const adminExternKey = await resolveAdminExternKey()
 
   const sellerId = context.sellerId({ offer, extra })
   const seller = await prisma.user.findUnique({

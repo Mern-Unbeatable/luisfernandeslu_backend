@@ -2,6 +2,7 @@ import { hashPassword, verifyPassword } from 'better-auth/crypto'
 import prisma from '../../../../lib/prisma.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { httpError, notFound } from '../../../shared/errors.js'
+import { getAdminStaffAccess } from '../../auth/staffAccess.js'
 
 function assertAdmin(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -19,8 +20,9 @@ function mapProfile(user, baseUrl) {
     name: user.name,
     email: user.email,
     avatarUrl: user.image ? absolutizeUrl(user.image, baseUrl) : null,
-    iban: user.profile?.ibanNumber || '',
-    ibanPhone: user.profile?.ibanPhone || user.phoneNumber || '',
+    // EuPago secrets are write-only — never returned by GET
+    iban: '',
+    ibanPhone: '',
   }
 }
 
@@ -33,7 +35,11 @@ async function loadUser(userId) {
       email: true,
       phoneNumber: true,
       image: true,
-      profile: { select: { companyName: true, ibanNumber: true, ibanPhone: true } },
+      profile: {
+        select: {
+          companyName: true,
+        },
+      },
     },
   })
   if (!user) throw notFound('Admin not found')
@@ -127,41 +133,49 @@ export class AdminProfileService {
   }
 
   async saveIban(auth, body = {}, baseUrl) {
-    const adminId = assertAdmin(auth, 'Only admins can update IBAN')
-    const ibanNumber = String(body.ibanNumber || body.iban || '').trim()
-    if (ibanNumber.length < 5) {
-      throw httpError('Valid IBAN is required', 400, 'ValidationError')
+    const adminId = assertAdmin(auth, 'Only admins can update EuPago credentials')
+    const staffAccess = await getAdminStaffAccess(adminId)
+    if (!staffAccess.isFullAdmin) {
+      throw httpError(
+        'Moderators cannot update EuPago credentials',
+        403,
+        'Forbidden',
+      )
     }
-    const ibanPhone =
-      body.ibanPhone != null || body.phoneNumber != null || body.phone != null
-        ? String(body.ibanPhone || body.phoneNumber || body.phone).trim()
-        : undefined
 
-    await prisma.$transaction([
-      prisma.businessProfile.upsert({
-        where: { userId: adminId },
-        create: {
-          userId: adminId,
-          ibanNumber,
-          ...(ibanPhone !== undefined ? { ibanPhone: ibanPhone || null } : {}),
-        },
-        update: {
-          ibanNumber,
-          ...(ibanPhone !== undefined ? { ibanPhone: ibanPhone || null } : {}),
-        },
-      }),
-      ...(ibanPhone !== undefined
-        ? [
-            prisma.user.update({
-              where: { id: adminId },
-              data: { phoneNumber: ibanPhone || null },
-            }),
-          ]
-        : []),
-    ])
+    const apiKey = String(
+      body.eupagoApiKey ?? body.apiKey ?? body.ibanNumber ?? body.iban ?? '',
+    ).trim()
+    const externKey = String(
+      body.eupagoExternKey ?? body.externKey ?? body.ibanPhone ?? '',
+    ).trim()
+
+    if (!apiKey && !externKey) {
+      throw httpError(
+        'Provide API key or EuPago extern key',
+        400,
+        'ValidationError',
+      )
+    }
+
+    await prisma.businessProfile.upsert({
+      where: { userId: adminId },
+      create: {
+        userId: adminId,
+        ...(apiKey ? { ibanNumber: apiKey } : {}),
+        ...(externKey ? { eupagoExternKey: externKey } : {}),
+      },
+      update: {
+        ...(apiKey ? { ibanNumber: apiKey } : {}),
+        ...(externKey ? { eupagoExternKey: externKey } : {}),
+      },
+    })
 
     const next = await toBody(adminId, baseUrl)
-    return { status: 200, body: { ...next, message: 'IBAN saved' } }
+    return {
+      status: 200,
+      body: { ...next, message: 'EuPago credentials saved' },
+    }
   }
 }
 

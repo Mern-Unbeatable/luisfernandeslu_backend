@@ -2,6 +2,7 @@ import { Router } from 'express'
 import supplierProfileController from '../controllers/supplier-profile.controller.js'
 import {
   changeSupplierPasswordBodySchema,
+  saveSupplierEupagoBodySchema,
   saveSupplierIbanBodySchema,
   saveSupplierWarehousesBodySchema,
   updateSupplierProfileBodySchema,
@@ -50,6 +51,12 @@ class SupplierProfileRoutes {
       '/iban',
       validate(saveSupplierIbanBodySchema, 'body'),
       (req, res, next) => supplierProfileController.saveIban(req, res, next),
+    )
+
+    this.router.put(
+      '/eupago',
+      validate(saveSupplierEupagoBodySchema, 'body'),
+      (req, res, next) => supplierProfileController.saveEupago(req, res, next),
     )
 
     this.router.post(

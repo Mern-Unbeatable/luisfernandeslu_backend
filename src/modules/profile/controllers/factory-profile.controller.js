@@ -70,6 +70,21 @@ export class FactoryProfileController {
     }
   }
 
+  async saveEupago(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await factoryProfileService.saveEupago(
+          req.auth,
+          req.body,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async resubmitDocuments(req, res, next) {
     try {
       return sendServiceResult(

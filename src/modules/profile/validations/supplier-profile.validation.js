@@ -52,3 +52,23 @@ export const saveSupplierIbanBodySchema = z
   .refine((b) => b.iban || b.ibanNumber, {
     message: 'iban is required',
   })
+
+export const saveSupplierEupagoBodySchema = z
+  .object({
+    iban: z.string().trim().optional(),
+    apiKey: z.string().trim().optional(),
+    eupagoApiKey: z.string().trim().optional(),
+    ibanPhone: z.string().trim().optional(),
+    eupagoExternKey: z.string().trim().optional(),
+    externKey: z.string().trim().optional(),
+  })
+  .refine(
+    (b) =>
+      Boolean(b.iban?.trim()) ||
+      Boolean(b.apiKey?.trim()) ||
+      Boolean(b.eupagoApiKey?.trim()) ||
+      Boolean(b.ibanPhone?.trim()) ||
+      Boolean(b.eupagoExternKey?.trim()) ||
+      Boolean(b.externKey?.trim()),
+    { message: 'Provide API key or EuPago extern key' },
+  )

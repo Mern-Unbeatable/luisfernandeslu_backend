@@ -4,6 +4,7 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { formatAddressLine } from '../../../shared/address.js'
 import { httpError, notFound } from '../../../shared/errors.js'
 import { assertSupplier } from '../../orders/status.js'
+import { saveSellerEupagoCredentials } from '../../payments/seller-eupago.js'
 
 function warehouseLine(address) {
   if (!address) return ''
@@ -33,6 +34,12 @@ function mapProfile(user, warehouses, baseUrl) {
     warehouses,
     iban: user.profile?.ibanNumber || '',
     ibanPhone: user.phoneNumber || '',
+    // EuPago secrets are write-only
+    eupagoApiKey: '',
+    eupagoExternKey: '',
+    hasEupagoCredentials: Boolean(
+      user.profile?.eupagoApiKey && user.profile?.eupagoExternKey,
+    ),
     rejectionReason: user.profile?.rejectionReason || null,
     verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
   }
@@ -51,6 +58,8 @@ async function loadUser(userId) {
         select: {
           companyName: true,
           ibanNumber: true,
+          eupagoApiKey: true,
+          eupagoExternKey: true,
           rejectionReason: true,
           verificationStatus: true,
         },
@@ -291,6 +300,16 @@ export class SupplierProfileService {
 
     const next = await toBody(sellerId, baseUrl)
     return { status: 200, body: { ...next, message: 'IBAN saved' } }
+  }
+
+  async saveEupago(auth, body = {}, baseUrl) {
+    const sellerId = assertSupplier(auth, 'Only suppliers can update EuPago credentials')
+    await saveSellerEupagoCredentials(sellerId, body)
+    const next = await toBody(sellerId, baseUrl)
+    return {
+      status: 200,
+      body: { ...next, message: 'EuPago credentials saved' },
+    }
   }
 
   async resubmitDocuments(auth, files) {
