@@ -13,20 +13,23 @@ export const payPromotionBodySchema = z.object({
 
 export const adminPromotionListQuerySchema = z.object({
   status: z
-    .enum([
-      'all',
-      'pending',
-      'active',
-      'featured',
-      'completed',
-      'rejected',
-      'ALL',
-      'PENDING',
-      'ACTIVE',
-      'FEATURED',
-      'COMPLETED',
-      'REJECTED',
-    ])
+    .preprocess(
+      (v) => (v === '' || v == null ? 'all' : v),
+      z.enum([
+        'all',
+        'pending',
+        'active',
+        'featured',
+        'completed',
+        'rejected',
+        'ALL',
+        'PENDING',
+        'ACTIVE',
+        'FEATURED',
+        'COMPLETED',
+        'REJECTED',
+      ]),
+    )
     .optional()
     .default('pending'),
   /** Optional extra filter on product.isFeatured (true|false). Empty ignored. */
@@ -74,7 +77,7 @@ export const upsertPlanBodySchema = z.object({
   label: z.string().trim().min(2).max(80),
   durationDays: z.coerce.number().int().positive(),
   price: positiveNumber,
-  currency: z.string().trim().min(3).max(8).optional().default('USD'),
+  currency: z.string().trim().min(3).max(8).optional().default('EUR'),
   isActive: z.boolean().optional().default(true),
   sortOrder: z.coerce.number().int().optional().default(0),
 })

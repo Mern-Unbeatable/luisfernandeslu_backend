@@ -1,6 +1,7 @@
 import prisma from '../../../../../lib/prisma.js'
 import { httpError } from '../../../../shared/errors.js'
 import { money } from '../../../../shared/money.js'
+import { getCommissionPercent } from '../../../payments/eupago.client.js'
 
 const MONTHS = [
   'Jan',
@@ -17,6 +18,8 @@ const MONTHS = [
   'Dec',
 ]
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+
 function assertAdmin(auth) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
   if (String(auth.role || '').toLowerCase() !== 'admin') {
@@ -25,43 +28,62 @@ function assertAdmin(auth) {
   return auth
 }
 
+/** Compact euro label with consistent K precision so B2B+B2C ≈ all. */
 function formatCompactEuro(amount) {
-  const num = Number(amount) || 0
-  if (num >= 1_000_000) {
+  const num = money(amount)
+  if (Math.abs(num) >= 1_000_000) {
     return `€${(num / 1_000_000).toFixed(1)}M`
   }
-  if (num >= 1_000) {
-    return `€${(num / 1_000).toFixed(0)}K`
+  if (Math.abs(num) >= 1_000) {
+    // Always 1 decimal in the K range (€21.5K + €243.4K = €264.9K).
+    return `€${(num / 1_000).toFixed(1)}K`
   }
-  return `€${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+  return `€${num.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`
 }
 
 function formatCompactNumber(num) {
-  const n = Number(num) || 0
-  return n.toLocaleString('en-US')
+  return (Number(num) || 0).toLocaleString('en-US')
+}
+
+function isB2BCustomerRole(role) {
+  return String(role || '').toUpperCase() === 'COMPANY'
+}
+
+function metricTriple(allValue, b2bValue, b2cValue, formatter) {
+  return {
+    all: formatter(allValue),
+    b2b: formatter(b2bValue),
+    b2c: formatter(b2cValue),
+  }
+}
+
+function roundMoneySeries(series) {
+  return series.map((value) => money(value))
 }
 
 class AdminDashboardService {
-  async getOverview(auth, query = {}) {
+  async getOverview(auth, _query = {}) {
     assertAdmin(auth)
 
     const currentYear = new Date().getFullYear()
-    const targetYear = query.year ? parseInt(query.year, 10) : currentYear
-    const yearStart = new Date(targetYear, 0, 1)
-    const yearEnd = new Date(targetYear + 1, 0, 1)
+    const registrationsSince = new Date(Date.now() - THIRTY_DAYS_MS)
+    const platformCommissionRate = getCommissionPercent() / 100
 
-    // Parallel fetch for overview aggregations
     const [
       allOrders,
       activeSuppliersCount,
       activeFactoriesCount,
       activeTransportersCount,
-      activeUsersCount,
-      newRegistrationsCount,
+      activeCompanyCount,
+      activeCustomerCount,
+      newCompanyCount,
+      newCustomerCount,
       openDisputesCount,
-      commissionSum,
+      commissionRows,
     ] = await Promise.all([
-      // 1. Orders for revenue, GMV and trend calculations
       prisma.order.findMany({
         where: {
           orderStatus: { not: 'CANCELLED' },
@@ -71,6 +93,7 @@ class AdminDashboardService {
           grandTotal: true,
           subTotal: true,
           createdAt: true,
+          customerId: true,
           customer: {
             select: {
               role: true,
@@ -79,7 +102,6 @@ class AdminDashboardService {
         },
       }),
 
-      // 2. Counts of active entities
       prisma.user.count({
         where: { role: 'SUPPLIER', status: 'ACTIVE' },
       }),
@@ -90,65 +112,79 @@ class AdminDashboardService {
         where: { role: 'TRANSPORTER', status: 'ACTIVE' },
       }),
       prisma.user.count({
-        where: { status: 'ACTIVE' },
+        where: { role: 'COMPANY', status: 'ACTIVE' },
       }),
-
-      // 3. New registrations in the last 30 days
+      prisma.user.count({
+        where: { role: 'CUSTOMER', status: 'ACTIVE' },
+      }),
       prisma.user.count({
         where: {
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          },
+          role: 'COMPANY',
+          createdAt: { gte: registrationsSince },
         },
       }),
-
-      // 4. Open disputes
+      prisma.user.count({
+        where: {
+          role: 'CUSTOMER',
+          createdAt: { gte: registrationsSince },
+        },
+      }),
       prisma.dispute.count({
         where: {
           status: { in: ['OPEN', 'UNDER_REVIEW'] },
         },
       }),
-
-      // 5. Commission transaction total
-      prisma.commissionTransaction.aggregate({
+      prisma.commissionTransaction.findMany({
         where: { status: { not: 'REJECTED' } },
-        _sum: { commissionAmount: true },
+        select: {
+          commissionAmount: true,
+          order: {
+            select: {
+              customer: { select: { role: true } },
+            },
+          },
+        },
       }),
     ])
 
-    // Calculate total GMV & Split by B2B (Company) vs B2C (Customer)
     let totalGmv = 0
     let b2bGmv = 0
     let b2cGmv = 0
-
     let b2bOrderCount = 0
     let b2cOrderCount = 0
 
-    // Monthly buckets for thisYear and lastYear
     const thisYear = currentYear
     const lastYear = currentYear - 1
 
-    const monthlyRevenueB2BThisYear = Array(12).fill(0)
-    const monthlyRevenueB2CThisYear = Array(12).fill(0)
+    const monthlyGmvB2BThisYear = Array(12).fill(0)
+    const monthlyGmvB2CThisYear = Array(12).fill(0)
     const monthlyOrdersB2BThisYear = Array(12).fill(0)
     const monthlyOrdersB2CThisYear = Array(12).fill(0)
 
-    const monthlyRevenueB2BLastYear = Array(12).fill(0)
-    const monthlyRevenueB2CLastYear = Array(12).fill(0)
+    const monthlyGmvB2BLastYear = Array(12).fill(0)
+    const monthlyGmvB2CLastYear = Array(12).fill(0)
     const monthlyOrdersB2BLastYear = Array(12).fill(0)
     const monthlyOrdersB2CLastYear = Array(12).fill(0)
 
-    for (const order of allOrders) {
-      const isB2B = order.customer?.role === 'COMPANY'
-      const amount = Number(order.grandTotal || order.subTotal || 0)
+    const buyerOrderCounts = { COMPANY: new Map(), CUSTOMER: new Map() }
 
-      totalGmv += amount
+    for (const order of allOrders) {
+      const isB2B = isB2BCustomerRole(order.customer?.role)
+      const amount = money(order.grandTotal || order.subTotal || 0)
+      const roleKey = isB2B ? 'COMPANY' : 'CUSTOMER'
+
+      totalGmv = money(totalGmv + amount)
       if (isB2B) {
-        b2bGmv += amount
+        b2bGmv = money(b2bGmv + amount)
         b2bOrderCount += 1
       } else {
-        b2cGmv += amount
+        b2cGmv = money(b2cGmv + amount)
         b2cOrderCount += 1
+      }
+
+      if (order.customerId) {
+        const map = buyerOrderCounts[roleKey]
+        map.set(order.customerId, (map.get(order.customerId) || 0) + 1)
       }
 
       const orderDate = new Date(order.createdAt)
@@ -157,55 +193,60 @@ class AdminDashboardService {
 
       if (orderYear === thisYear) {
         if (isB2B) {
-          monthlyRevenueB2BThisYear[monthIdx] += amount
+          monthlyGmvB2BThisYear[monthIdx] = money(
+            monthlyGmvB2BThisYear[monthIdx] + amount,
+          )
           monthlyOrdersB2BThisYear[monthIdx] += 1
         } else {
-          monthlyRevenueB2CThisYear[monthIdx] += amount
+          monthlyGmvB2CThisYear[monthIdx] = money(
+            monthlyGmvB2CThisYear[monthIdx] + amount,
+          )
           monthlyOrdersB2CThisYear[monthIdx] += 1
         }
       } else if (orderYear === lastYear) {
         if (isB2B) {
-          monthlyRevenueB2BLastYear[monthIdx] += amount
+          monthlyGmvB2BLastYear[monthIdx] = money(
+            monthlyGmvB2BLastYear[monthIdx] + amount,
+          )
           monthlyOrdersB2BLastYear[monthIdx] += 1
         } else {
-          monthlyRevenueB2CLastYear[monthIdx] += amount
+          monthlyGmvB2CLastYear[monthIdx] = money(
+            monthlyGmvB2CLastYear[monthIdx] + amount,
+          )
           monthlyOrdersB2CLastYear[monthIdx] += 1
         }
       }
     }
 
-    // If database orders only exist for current year (e.g. newly seeded DB with 0 orders in lastYear),
-    // supply realistic growth comparison for lastYear so "Last year" dropdown reflects historic comparative data
-    const hasLastYearData = monthlyRevenueB2BLastYear.some((v) => v > 0) || monthlyRevenueB2CLastYear.some((v) => v > 0)
-    if (!hasLastYearData) {
-      const b2bRatio = 0.68
-      const b2cRatio = 0.72
-      for (let i = 0; i < 12; i++) {
-        const thisB2BRev = monthlyRevenueB2BThisYear[i] || [28000, 31000, 34000, 31000, 37000, 42000, 46000, 43000, 49000, 47000, 39000, 41000][i]
-        const thisB2CRev = monthlyRevenueB2CThisYear[i] || [12000, 15000, 16000, 14000, 18000, 21000, 23000, 22000, 26000, 24000, 20000, 21000][i]
-        const thisB2BOrd = monthlyOrdersB2BThisYear[i] || [280, 260, 310, 280, 330, 360, 380, 360, 400, 380, 320, 340][i]
-        const thisB2COrd = monthlyOrdersB2CThisYear[i] || [190, 180, 210, 200, 230, 250, 270, 250, 280, 260, 220, 230][i]
-
-        monthlyRevenueB2BLastYear[i] = Math.round(thisB2BRev * b2bRatio)
-        monthlyRevenueB2CLastYear[i] = Math.round(thisB2CRev * b2cRatio)
-        monthlyOrdersB2BLastYear[i] = Math.round(thisB2BOrd * b2bRatio)
-        monthlyOrdersB2CLastYear[i] = Math.round(thisB2COrd * b2cRatio)
+    let b2bCommission = 0
+    let b2cCommission = 0
+    for (const row of commissionRows) {
+      const amount = money(row.commissionAmount || 0)
+      if (isB2BCustomerRole(row.order?.customer?.role)) {
+        b2bCommission = money(b2bCommission + amount)
+      } else {
+        b2cCommission = money(b2cCommission + amount)
       }
     }
+    const totalCommission = money(b2bCommission + b2cCommission)
+
+    // Platform revenue = marketplace take on GMV (admin commission %), not affiliate payouts.
+    const totalPlatformRevenue = money(totalGmv * platformCommissionRate)
+    const b2bPlatformRevenue = money(b2bGmv * platformCommissionRate)
+    const b2cPlatformRevenue = money(b2cGmv * platformCommissionRate)
 
     const totalOrdersCount = allOrders.length
-    const avgOrderValue = totalOrdersCount > 0 ? totalGmv / totalOrdersCount : 0
-    const totalCommission = Number(commissionSum._sum.commissionAmount || 0)
-    // Total platform revenue can be calculated as total commission plus platform fees (e.g. 10% average or actual commission)
-    const totalPlatformRevenue = totalCommission > 0 ? totalCommission : totalGmv * 0.05
+    const avgOrderValue = totalOrdersCount > 0 ? money(totalGmv / totalOrdersCount) : 0
+    const b2bAvgOrderValue =
+      b2bOrderCount > 0 ? money(b2bGmv / b2bOrderCount) : 0
+    const b2cAvgOrderValue =
+      b2cOrderCount > 0 ? money(b2cGmv / b2cOrderCount) : 0
 
-    // Build metrics for 'all', 'b2b', 'b2c'
+    const activeUsersCount = activeCompanyCount + activeCustomerCount
+    const newRegistrationsCount = newCompanyCount + newCustomerCount
+
     const metricsMap = {
-      totalGmv: {
-        all: formatCompactEuro(totalGmv),
-        b2b: formatCompactEuro(b2bGmv),
-        b2c: formatCompactEuro(b2cGmv),
-      },
+      totalGmv: metricTriple(totalGmv, b2bGmv, b2cGmv, formatCompactEuro),
       b2bGmv: {
         all: formatCompactEuro(b2bGmv),
         b2b: formatCompactEuro(b2bGmv),
@@ -216,31 +257,35 @@ class AdminDashboardService {
         b2b: '€0',
         b2c: formatCompactEuro(b2cGmv),
       },
-      totalRevenue: {
-        all: formatCompactEuro(totalPlatformRevenue),
-        b2b: formatCompactEuro(totalPlatformRevenue * 0.7),
-        b2c: formatCompactEuro(totalPlatformRevenue * 0.3),
-      },
-      commission: {
-        all: formatCompactEuro(totalCommission || totalGmv * 0.03),
-        b2b: formatCompactEuro((totalCommission || totalGmv * 0.03) * 0.65),
-        b2c: formatCompactEuro((totalCommission || totalGmv * 0.03) * 0.35),
-      },
+      totalRevenue: metricTriple(
+        totalPlatformRevenue,
+        b2bPlatformRevenue,
+        b2cPlatformRevenue,
+        formatCompactEuro,
+      ),
+      commission: metricTriple(
+        totalCommission,
+        b2bCommission,
+        b2cCommission,
+        formatCompactEuro,
+      ),
       avgOrderValue: {
-        all: `€${money(avgOrderValue)}`,
-        b2b: `€${money(b2bOrderCount > 0 ? b2bGmv / b2bOrderCount : 0)}`,
-        b2c: `€${money(b2cOrderCount > 0 ? b2cGmv / b2cOrderCount : 0)}`,
+        all: `€${avgOrderValue}`,
+        b2b: `€${b2bAvgOrderValue}`,
+        b2c: `€${b2cAvgOrderValue}`,
       },
-      activeUsers: {
-        all: formatCompactNumber(activeUsersCount),
-        b2b: formatCompactNumber(Math.round(activeUsersCount * 0.45)),
-        b2c: formatCompactNumber(Math.round(activeUsersCount * 0.55)),
-      },
-      newRegistrations: {
-        all: formatCompactNumber(newRegistrationsCount),
-        b2b: formatCompactNumber(Math.round(newRegistrationsCount * 0.35)),
-        b2c: formatCompactNumber(Math.round(newRegistrationsCount * 0.65)),
-      },
+      activeUsers: metricTriple(
+        activeUsersCount,
+        activeCompanyCount,
+        activeCustomerCount,
+        formatCompactNumber,
+      ),
+      newRegistrations: metricTriple(
+        newRegistrationsCount,
+        newCompanyCount,
+        newCustomerCount,
+        formatCompactNumber,
+      ),
       activeSuppliers: {
         all: formatCompactNumber(activeSuppliersCount),
       },
@@ -255,9 +300,66 @@ class AdminDashboardService {
       },
     }
 
-    // Performance metrics (retention, ltv, repurchase)
-    const b2bLtv = b2bOrderCount > 0 ? b2bGmv / Math.max(1, activeUsersCount * 0.3) : 0
-    const b2cLtv = b2cOrderCount > 0 ? b2cGmv / Math.max(1, activeUsersCount * 0.7) : 0
+    const repeatByRole = { COMPANY: 0, CUSTOMER: 0 }
+    const buyersByRole = { COMPANY: 0, CUSTOMER: 0 }
+    for (const [, count] of buyerOrderCounts.COMPANY) {
+      buyersByRole.COMPANY += 1
+      if (count > 1) repeatByRole.COMPANY += 1
+    }
+    for (const [, count] of buyerOrderCounts.CUSTOMER) {
+      buyersByRole.CUSTOMER += 1
+      if (count > 1) repeatByRole.CUSTOMER += 1
+    }
+
+    // LTV = total spend / unique buyers who actually ordered (not all active accounts).
+    const b2bLtv =
+      buyersByRole.COMPANY > 0 ? money(b2bGmv / buyersByRole.COMPANY) : 0
+    const b2cLtv =
+      buyersByRole.CUSTOMER > 0 ? money(b2cGmv / buyersByRole.CUSTOMER) : 0
+
+    const b2bRepurchase =
+      buyersByRole.COMPANY > 0
+        ? Math.round((repeatByRole.COMPANY / buyersByRole.COMPANY) * 100)
+        : 0
+    const b2cRepurchase =
+      buyersByRole.CUSTOMER > 0
+        ? Math.round((repeatByRole.CUSTOMER / buyersByRole.CUSTOMER) * 100)
+        : 0
+
+    // Retention: previous-month buyers who also ordered this month.
+    const now = new Date()
+    const thisMonth = now.getMonth()
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const prevMonth = prevMonthDate.getMonth()
+    const prevMonthYear = prevMonthDate.getFullYear()
+    const thisMonthYear = now.getFullYear()
+
+    const buyersThisMonth = { COMPANY: new Set(), CUSTOMER: new Set() }
+    const buyersPrevMonth = { COMPANY: new Set(), CUSTOMER: new Set() }
+    for (const order of allOrders) {
+      if (!order.customerId) continue
+      const roleKey = isB2BCustomerRole(order.customer?.role)
+        ? 'COMPANY'
+        : 'CUSTOMER'
+      const d = new Date(order.createdAt)
+      const y = d.getFullYear()
+      const m = d.getMonth()
+      if (y === thisMonthYear && m === thisMonth) {
+        buyersThisMonth[roleKey].add(order.customerId)
+      } else if (y === prevMonthYear && m === prevMonth) {
+        buyersPrevMonth[roleKey].add(order.customerId)
+      }
+    }
+
+    function retentionRate(roleKey) {
+      const prev = buyersPrevMonth[roleKey]
+      if (prev.size === 0) return 0
+      let retained = 0
+      for (const id of prev) {
+        if (buyersThisMonth[roleKey].has(id)) retained += 1
+      }
+      return Math.round((retained / prev.size) * 100)
+    }
 
     return {
       metrics: metricsMap,
@@ -265,6 +367,13 @@ class AdminDashboardService {
         totalGmv,
         b2bGmv,
         b2cGmv,
+        platformCommissionPercent: getCommissionPercent(),
+        totalPlatformRevenue,
+        b2bPlatformRevenue,
+        b2cPlatformRevenue,
+        totalCommission,
+        b2bCommission,
+        b2cCommission,
         totalOrdersCount,
         b2bOrderCount,
         b2cOrderCount,
@@ -272,23 +381,29 @@ class AdminDashboardService {
         activeFactoriesCount,
         activeTransportersCount,
         activeUsersCount,
+        activeCompanyCount,
+        activeCustomerCount,
         newRegistrationsCount,
+        newCompanyCount,
+        newCustomerCount,
         openDisputesCount,
+        uniqueB2bBuyers: buyersByRole.COMPANY,
+        uniqueB2cBuyers: buyersByRole.CUSTOMER,
       },
       charts: {
         labels: MONTHS,
+        // Monthly series are order GMV (sales volume), not platform take.
         revenue: {
           thisYear: {
-            b2b: monthlyRevenueB2BThisYear,
-            b2c: monthlyRevenueB2CThisYear,
+            b2b: roundMoneySeries(monthlyGmvB2BThisYear),
+            b2c: roundMoneySeries(monthlyGmvB2CThisYear),
           },
           lastYear: {
-            b2b: monthlyRevenueB2BLastYear,
-            b2c: monthlyRevenueB2CLastYear,
+            b2b: roundMoneySeries(monthlyGmvB2BLastYear),
+            b2c: roundMoneySeries(monthlyGmvB2CLastYear),
           },
-          // default shortcuts for direct consumption
-          b2b: monthlyRevenueB2BThisYear,
-          b2c: monthlyRevenueB2CThisYear,
+          b2b: roundMoneySeries(monthlyGmvB2BThisYear),
+          b2c: roundMoneySeries(monthlyGmvB2CThisYear),
         },
         orders: {
           thisYear: {
@@ -299,18 +414,23 @@ class AdminDashboardService {
             b2b: monthlyOrdersB2BLastYear,
             b2c: monthlyOrdersB2CLastYear,
           },
-          // default shortcuts for direct consumption
           b2b: monthlyOrdersB2BThisYear,
           b2c: monthlyOrdersB2CThisYear,
         },
       },
       performance: {
-        retention: { b2b: 78, b2c: 45 },
-        ltv: {
-          b2b: b2bLtv > 0 ? `€${money(b2bLtv)}` : '€12,450',
-          b2c: b2cLtv > 0 ? `€${money(b2cLtv)}` : '€890',
+        retention: {
+          b2b: retentionRate('COMPANY'),
+          b2c: retentionRate('CUSTOMER'),
         },
-        repurchase: { b2b: 65, b2c: 32 },
+        ltv: {
+          b2b: `€${b2bLtv}`,
+          b2c: `€${b2cLtv}`,
+        },
+        repurchase: {
+          b2b: b2bRepurchase,
+          b2c: b2cRepurchase,
+        },
       },
     }
   }

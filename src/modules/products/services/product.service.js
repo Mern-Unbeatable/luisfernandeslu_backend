@@ -1006,31 +1006,66 @@ export class ProductService {
     }
     const where = and.length ? { AND: and } : {}
 
-    const [total, rows] = await Promise.all([
-      prisma.product.count({ where }),
-      prisma.product.findMany({
-        where,
-        select: {
-          id: true,
-          title: true,
-          shortDescription: true,
-          basePrice: true,
-          unitOfMeasure: true,
-          weightKg: true,
-          approvalStatus: true,
-          media: { orderBy: { sortOrder: 'asc' } },
-        },
-        orderBy: { updatedAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-    ])
+    const categoryOnly = []
+    if (categoryId) categoryOnly.push({ OR: categoryFilter(categoryId) })
+    if (search) {
+      categoryOnly.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+        ],
+      })
+    }
+    const countBase = categoryOnly.length ? { AND: categoryOnly } : {}
+
+    const [total, rows, allCount, pendingCount, approvedCount, rejectedCount] =
+      await Promise.all([
+        prisma.product.count({ where }),
+        prisma.product.findMany({
+          where,
+          select: {
+            id: true,
+            title: true,
+            shortDescription: true,
+            basePrice: true,
+            unitOfMeasure: true,
+            weightKg: true,
+            approvalStatus: true,
+            media: { orderBy: { sortOrder: 'asc' } },
+          },
+          orderBy: { updatedAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.product.count({ where: countBase }),
+        prisma.product.count({
+          where: {
+            AND: [...categoryOnly, { approvalStatus: 'PENDING_REVIEW' }],
+          },
+        }),
+        prisma.product.count({
+          where: {
+            AND: [...categoryOnly, { approvalStatus: 'APPROVED' }],
+          },
+        }),
+        prisma.product.count({
+          where: {
+            AND: [...categoryOnly, { approvalStatus: 'REJECTED' }],
+          },
+        }),
+      ])
 
     return {
       status: 200,
       body: {
         products: rows.map((p) => mapAdminProductCard(p, baseUrl)),
         pagination: paginationMeta({ page, limit, total }),
+        counts: {
+          all: allCount,
+          pending: pendingCount,
+          accepted: approvedCount,
+          rejected: rejectedCount,
+        },
         filters: {
           status,
           categoryId: categoryId || null,

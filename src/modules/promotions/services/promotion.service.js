@@ -169,7 +169,7 @@ function mapAdminMarketingCard(row, baseUrl) {
     weightKg: product?.weightKg || 0,
     boostTier: Number(row.amountPaid ?? row.plan?.price ?? 0),
     durationDays: row.durationDays,
-    currency: row.plan?.currency || 'USD',
+    currency: row.plan?.currency || 'EUR',
     isFeatured,
     endDate: row.endDate || null,
     timeLeft: daysLeftLabel(row.endDate),
@@ -188,7 +188,7 @@ export class PromotionService {
   async listActivePlans() {
     const plans = await prisma.promotionPlan.findMany({
       where: { isActive: true },
-      orderBy: [{ sortOrder: 'asc' }, { durationDays: 'asc' }],
+      orderBy: [{ price: 'asc' }, { durationDays: 'asc' }],
     })
     return {
       status: 200,
@@ -201,7 +201,7 @@ export class PromotionService {
 
   async adminListPlans() {
     const plans = await prisma.promotionPlan.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { durationDays: 'asc' }],
+      orderBy: [{ price: 'asc' }, { durationDays: 'asc' }],
     })
     return {
       status: 200,
@@ -216,16 +216,15 @@ export class PromotionService {
         label: body.label,
         durationDays: body.durationDays,
         price: body.price,
-        currency: body.currency || 'USD',
+        currency: 'EUR',
         isActive: body.isActive ?? true,
-        sortOrder: body.sortOrder ?? 0,
+        sortOrder: 0,
       },
       update: {
         label: body.label,
         price: body.price,
-        currency: body.currency || 'USD',
+        currency: 'EUR',
         isActive: body.isActive ?? true,
-        sortOrder: body.sortOrder ?? 0,
       },
     })
     return {
@@ -236,9 +235,12 @@ export class PromotionService {
 
   async updatePlan(planId, body) {
     try {
+      const data = { ...body }
+      delete data.sortOrder
+      if (data.currency != null) data.currency = 'EUR'
       const plan = await prisma.promotionPlan.update({
         where: { id: planId },
-        data: body,
+        data,
       })
       return {
         status: 200,

@@ -19,6 +19,7 @@ export const EDIT_MODULES = [
   { id: 'product-moderation', module: 'Product Moderation', defaultEnabled: true },
   { id: 'chat', module: 'Chat', defaultEnabled: false },
   { id: 'marketing-management', module: 'Marketing Management', defaultEnabled: false },
+  { id: 'promotion-plans', module: 'Promotion Plans', defaultEnabled: false },
   { id: 'finance-payments', module: 'Finance & Payments', defaultEnabled: false },
   { id: 'disputes', module: 'Disputes Resolution', defaultEnabled: false },
   { id: 'auction', module: 'Auction', defaultEnabled: false },
