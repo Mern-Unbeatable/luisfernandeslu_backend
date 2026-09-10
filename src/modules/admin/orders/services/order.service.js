@@ -52,6 +52,61 @@ function normalizeTab(raw) {
     : 'supplier'
 }
 
+const transporterUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  phoneNumber: true,
+  profile: { select: { companyName: true } },
+}
+
+function mapAdminShipment(shipment) {
+  if (!shipment) return null
+
+  const bid = shipment.auction?.bids?.[0]
+  const transporterUser =
+    bid?.transporter || shipment.vehicle?.transporter || null
+  const vehicle = shipment.vehicle
+  const displayName =
+    companyDisplayName(transporterUser) || partyName(transporterUser) || null
+  const vehicleLabel = vehicle
+    ? [vehicle.vehicleType, vehicle.licensePlate].filter(Boolean).join(' · ')
+    : null
+
+  return {
+    id: shipment.id,
+    pickupAddressText: shipment.pickupAddressText,
+    deliveryAddressText: shipment.deliveryAddressText,
+    distanceKm: shipment.distanceKm ?? null,
+    auction: shipment.auction
+      ? {
+          id: shipment.auction.id,
+          auctionCode: shipment.auction.auctionCode,
+          auctionStatus: shipment.auction.auctionStatus,
+          expiresAt: shipment.auction.expiresAt,
+        }
+      : null,
+    transporterId:
+      transporterUser?.id ||
+      bid?.transporterId ||
+      vehicle?.transporterId ||
+      null,
+    transporterName: displayName,
+    name: displayName,
+    email: transporterUser?.email || null,
+    phone: transporterUser?.phoneNumber || null,
+    vehicle: vehicleLabel,
+    initials: displayName
+      ? displayName
+          .split(/\s+/)
+          .map((part) => part[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()
+      : null,
+  }
+}
+
 function normalizeCustomerType(raw) {
   const s = String(raw || 'all').trim().toLowerCase()
   if (s === 'company') return 'COMPANY'
@@ -364,12 +419,28 @@ class AdminOrderService {
             pickupAddressText: true,
             deliveryAddressText: true,
             distanceKm: true,
+            vehicle: {
+              select: {
+                licensePlate: true,
+                vehicleType: true,
+                transporterId: true,
+                transporter: { select: transporterUserSelect },
+              },
+            },
             auction: {
               select: {
                 id: true,
                 auctionCode: true,
                 auctionStatus: true,
                 expiresAt: true,
+                bids: {
+                  where: { status: 'ACCEPTED' },
+                  take: 1,
+                  select: {
+                    transporterId: true,
+                    transporter: { select: transporterUserSelect },
+                  },
+                },
               },
             },
           },
@@ -463,7 +534,7 @@ class AdminOrderService {
       project: order.project,
       products,
       invoice: invoiceMapped,
-      shipment: order.shipment,
+      shipment: mapAdminShipment(order.shipment),
       statusHistory: order.statusHistory.map((h) => ({
         status: factory
           ? h.status === 'CANCELLED' && /cancelled by admin/i.test(h.note || '')
