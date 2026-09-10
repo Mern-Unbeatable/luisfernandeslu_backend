@@ -913,17 +913,11 @@ class AuctionService {
     const { page, limit, skip, take } = parsePagination(query, { defaultLimit: 20 })
     const filter = this.normalizeTransporterAuctionFilter(query.filter)
     const now = new Date()
-    const lingerMs = env.auctionEndedVisibleMinutes * 60 * 1000
-    const lingerFrom = new Date(now.getTime() - lingerMs)
 
     this.scheduleExpireSweep()
 
-    // Admin "all" = every auction (not only open + recent linger window)
-    const where =
-      filter === 'all'
-        ? {}
-        : this.transporterAuctionBoardWhere(filter, now, lingerFrom)
-    const orderBy = this.transporterAuctionBoardOrder(filter)
+    const where = this.adminAuctionBoardWhere(filter, now)
+    const orderBy = this.adminAuctionBoardOrder(filter)
     const include = this.auctionBoardListInclude()
 
     const [total, auctions] = await Promise.all([
@@ -948,6 +942,38 @@ class AuctionService {
         message: 'Auctions fetched',
       },
     }
+  }
+
+  /** Admin filters — Ended is not limited to the transporter linger window. */
+  adminAuctionBoardWhere(filter, now) {
+    const open = {
+      auctionStatus: 'PENDING_BIDS',
+      expiresAt: { gt: now },
+    }
+    const ended = {
+      OR: [
+        {
+          auctionStatus: {
+            in: ['ASSIGNED', 'EXPIRED', 'PENDING_PAYMENT', 'CANCELLED'],
+          },
+        },
+        {
+          auctionStatus: 'PENDING_BIDS',
+          expiresAt: { lte: now },
+        },
+      ],
+    }
+
+    if (filter === 'ended') return ended
+    if (filter === 'ending_soon' || filter === 'nearest') return open
+    return {}
+  }
+
+  adminAuctionBoardOrder(filter) {
+    if (filter === 'ending_soon') return { expiresAt: 'asc' }
+    if (filter === 'nearest') return { shipment: { distanceKm: 'asc' } }
+    if (filter === 'ended') return { expiresAt: 'desc' }
+    return { createdAt: 'desc' }
   }
 
   normalizeTransporterAuctionFilter(raw) {
