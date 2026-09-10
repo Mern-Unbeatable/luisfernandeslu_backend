@@ -14,6 +14,10 @@ import {
   requireAccessToken,
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
+import {
+  avatarUpload,
+  AVATAR_FILE_FIELDS,
+} from '../../../shared/upload/evidence-upload.js'
 
 /** Mounted at `/api/affiliate`. */
 class AffiliateRoutes {
@@ -79,6 +83,15 @@ class AffiliateRoutes {
       '/iban',
       validate(saveIbanBodySchema, 'body'),
       (req, res, next) => affiliateController.saveIban(req, res, next),
+    )
+
+    this.router.post(
+      '/profile/avatar',
+      avatarUpload.fields(AVATAR_FILE_FIELDS),
+      (req, res, next) => affiliateController.uploadAvatar(req, res, next),
+    )
+    this.router.delete('/profile/avatar', (req, res, next) =>
+      affiliateController.removeAvatar(req, res, next),
     )
   }
 

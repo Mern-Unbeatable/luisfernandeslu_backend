@@ -10,6 +10,10 @@ import {
   requireAccessToken,
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
+import {
+  avatarUpload,
+  AVATAR_FILE_FIELDS,
+} from '../../../shared/upload/evidence-upload.js'
 
 /** Mounted at `/api/admin/profile`. */
 class AdminProfileRoutes {
@@ -41,6 +45,16 @@ class AdminProfileRoutes {
       '/iban',
       validate(saveAdminIbanBodySchema, 'body'),
       (req, res, next) => adminProfileController.saveIban(req, res, next),
+    )
+
+    this.router.post(
+      '/avatar',
+      avatarUpload.fields(AVATAR_FILE_FIELDS),
+      (req, res, next) => adminProfileController.uploadAvatar(req, res, next),
+    )
+
+    this.router.delete('/avatar', (req, res, next) =>
+      adminProfileController.removeAvatar(req, res, next),
     )
   }
 

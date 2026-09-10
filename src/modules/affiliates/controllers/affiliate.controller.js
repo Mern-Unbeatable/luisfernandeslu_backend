@@ -1,5 +1,6 @@
 import affiliateService from '../services/affiliate.service.js'
 import { sendServiceResult } from '../../../utils/apiResponse.js'
+import { resolveRequestBaseUrl } from '../../../lib/requestUrl.js'
 
 class AffiliateController {
   async overview(req, res, next) {
@@ -64,7 +65,13 @@ class AffiliateController {
 
   async getProfile(req, res, next) {
     try {
-      return sendServiceResult(res, await affiliateService.getProfile(req.auth))
+      return sendServiceResult(
+        res,
+        await affiliateService.getProfile(
+          req.auth,
+          resolveRequestBaseUrl(req),
+        ),
+      )
     } catch (err) {
       next(err)
     }
@@ -105,6 +112,35 @@ class AffiliateController {
       return sendServiceResult(
         res,
         await affiliateService.saveIban(req.auth, req.body),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async uploadAvatar(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await affiliateService.uploadAvatar(
+          req.auth,
+          req.files,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async removeAvatar(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await affiliateService.removeAvatar(
+          req.auth,
+          resolveRequestBaseUrl(req),
+        ),
       )
     } catch (err) {
       next(err)

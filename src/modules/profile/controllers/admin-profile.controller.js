@@ -54,6 +54,35 @@ export class AdminProfileController {
       next(err)
     }
   }
+
+  async uploadAvatar(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminProfileService.uploadAvatar(
+          req.auth,
+          req.files,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async removeAvatar(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminProfileService.removeAvatar(
+          req.auth,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new AdminProfileController()

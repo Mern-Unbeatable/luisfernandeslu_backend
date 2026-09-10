@@ -3,6 +3,10 @@ import prisma from '../../../../lib/prisma.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { httpError, notFound } from '../../../shared/errors.js'
 import { getAdminStaffAccess } from '../../auth/staffAccess.js'
+import {
+  clearUserAvatar,
+  replaceUserAvatar,
+} from '../../../shared/upload/user-avatar.js'
 
 function assertAdmin(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -176,6 +180,20 @@ export class AdminProfileService {
       status: 200,
       body: { ...next, message: 'EuPago credentials saved' },
     }
+  }
+
+  async uploadAvatar(auth, files, baseUrl) {
+    const adminId = assertAdmin(auth, 'Only admins can update avatar')
+    await replaceUserAvatar(adminId, files)
+    const next = await toBody(adminId, baseUrl)
+    return { status: 200, body: { ...next, message: 'Avatar updated' } }
+  }
+
+  async removeAvatar(auth, baseUrl) {
+    const adminId = assertAdmin(auth, 'Only admins can update avatar')
+    await clearUserAvatar(adminId)
+    const next = await toBody(adminId, baseUrl)
+    return { status: 200, body: { ...next, message: 'Avatar removed' } }
   }
 }
 

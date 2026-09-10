@@ -85,6 +85,35 @@ export class SupplierProfileController {
     }
   }
 
+  async uploadAvatar(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await supplierProfileService.uploadAvatar(
+          req.auth,
+          req.files,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async removeAvatar(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await supplierProfileService.removeAvatar(
+          req.auth,
+          resolveRequestBaseUrl(req),
+        ),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async resubmitDocuments(req, res, next) {
     try {
       return sendServiceResult(

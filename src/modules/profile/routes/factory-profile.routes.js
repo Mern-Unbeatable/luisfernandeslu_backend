@@ -13,6 +13,10 @@ import {
   requireRoles,
 } from '../../../middlewares/auth.middleware.js'
 import { resubmitUpload } from '../upload.js'
+import {
+  avatarUpload,
+  AVATAR_FILE_FIELDS,
+} from '../../../shared/upload/evidence-upload.js'
 
 class FactoryProfileRoutes {
   constructor() {
@@ -57,6 +61,16 @@ class FactoryProfileRoutes {
       '/eupago',
       validate(saveFactoryEupagoBodySchema, 'body'),
       (req, res, next) => factoryProfileController.saveEupago(req, res, next),
+    )
+
+    this.router.post(
+      '/avatar',
+      avatarUpload.fields(AVATAR_FILE_FIELDS),
+      (req, res, next) => factoryProfileController.uploadAvatar(req, res, next),
+    )
+
+    this.router.delete('/avatar', (req, res, next) =>
+      factoryProfileController.removeAvatar(req, res, next),
     )
 
     this.router.post(

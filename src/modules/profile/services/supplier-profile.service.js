@@ -5,6 +5,10 @@ import { formatAddressLine } from '../../../shared/address.js'
 import { httpError, notFound } from '../../../shared/errors.js'
 import { assertSupplier } from '../../orders/status.js'
 import { saveSellerEupagoCredentials } from '../../payments/seller-eupago.js'
+import {
+  clearUserAvatar,
+  replaceUserAvatar,
+} from '../../../shared/upload/user-avatar.js'
 
 function warehouseLine(address) {
   if (!address) return ''
@@ -310,6 +314,20 @@ export class SupplierProfileService {
       status: 200,
       body: { ...next, message: 'EuPago credentials saved' },
     }
+  }
+
+  async uploadAvatar(auth, files, baseUrl) {
+    const sellerId = assertSupplier(auth, 'Only suppliers can update avatar')
+    await replaceUserAvatar(sellerId, files)
+    const next = await toBody(sellerId, baseUrl)
+    return { status: 200, body: { ...next, message: 'Avatar updated' } }
+  }
+
+  async removeAvatar(auth, baseUrl) {
+    const sellerId = assertSupplier(auth, 'Only suppliers can update avatar')
+    await clearUserAvatar(sellerId)
+    const next = await toBody(sellerId, baseUrl)
+    return { status: 200, body: { ...next, message: 'Avatar removed' } }
   }
 
   async resubmitDocuments(auth, files) {

@@ -1,8 +1,13 @@
 import { hashPassword, verifyPassword } from 'better-auth/crypto'
 import prisma from '../../../../lib/prisma.js'
+import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { httpError } from '../../../shared/errors.js'
 import { money } from '../../../shared/money.js'
 import { parsePagination, paginationMeta, searchFilter } from '../../../shared/pagination.js'
+import {
+  clearUserAvatar,
+  replaceUserAvatar,
+} from '../../../shared/upload/user-avatar.js'
 import {
   activeSinceDate,
   buildShareLink,
@@ -524,7 +529,7 @@ class AffiliateService {
     }
   }
 
-  async getProfile(auth) {
+  async getProfile(auth, baseUrl) {
     assertAffiliate(auth)
     const user = await prisma.user.findUnique({
       where: { id: auth.id },
@@ -533,6 +538,7 @@ class AffiliateService {
         name: true,
         email: true,
         phoneNumber: true,
+        image: true,
         role: true,
         status: true,
         referralCode: true,
@@ -555,6 +561,7 @@ class AffiliateService {
           name: user.name,
           email: user.email,
           phoneNumber: user.phoneNumber,
+          avatarUrl: user.image ? absolutizeUrl(user.image, baseUrl) : null,
           role: 'affiliate',
           status: user.status,
           referralCode: user.referralCode,
@@ -726,6 +733,24 @@ class AffiliateService {
     return this.getIban(auth).then((r) => ({
       status: 200,
       body: { ...r.body, message: 'IBAN saved' },
+    }))
+  }
+
+  async uploadAvatar(auth, files, baseUrl) {
+    assertAffiliate(auth)
+    await replaceUserAvatar(auth.id, files)
+    return this.getProfile(auth, baseUrl).then((r) => ({
+      status: 200,
+      body: { ...r.body, message: 'Avatar updated' },
+    }))
+  }
+
+  async removeAvatar(auth, baseUrl) {
+    assertAffiliate(auth)
+    await clearUserAvatar(auth.id)
+    return this.getProfile(auth, baseUrl).then((r) => ({
+      status: 200,
+      body: { ...r.body, message: 'Avatar removed' },
     }))
   }
 }

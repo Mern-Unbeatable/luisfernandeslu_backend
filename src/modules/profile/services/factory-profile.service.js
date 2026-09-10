@@ -4,6 +4,10 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { formatAddressLine } from '../../../shared/address.js'
 import { httpError, notFound } from '../../../shared/errors.js'
 import { saveSellerEupagoCredentials } from '../../payments/seller-eupago.js'
+import {
+  clearUserAvatar,
+  replaceUserAvatar,
+} from '../../../shared/upload/user-avatar.js'
 
 function assertFactory(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -322,6 +326,20 @@ export class FactoryProfileService {
       status: 200,
       body: { ...next, message: 'EuPago credentials saved' },
     }
+  }
+
+  async uploadAvatar(auth, files, baseUrl) {
+    const factoryId = assertFactory(auth, 'Only factories can update avatar')
+    await replaceUserAvatar(factoryId, files)
+    const next = await toBody(factoryId, baseUrl)
+    return { status: 200, body: { ...next, message: 'Avatar updated' } }
+  }
+
+  async removeAvatar(auth, baseUrl) {
+    const factoryId = assertFactory(auth, 'Only factories can update avatar')
+    await clearUserAvatar(factoryId)
+    const next = await toBody(factoryId, baseUrl)
+    return { status: 200, body: { ...next, message: 'Avatar removed' } }
   }
 
   async resubmitDocuments(auth, files) {
