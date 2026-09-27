@@ -136,6 +136,8 @@ export function getCorsOrigins() {
         'http://127.0.0.1:5173',
         'https://luisfernandeslu.maktechgroup.tech',
         'https://dev.luisfernandeslu.maktechgroup.tech',
+        'https://construpreco.pt',
+        'https://www.construpreco.pt',
         env.frontendUrlExtra,
       ]
         .filter(Boolean)
