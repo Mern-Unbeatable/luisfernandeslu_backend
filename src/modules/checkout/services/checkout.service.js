@@ -816,14 +816,6 @@ class CheckoutService {
         b.orderId = order.id
         b.orderNumber = order.orderNumber
       }
-      if (priced.items.length && !directBuy) {
-        await tx.cartItem.deleteMany({
-          where: {
-            id: { in: priced.items.map((i) => i.id) },
-            cart: { userId: auth.id },
-          },
-        })
-      }
 
       return created
     })
@@ -848,16 +840,31 @@ class CheckoutService {
           })),
       })
     } catch (err) {
-      await prisma.checkoutSession.update({
-        where: { id: session.id },
-        data: { paymentStatus: 'FAILED' },
-      })
+      await prisma.$transaction([
+        prisma.checkoutSession.update({
+          where: { id: session.id },
+          data: { paymentStatus: 'FAILED' },
+        }),
+        prisma.order.updateMany({
+          where: { checkoutSessionId: session.id, orderStatus: 'NEW' },
+          data: { orderStatus: 'CANCELLED' },
+        }),
+      ])
       throw httpError(
         err.message || 'Payment provider error',
         err.statusCode || 502,
         err.code || 'EupagoError',
         err.details,
       )
+    }
+
+    if (priced.items.length && !directBuy) {
+      await prisma.cartItem.deleteMany({
+        where: {
+          id: { in: priced.items.map((i) => i.id) },
+          cart: { userId: auth.id },
+        },
+      })
     }
 
     const updated = await prisma.checkoutSession.update({
