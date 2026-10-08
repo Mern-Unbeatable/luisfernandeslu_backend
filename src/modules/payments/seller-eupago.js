@@ -17,7 +17,7 @@ export async function getSellerEupagoStatus(userId) {
   return {
     hasApiKey,
     hasExternKey,
-    configured: hasApiKey && hasExternKey,
+    configured: hasExternKey,
   }
 }
 
@@ -26,7 +26,7 @@ export async function assertSellerEupagoConfigured(userId) {
   if (status.configured) return status
 
   throw httpError(
-    'Add your EuPago API key and extern key in Profile before listing products on the website',
+    'Add your EuPago extern key in Profile before listing products on the website',
     400,
     'EupagoCredentialsRequired',
   )

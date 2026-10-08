@@ -19,6 +19,7 @@ import {
   payConvertedOffer,
 } from '../../offers/offer-payment.js'
 import { quotePayContext } from '../../offers/contexts/quote.context.js'
+import { assertSellerEupagoConfigured } from '../../payments/seller-eupago.js'
 
 function parseQuantityAmount(quantityText) {
   const match = String(quantityText || '').match(/\d+/)
@@ -393,6 +394,7 @@ ${quantityNote}.`,
     if (quote.sellerId !== auth.id) {
       throw httpError('Only the product supplier can send offers', 403, 'Forbidden')
     }
+    await assertSellerEupagoConfigured(auth.id)
 
     const quoteProduct = quote.quoteItems?.[0]?.product || null
     let productId = body.productId || quoteProduct?.id || null

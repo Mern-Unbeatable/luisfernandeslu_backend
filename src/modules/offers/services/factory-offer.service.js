@@ -15,6 +15,7 @@ import {
 } from '../offer-payment.js'
 import { factoryPayContext } from '../contexts/factory.context.js'
 import factoryOrderService from '../../orders/services/factory-order.service.js'
+import { assertSellerEupagoConfigured } from '../../payments/seller-eupago.js'
 
 class FactoryOfferService {
   role(auth) {
@@ -37,6 +38,7 @@ class FactoryOfferService {
 
   async create(auth, body, baseUrl) {
     this.assertFactory(auth)
+    await assertSellerEupagoConfigured(auth.id)
 
     let productId = body.productId || null
     let productName = body.productName

@@ -41,9 +41,7 @@ function mapProfile(user, warehouses, baseUrl) {
     // EuPago secrets are write-only
     eupagoApiKey: '',
     eupagoExternKey: '',
-    hasEupagoCredentials: Boolean(
-      user.profile?.eupagoApiKey && user.profile?.eupagoExternKey,
-    ),
+    hasEupagoCredentials: Boolean(user.profile?.eupagoExternKey?.trim()),
     rejectionReason: user.profile?.rejectionReason || null,
     verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
   }
