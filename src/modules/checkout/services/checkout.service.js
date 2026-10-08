@@ -3,7 +3,7 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import cartService from '../../cart/services/cart.service.js'
 import {
   createSplitPayment,
-  resolveAdminExternKey,
+  MERCHANT_SPLIT_KEY,
   getCommissionPercent,
   getPaymentProvider,
   isMockPayments,
@@ -623,14 +623,6 @@ class CheckoutService {
     }
 
     const mock = isMockPayments()
-    const adminExternKey = await resolveAdminExternKey()
-    if (!mock && !adminExternKey) {
-      throw httpError(
-        'Admin EuPago beneficiary is not configured',
-        503,
-        'EupagoAdminNotConfigured',
-      )
-    }
 
     const vatRate = await this.loadVatRate(auth.id)
     let priced
@@ -725,7 +717,7 @@ class CheckoutService {
       beneficiaryType: 'ADMIN',
       sellerId: null,
       amount: adminAmount,
-      externKey: adminExternKey,
+      externKey: MERCHANT_SPLIT_KEY,
       identifier: 'admin-commission',
     })
 
@@ -843,12 +835,14 @@ class CheckoutService {
         identifier: session.checkoutNumber,
         alias: body.mbwayPhone,
         adminCallback: env.payments.eupago.callbackUrl || undefined,
-        beneficiaries: splits.map((s) => ({
-          externKey: s.externKey,
-          amount: s.amount,
-          identifier: `${session.checkoutNumber}-${s.identifier}`,
-          immediatePayment: false,
-        })),
+        beneficiaries: splits
+          .filter((s) => s.beneficiaryType !== 'ADMIN')
+          .map((s) => ({
+            externKey: s.externKey,
+            amount: s.amount,
+            identifier: `${session.checkoutNumber}-${s.identifier}`,
+            immediatePayment: false,
+          })),
       })
     } catch (err) {
       await prisma.checkoutSession.update({

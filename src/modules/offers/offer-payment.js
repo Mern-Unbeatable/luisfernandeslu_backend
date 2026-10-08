@@ -6,7 +6,7 @@ import { splitName } from '../../shared/party.js'
 import { addMonths } from '../../shared/dates.js'
 import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
 import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
-import eupagoClient, { resolveAdminExternKey, getCommissionPercent, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
+import eupagoClient, { MERCHANT_SPLIT_KEY, getCommissionPercent, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
@@ -244,7 +244,6 @@ export async function payConvertedOffer({
   })
 
   const mock = isMockPayments()
-  const adminExternKey = await resolveAdminExternKey()
 
   const sellerId = context.sellerId({ offer, extra })
   const seller = await prisma.user.findUnique({
@@ -280,7 +279,7 @@ export async function payConvertedOffer({
       beneficiaryType: 'ADMIN',
       sellerId: null,
       amount: adminAmount,
-      externKey: adminExternKey || 'MOCK-ADMIN',
+      externKey: MERCHANT_SPLIT_KEY,
       identifier: 'admin-commission',
     },
   ]
@@ -294,12 +293,14 @@ export async function payConvertedOffer({
       identifier: result.session.checkoutNumber,
       alias: method === 'mbway' ? mbwayPhone : undefined,
       adminCallback: env.payments.eupago.callbackUrl || undefined,
-      beneficiaries: splits.map((s) => ({
-        externKey: s.externKey,
-        amount: s.amount,
-        identifier: `${result.session.checkoutNumber}-${s.identifier}`,
-        immediatePayment: false,
-      })),
+      beneficiaries: splits
+        .filter((s) => s.beneficiaryType !== 'ADMIN')
+        .map((s) => ({
+          externKey: s.externKey,
+          amount: s.amount,
+          identifier: `${result.session.checkoutNumber}-${s.identifier}`,
+          immediatePayment: false,
+        })),
     })
 
     await prisma.checkoutSession.update({

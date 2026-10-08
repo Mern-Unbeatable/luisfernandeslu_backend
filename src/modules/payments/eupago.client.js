@@ -10,6 +10,12 @@ import { env } from '../../config/env.js'
 import { moneyNonNegative as money } from '../../shared/money.js'
 import prisma from '../../../lib/prisma.js'
 
+/**
+ * Stored on the ADMIN split row only. Construpreço is the merchant and must not
+ * be sent as a beneficiary — EuPago transfers the remainder to it automatically.
+ */
+export const MERCHANT_SPLIT_KEY = 'MERCHANT'
+
 export function getPaymentProvider() {
   return env.payments.provider === 'eupago' ? 'eupago' : 'mock'
 }
