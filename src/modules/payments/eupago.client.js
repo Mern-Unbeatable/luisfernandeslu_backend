@@ -75,6 +75,16 @@ export function getCommissionPercent() {
   return n
 }
 
+/**
+ * Per-seller commission set by admin (stored in `user.vatRate`),
+ * falling back to the platform default.
+ */
+export function commissionPercentOf(party) {
+  const custom = Number(party?.vatRate)
+  if (Number.isFinite(custom) && custom > 0 && custom <= 100) return money(custom)
+  return money(getCommissionPercent())
+}
+
 export function createMockSplitPayment({ amount, identifier, paymentMethod }) {
   const ref = `MOCK${Date.now().toString().slice(-9)}`
   const method = String(paymentMethod || 'multibanco').toLowerCase()
@@ -202,6 +212,7 @@ export default {
   resolveAdminExternKey,
   resolveEupagoApiKey,
   getCommissionPercent,
+  commissionPercentOf,
   getPaymentProvider,
   isMockPayments,
 }

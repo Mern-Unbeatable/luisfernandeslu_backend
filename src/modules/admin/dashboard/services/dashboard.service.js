@@ -1,7 +1,10 @@
 import prisma from '../../../../../lib/prisma.js'
 import { httpError } from '../../../../shared/errors.js'
 import { money } from '../../../../shared/money.js'
-import { getCommissionPercent } from '../../../payments/eupago.client.js'
+import {
+  getCommissionPercent,
+  commissionPercentOf,
+} from '../../../payments/eupago.client.js'
 
 const MONTHS = [
   'Jan',
@@ -70,8 +73,6 @@ class AdminDashboardService {
 
     const currentYear = new Date().getFullYear()
     const registrationsSince = new Date(Date.now() - THIRTY_DAYS_MS)
-    const platformCommissionRate = getCommissionPercent() / 100
-
     const [
       allOrders,
       activeSuppliersCount,
@@ -99,6 +100,7 @@ class AdminDashboardService {
               role: true,
             },
           },
+          seller: { select: { vatRate: true } },
         },
       }),
 
@@ -152,6 +154,8 @@ class AdminDashboardService {
     let b2cGmv = 0
     let b2bOrderCount = 0
     let b2cOrderCount = 0
+    let b2bPlatformRevenue = 0
+    let b2cPlatformRevenue = 0
 
     const thisYear = currentYear
     const lastYear = currentYear - 1
@@ -172,14 +176,19 @@ class AdminDashboardService {
       const isB2B = isB2BCustomerRole(order.customer?.role)
       const amount = money(order.grandTotal || order.subTotal || 0)
       const roleKey = isB2B ? 'COMPANY' : 'CUSTOMER'
+      const platformRevenue = money(
+        (amount * commissionPercentOf(order.seller)) / 100,
+      )
 
       totalGmv = money(totalGmv + amount)
       if (isB2B) {
         b2bGmv = money(b2bGmv + amount)
         b2bOrderCount += 1
+        b2bPlatformRevenue = money(b2bPlatformRevenue + platformRevenue)
       } else {
         b2cGmv = money(b2cGmv + amount)
         b2cOrderCount += 1
+        b2cPlatformRevenue = money(b2cPlatformRevenue + platformRevenue)
       }
 
       if (order.customerId) {
@@ -230,10 +239,8 @@ class AdminDashboardService {
     }
     const totalCommission = money(b2bCommission + b2cCommission)
 
-    // Platform revenue = marketplace take on GMV (admin commission %), not affiliate payouts.
-    const totalPlatformRevenue = money(totalGmv * platformCommissionRate)
-    const b2bPlatformRevenue = money(b2bGmv * platformCommissionRate)
-    const b2cPlatformRevenue = money(b2cGmv * platformCommissionRate)
+    // Platform revenue = marketplace take on GMV (per-seller commission %), not affiliate payouts.
+    const totalPlatformRevenue = money(b2bPlatformRevenue + b2cPlatformRevenue)
 
     const totalOrdersCount = allOrders.length
     const avgOrderValue = totalOrdersCount > 0 ? money(totalGmv / totalOrdersCount) : 0

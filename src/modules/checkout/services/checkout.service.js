@@ -4,7 +4,7 @@ import cartService from '../../cart/services/cart.service.js'
 import {
   createSplitPayment,
   MERCHANT_SPLIT_KEY,
-  getCommissionPercent,
+  commissionPercentOf,
   getPaymentProvider,
   isMockPayments,
 } from '../../payments/eupago.client.js'
@@ -669,6 +669,7 @@ class CheckoutService {
       where: { id: { in: sellerIds } },
       select: {
         id: true,
+        vatRate: true,
         profile: { select: { eupagoExternKey: true, companyName: true } },
       },
     })
@@ -689,14 +690,14 @@ class CheckoutService {
         )
       }
       b.externKey = key || `MOCK-SELLER-${b.sellerId}`
+      b.commissionPercent = commissionPercentOf(seller)
     }
 
-    const commissionPercent = getCommissionPercent()
     const splits = []
     let sellerPayoutSum = 0
     for (const b of buckets) {
       const payout = money(
-        b.merchandise * (1 - commissionPercent / 100),
+        b.merchandise * (1 - b.commissionPercent / 100),
       )
       b.sellerPayout = payout
       sellerPayoutSum = money(sellerPayoutSum + payout)

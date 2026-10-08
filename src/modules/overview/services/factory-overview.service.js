@@ -5,7 +5,7 @@
 import prisma from '../../../../lib/prisma.js'
 import { money } from '../../../shared/money.js'
 import { httpError } from '../../../shared/errors.js'
-import { getCommissionPercent } from '../../payments/eupago.client.js'
+import { commissionPercentOf } from '../../payments/eupago.client.js'
 import { FACTORY_ORDER_SOURCE } from '../../orders/factory-status-rules.js'
 
 const MONTHS = [
@@ -164,7 +164,11 @@ export class FactoryOverviewService {
     const factoryId = assertFactory(auth)
     const now = new Date()
     const year = now.getFullYear()
-    const commissionPercent = getCommissionPercent()
+    const factoryUser = await prisma.user.findUnique({
+      where: { id: factoryId },
+      select: { vatRate: true },
+    })
+    const commissionPercent = commissionPercentOf(factoryUser)
 
     const [
       totalOrders,

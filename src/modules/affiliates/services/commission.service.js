@@ -1,6 +1,6 @@
 import prisma from '../../../../lib/prisma.js'
 import { money } from '../../../shared/money.js'
-import { getCommissionPercent } from '../../payments/eupago.client.js'
+import { commissionPercentOf } from '../../payments/eupago.client.js'
 import {
   activeSinceDate,
   isReferralActive,
@@ -9,7 +9,7 @@ import {
 
 /**
  * After checkout is paid: attribute affiliate commission from admin merchandise share.
- * Formula: adminShare = order.subTotal * ADMIN_COMMISSION% ; commission = adminShare * tier%
+ * Formula: adminShare = order.subTotal * seller commission% ; commission = adminShare * tier%
  * Only if buyer was referred and registration is still within the 2-month window.
  */
 export async function recordAffiliateCommissionsForCheckout(checkoutSessionId, tx = prisma) {
@@ -24,6 +24,7 @@ export async function recordAffiliateCommissionsForCheckout(checkoutSessionId, t
       subTotal: true,
       grandTotal: true,
       commission: { select: { id: true } },
+      seller: { select: { vatRate: true } },
       customer: {
         select: {
           id: true,
@@ -37,7 +38,6 @@ export async function recordAffiliateCommissionsForCheckout(checkoutSessionId, t
 
   if (!orders.length) return []
 
-  const adminPercent = getCommissionPercent()
   const created = []
 
   for (const order of orders) {
@@ -69,6 +69,7 @@ export async function recordAffiliateCommissionsForCheckout(checkoutSessionId, t
     const tierPercent = Number(tier?.commissionPercent ?? 0)
     if (tierPercent <= 0) continue
 
+    const adminPercent = commissionPercentOf(order.seller)
     const adminShare = money((Number(order.subTotal) || 0) * (adminPercent / 100))
     const commissionAmount = money(adminShare * (tierPercent / 100))
     if (commissionAmount <= 0) continue

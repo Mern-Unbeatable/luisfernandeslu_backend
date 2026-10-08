@@ -5,7 +5,7 @@ import { companyDisplayName, partyName } from '../../shared/party.js'
 import { parsePagination, paginationMeta } from '../../shared/pagination.js'
 import { httpError, notFound } from '../../shared/errors.js'
 import { buildCommissionInvoicePdf } from '../../shared/pdf/commission-invoice-pdf.js'
-import { getCommissionPercent } from '../payments/eupago.client.js'
+import { commissionPercentOf } from '../payments/eupago.client.js'
 
 const ROLE_MAP = {
   supplier: 'SUPPLIER',
@@ -117,12 +117,6 @@ function baseAmount(order, role, partyId) {
     return money(bid?.bidAmount)
   }
   return money(order.grandTotal)
-}
-
-function commissionPercentOf(party) {
-  const custom = Number(party.vatRate)
-  if (Number.isFinite(custom) && custom > 0) return money(custom)
-  return money(getCommissionPercent())
 }
 
 function mapRow(order, party, role) {

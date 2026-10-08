@@ -6,7 +6,7 @@ import { splitName } from '../../shared/party.js'
 import { addMonths } from '../../shared/dates.js'
 import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
 import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
-import eupagoClient, { MERCHANT_SPLIT_KEY, getCommissionPercent, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
+import eupagoClient, { MERCHANT_SPLIT_KEY, commissionPercentOf, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
@@ -215,6 +215,25 @@ export async function payConvertedOffer({
     )
   }
 
+  const mock = isMockPayments()
+  const sellerId = context.sellerId({ offer, extra })
+  const seller = await prisma.user.findUnique({
+    where: { id: sellerId },
+    select: {
+      id: true,
+      vatRate: true,
+      profile: { select: { eupagoExternKey: true, companyName: true } },
+    },
+  })
+  const sellerExternKey = seller?.profile?.eupagoExternKey?.trim()
+  if (!sellerExternKey && !mock) {
+    throw httpError(
+      'Seller payment is not configured',
+      400,
+      'SellerPaymentNotConfigured',
+    )
+  }
+
   const buyer = await loadBuyer(auth.id)
   const vatRate = await loadBuyerVatRate(auth.id)
   const subtotal = money(Number(offer.totalPrice) || 0)
@@ -243,28 +262,10 @@ export async function payConvertedOffer({
     return { ...converted, ...followUp }
   })
 
-  const mock = isMockPayments()
-
-  const sellerId = context.sellerId({ offer, extra })
-  const seller = await prisma.user.findUnique({
-    where: { id: sellerId },
-    select: {
-      id: true,
-      profile: { select: { eupagoExternKey: true, companyName: true } },
-    },
-  })
-  const sellerExternKey = seller?.profile?.eupagoExternKey?.trim()
-  if (!sellerExternKey && !mock) {
-    throw httpError(
-      'Seller payment is not configured',
-      400,
-      'SellerPaymentNotConfigured',
-    )
-  }
-
-  const commissionPercent = getCommissionPercent()
+  const commissionPercent = commissionPercentOf(seller)
   const grandTotal = money(result.order.grandTotal)
-  const sellerPayout = money(grandTotal * (1 - commissionPercent / 100))
+  const merchandise = money(result.order.subTotal)
+  const sellerPayout = money(merchandise * (1 - commissionPercent / 100))
   const adminAmount = money(grandTotal - sellerPayout)
 
   const splits = [
