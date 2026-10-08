@@ -54,7 +54,6 @@ export const env = {
     adminCommissionPercent: num('ADMIN_COMMISSION_PERCENT', 20),
     eupago: {
       apiKey: str('EUPAGO_API_KEY'),
-      adminExternKey: str('EUPAGO_ADMIN_EXTERN_KEY'),
       baseUrl: trimTrailingSlash(
         str('EUPAGO_BASE_URL', 'https://sandbox.eupago.pt/api'),
       ),

@@ -208,8 +208,8 @@ curl -X POST "https://sandbox.eupago.pt/api/v1/split-payments/multibanco" \
 | Key | Where to put it |
 |-----|-----------------|
 | Webhook callback (full URL) | `backend/.env` → `EUPAGO_CALLBACK_URL` (e.g. `https://api.example.com/api/checkout/webhook/eupago`) |
-| Platform `externKey` | `backend/.env` → `EUPAGO_ADMIN_EXTERN_KEY` |
-| Supplier `externKey` | DB → `BusinessProfile.eupagoExternKey` per supplier |
+| Platform `externKey` | Not used — EuPago confirmed Construpreço must not be a beneficiary; the remainder goes to it automatically |
+| Supplier `externKey` | DB → `BusinessProfile.eupagoExternKey` per supplier (entered by the seller in Profile) |
 | Enable real split | `PAYMENT_PROVIDER=eupago` in `backend/.env` |
 
 See also: `backend/.env.example` and `backend/src/modules/payments/eupago.client.js`.

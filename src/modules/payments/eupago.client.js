@@ -3,7 +3,7 @@
  * Docs: POST /v1/split-payments/{payment-method}
  *
  * PAYMENT_PROVIDER=mock  → no EuPago calls (local/dev)
- * PAYMENT_PROVIDER=eupago → real split payments (needs API key + externKeys)
+ * PAYMENT_PROVIDER=eupago → real split payments (needs Construpreço API key + seller externKeys)
  */
 
 import { env } from '../../config/env.js'
@@ -22,30 +22,6 @@ export function getPaymentProvider() {
 
 export function isMockPayments() {
   return getPaymentProvider() === 'mock'
-}
-
-/** Env / mock fallback only. Prefer `resolveAdminExternKey()` at payment time. */
-export function getAdminExternKey() {
-  const key = env.payments.eupago.adminExternKey
-  if (key) return key
-  if (isMockPayments()) return 'MOCK-ADMIN'
-  return ''
-}
-
-/** Admin profile `eupagoExternKey` first, then env, then mock. */
-export async function resolveAdminExternKey() {
-  try {
-    const admin = await prisma.user.findFirst({
-      where: { role: 'ADMIN' },
-      orderBy: { createdAt: 'asc' },
-      select: { profile: { select: { eupagoExternKey: true } } },
-    })
-    const fromProfile = admin?.profile?.eupagoExternKey?.trim()
-    if (fromProfile) return fromProfile
-  } catch {
-    // fall through to env
-  }
-  return getAdminExternKey()
 }
 
 /** Env fallback only. Prefer `resolveEupagoApiKey()` at payment time. */
@@ -209,8 +185,6 @@ export async function createSplitPayment({
 export default {
   createSplitPayment,
   createMockSplitPayment,
-  getAdminExternKey,
-  resolveAdminExternKey,
   resolveEupagoApiKey,
   getCommissionPercent,
   commissionPercentOf,

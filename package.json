@@ -23,6 +23,7 @@
         "seed:admin-products": "tsx src/scripts/seed-admin-products.js",
         "seed:marketplace-50": "tsx src/scripts/seed-marketplace-50.js",
         "seed:eupago-keys": "tsx src/scripts/seed-eupago-keys.js",
+    "check:eupago-keys": "tsx src/scripts/check-fake-eupago-keys.js",
         "seed": "tsx src/scripts/seed-catalog.js && tsx src/scripts/seed-promotion-plans.js && tsx src/scripts/seed-demo.js",
         "test": "node --test tests/**/*.test.js",
         "check:imports": "tsx scripts/check-imports.mjs",
