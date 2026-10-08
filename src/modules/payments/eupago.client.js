@@ -118,6 +118,8 @@ export async function createSplitPayment({
   beneficiaries,
   alias,
   adminCallback,
+  successUrl,
+  cancelUrl,
 }) {
   if (isMockPayments()) {
     return createMockSplitPayment({ amount, identifier, paymentMethod })
@@ -151,11 +153,10 @@ export async function createSplitPayment({
   if (method === 'mbway' && alias) body.alias = String(alias)
   
   if (method === 'creditcard') {
-    // Eupago requires a valid public URL (usually HTTPS) for credit card transactions.
-    // Localhost is often rejected with "URL_INVALID".
-    const success = 'https://google.com/success'
-    const cancel = 'https://google.com/cancel'
-    
+    // EuPago requires a public (usually HTTPS) URL; localhost is rejected with "URL_INVALID".
+    const success = successUrl || env.frontendUrl
+    const cancel = cancelUrl || success
+
     body.successUrl = success
     body.cancelUrl = cancel
     body.failUrl = cancel

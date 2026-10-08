@@ -4,6 +4,7 @@ import { env } from '../../../config/env.js'
 import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
 import { resolveVatRate } from '../../admin/settings/settings.store.js'
+import { isSellerPayable } from '../../payments/seller-eupago.js'
 
 /** Flat env fee removed — shipping = distance × admin vehicle rate at checkout. */
 const VAT_FIXED = env.vatFixed
@@ -596,6 +597,9 @@ class CartService {
           inventory: {
             select: { listedQuantity: true, currentStock: true },
           },
+          seller: {
+            select: { profile: { select: { eupagoExternKey: true } } },
+          },
         },
       }),
       this.getOrCreateCart(auth.id),
@@ -603,6 +607,14 @@ class CartService {
 
     if (!product) {
       throw httpError('Product not found or not available', 404, 'NotFound')
+    }
+    if (!isSellerPayable(product.seller)) {
+      throw httpError(
+        'This product is currently unavailable for purchase',
+        400,
+        'SellerPaymentNotConfigured',
+        { productId: product.id },
+      )
     }
 
     const maxQty = maxSellable(product.inventory)

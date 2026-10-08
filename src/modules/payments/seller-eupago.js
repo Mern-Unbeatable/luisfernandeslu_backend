@@ -1,5 +1,12 @@
 import prisma from '../../../lib/prisma.js'
 import { httpError } from '../../shared/errors.js'
+import { isMockPayments } from './eupago.client.js'
+
+/** True when a buyer can pay this seller (seller has an extern key, or payments are mocked). */
+export function isSellerPayable(seller) {
+  if (isMockPayments()) return true
+  return Boolean(String(seller?.profile?.eupagoExternKey || '').trim())
+}
 
 export async function getSellerEupagoStatus(userId) {
   if (!userId) {

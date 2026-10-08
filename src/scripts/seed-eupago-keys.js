@@ -13,6 +13,13 @@ const KEY_PREFIXES = {
 }
 
 async function main() {
+  // Fake keys make every real EuPago split fail with BENEFICIARY_INVALID.
+  if (process.env.NODE_ENV === 'production' || process.env.PAYMENT_PROVIDER === 'eupago') {
+    throw new Error(
+      'Refusing to seed fake EuPago extern keys when NODE_ENV=production or PAYMENT_PROVIDER=eupago',
+    )
+  }
+
   const roles = ['FACTORY', 'SUPPLIER']
   let total = 0
 

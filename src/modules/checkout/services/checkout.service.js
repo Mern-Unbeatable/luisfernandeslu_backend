@@ -836,6 +836,8 @@ class CheckoutService {
         identifier: session.checkoutNumber,
         alias: body.mbwayPhone,
         adminCallback: env.payments.eupago.callbackUrl || undefined,
+        successUrl: `${env.frontendUrl}/order/confirmation?id=${session.id}`,
+        cancelUrl: `${env.frontendUrl}/order/confirmation?id=${session.id}`,
         beneficiaries: splits
           .filter((s) => s.beneficiaryType !== 'ADMIN')
           .map((s) => ({

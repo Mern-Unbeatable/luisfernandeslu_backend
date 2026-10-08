@@ -19,6 +19,7 @@ export const factoryProductInclude = {
   category: categoryTreeInclude,
 }
 
+// `eupagoExternKey` is read only to compute `purchasable`; mappers never expose it.
 export const marketplaceListInclude = {
   inventory: true,
   media: { orderBy: { sortOrder: 'asc' } },
@@ -27,7 +28,7 @@ export const marketplaceListInclude = {
     select: {
       id: true,
       name: true,
-      profile: { select: { companyName: true } },
+      profile: { select: { companyName: true, eupagoExternKey: true } },
     },
   },
 }
@@ -41,7 +42,7 @@ export const marketplaceDetailInclude = {
     select: {
       id: true,
       name: true,
-      profile: { select: { companyName: true } },
+      profile: { select: { companyName: true, eupagoExternKey: true } },
     },
   },
   category: categoryTreeInclude,

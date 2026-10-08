@@ -2,6 +2,7 @@ import { money, formatMoney } from '../../shared/money.js'
 import { publicSlug } from '../../shared/slug.js'
 import { mapCategoryNode, categoryPathStrict } from '../../shared/catalog.js'
 import { featureTexts, mapProductMedia, marketplaceAvailability } from './read.js'
+import { isSellerPayable } from '../payments/seller-eupago.js'
 
 function unitLabel(product) {
   return product.unitOfMeasure || 'bag'
@@ -109,6 +110,7 @@ export function mapMarketplaceListProduct(product, baseUrl, buyer) {
     isSponsored: Boolean(product.isSponsored),
     minOrder,
     hasBulkOption: hasVisibleBulkOption(product, buyer),
+    purchasable: isSellerPayable(product.seller),
   }
 
   return row
@@ -130,6 +132,7 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
     ? allBulk
     : allBulk.filter((tier) => tier.price >= basePrice)
   const minQty = product.minB2bQuantity ?? product.minOrderQuantity ?? null
+  const purchasable = isSellerPayable(product.seller)
 
   const shared = {
     id: product.id,
@@ -175,9 +178,10 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
       author: r.author ? { id: r.author.id, name: r.author.name } : null,
     })),
     pricingView: buyer.isCompany ? 'company' : 'retail',
+    purchasable,
     actions: {
-      addToCart: true,
-      buyNow: true,
+      addToCart: purchasable,
+      buyNow: purchasable,
       ...(buyer.isCompany ? { sendQuote: true } : {}),
     },
   }

@@ -294,6 +294,8 @@ export async function payConvertedOffer({
       identifier: result.session.checkoutNumber,
       alias: method === 'mbway' ? mbwayPhone : undefined,
       adminCallback: env.payments.eupago.callbackUrl || undefined,
+      successUrl: `${env.frontendUrl}/order/confirmation?id=${result.session.id}`,
+      cancelUrl: `${env.frontendUrl}/order/confirmation?id=${result.session.id}`,
       beneficiaries: splits
         .filter((s) => s.beneficiaryType !== 'ADMIN')
         .map((s) => ({
