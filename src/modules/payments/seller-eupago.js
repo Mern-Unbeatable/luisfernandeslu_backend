@@ -33,7 +33,7 @@ export async function assertSellerEupagoConfigured(userId) {
   if (status.configured) return status
 
   throw httpError(
-    'Add your EuPago extern key in Profile before listing products on the website',
+    'Add your EuPago extern key in Profile before sending offers',
     400,
     'EupagoCredentialsRequired',
   )

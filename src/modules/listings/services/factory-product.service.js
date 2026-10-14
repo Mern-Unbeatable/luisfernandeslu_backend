@@ -11,7 +11,6 @@ import {
 } from './factory-csv.js'
 import { factoryCreateBodySchema } from '../validations/factory-product.validation.js'
 import { httpError } from '../../../shared/errors.js'
-import { assertSellerEupagoConfigured } from '../../payments/seller-eupago.js'
 import { categoryFilter } from '../../../shared/catalog.js'
 import {
   assertCategoryPath,
@@ -123,7 +122,6 @@ class FactoryProductService {
    */
   async create(auth, body, files, _baseUrl) {
     this.assertFactory(auth)
-    await assertSellerEupagoConfigured(auth.id)
 
     const sku = body.sku.trim()
     await assertCategoryPath(body)
@@ -606,7 +604,6 @@ class FactoryProductService {
 
   async importCsv(auth, fileBuffer) {
     this.assertFactory(auth)
-    await assertSellerEupagoConfigured(auth.id)
 
     if (!fileBuffer?.length) {
       throw httpError('CSV file is required', 400, 'CsvRequired')
