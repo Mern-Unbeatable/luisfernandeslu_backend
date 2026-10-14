@@ -8,6 +8,7 @@ import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
 import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
 import eupagoClient, { MERCHANT_SPLIT_KEY, commissionPercentOf, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
+import { notifyPaymentFailure } from '../payments/payment-failure-notify.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
   if (offer.status === 'PAID') {
@@ -321,6 +322,14 @@ export async function payConvertedOffer({
     }
   } catch (err) {
     console.error('EuPago split payment failed, using mock fallback:', err.message)
+    void notifyPaymentFailure({
+      sellerIds: [sellerId],
+      buyerId: auth.id,
+      checkoutNumber: result.session.checkoutNumber,
+      amount: grandTotal,
+      paymentMethod: method,
+      error: err,
+    })
     const mockResult = createMockSplitPayment({ amount: grandTotal, identifier: result.session.checkoutNumber, paymentMethod: method })
     await prisma.checkoutSession.update({
       where: { id: result.session.id },

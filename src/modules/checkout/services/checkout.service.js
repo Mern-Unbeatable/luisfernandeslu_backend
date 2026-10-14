@@ -20,6 +20,7 @@ import {
 } from '../../../shared/shipping-quote.js'
 import { hasMapboxToken, suggestPlaces } from '../../../shared/distance.js'
 import { env } from '../../../config/env.js'
+import { notifyPaymentFailure } from '../../payments/payment-failure-notify.js'
 
 function methodEnum(method) {
   const m = String(method || 'multibanco').toLowerCase()
@@ -850,6 +851,14 @@ class CheckoutService {
           data: { orderStatus: 'CANCELLED' },
         }),
       ])
+      void notifyPaymentFailure({
+        sellerIds: buckets.map((b) => b.sellerId),
+        buyerId: auth.id,
+        checkoutNumber: session.checkoutNumber,
+        amount: grandTotal,
+        paymentMethod: body.paymentMethod,
+        error: err,
+      })
       throw httpError(
         err.message || 'Payment provider error',
         err.statusCode || 502,
