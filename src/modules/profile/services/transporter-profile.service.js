@@ -25,7 +25,6 @@ function mapProfile(user, baseUrl) {
     phone: user.phoneNumber || '',
     avatarUrl: user.image ? absolutizeUrl(user.image, baseUrl) : null,
     iban: user.profile?.ibanNumber || '',
-    ibanPhone: user.profile?.ibanPhone || '',
     rejectionReason: user.profile?.rejectionReason || null,
     verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
   }
@@ -44,7 +43,6 @@ async function loadUser(userId) {
         select: {
           companyName: true,
           ibanNumber: true,
-          ibanPhone: true,
           rejectionReason: true,
           verificationStatus: true,
         },
@@ -163,22 +161,10 @@ export class TransporterProfileService {
     if (ibanNumber.length < 5) {
       throw httpError('Valid IBAN is required', 400, 'ValidationError')
     }
-    const ibanPhone =
-      body.ibanPhone != null || body.phoneNumber != null || body.phone != null
-        ? String(body.ibanPhone || body.phoneNumber || body.phone).trim()
-        : undefined
-
     await prisma.businessProfile.upsert({
       where: { userId },
-      create: {
-        userId,
-        ibanNumber,
-        ...(ibanPhone !== undefined ? { ibanPhone: ibanPhone || null } : {}),
-      },
-      update: {
-        ibanNumber,
-        ...(ibanPhone !== undefined ? { ibanPhone: ibanPhone || null } : {}),
-      },
+      create: { userId, ibanNumber },
+      update: { ibanNumber },
     })
 
     const next = await toBody(userId, baseUrl)

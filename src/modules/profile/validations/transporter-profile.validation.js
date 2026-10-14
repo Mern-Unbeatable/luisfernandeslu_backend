@@ -42,9 +42,6 @@ export const saveTransporterIbanBodySchema = z
   .object({
     iban: z.string().trim().min(5).optional(),
     ibanNumber: z.string().trim().min(5).optional(),
-    ibanPhone: z.string().trim().min(6).optional(),
-    phone: z.string().trim().min(6).optional(),
-    phoneNumber: z.string().trim().min(6).optional(),
   })
   .refine((b) => b.iban || b.ibanNumber, {
     message: 'iban is required',

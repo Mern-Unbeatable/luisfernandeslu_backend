@@ -53,9 +53,6 @@ export const changePasswordBodySchema = z
 export const saveIbanBodySchema = z.object({
   ibanNumber: z.string().trim().min(5).optional(),
   iban: z.string().trim().min(5).optional(),
-  linkedPhoneNumber: z.string().trim().min(6).optional(),
-  phoneNumber: z.string().trim().min(6).optional(),
-  phone: z.string().trim().min(6).optional(),
   businessName: z.string().trim().min(2).optional(),
   companyName: z.string().trim().min(2).optional(),
 }).refine((b) => b.ibanNumber || b.iban, {

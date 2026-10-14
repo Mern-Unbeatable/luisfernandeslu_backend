@@ -669,23 +669,16 @@ class AffiliateService {
 
   async getIban(auth) {
     assertAffiliate(auth)
-    const [profile, user] = await Promise.all([
-      prisma.businessProfile.findUnique({
-        where: { userId: auth.id },
-        select: { ibanNumber: true, companyName: true },
-      }),
-      prisma.user.findUnique({
-        where: { id: auth.id },
-        select: { phoneNumber: true },
-      }),
-    ])
+    const profile = await prisma.businessProfile.findUnique({
+      where: { userId: auth.id },
+      select: { ibanNumber: true, companyName: true },
+    })
 
     return {
       status: 200,
       body: {
         iban: {
           ibanNumber: profile?.ibanNumber || null,
-          linkedPhoneNumber: user?.phoneNumber || null,
           businessName: profile?.companyName || null,
         },
         message: 'IBAN fetched',
@@ -699,35 +692,23 @@ class AffiliateService {
     if (ibanNumber.length < 5) {
       throw httpError('Valid IBAN is required', 400, 'ValidationError')
     }
-    const linkedPhone =
-      body.linkedPhoneNumber != null || body.phoneNumber != null || body.phone != null
-        ? String(body.linkedPhoneNumber || body.phoneNumber || body.phone).trim()
-        : undefined
     const businessName =
       body.businessName != null || body.companyName != null
         ? String(body.businessName || body.companyName).trim()
         : undefined
 
-    await prisma.$transaction(async (tx) => {
-      await tx.businessProfile.upsert({
-        where: { userId: auth.id },
-        create: {
-          userId: auth.id,
-          ibanNumber,
-          companyName: businessName || null,
-          verificationStatus: 'APPROVED',
-        },
-        update: {
-          ibanNumber,
-          ...(businessName !== undefined ? { companyName: businessName || null } : {}),
-        },
-      })
-      if (linkedPhone !== undefined) {
-        await tx.user.update({
-          where: { id: auth.id },
-          data: { phoneNumber: linkedPhone || null },
-        })
-      }
+    await prisma.businessProfile.upsert({
+      where: { userId: auth.id },
+      create: {
+        userId: auth.id,
+        ibanNumber,
+        companyName: businessName || null,
+        verificationStatus: 'APPROVED',
+      },
+      update: {
+        ibanNumber,
+        ...(businessName !== undefined ? { companyName: businessName || null } : {}),
+      },
     })
 
     return this.getIban(auth).then((r) => ({
