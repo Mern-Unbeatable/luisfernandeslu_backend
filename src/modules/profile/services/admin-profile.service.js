@@ -4,6 +4,10 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { httpError, notFound } from '../../../shared/errors.js'
 import { getAdminStaffAccess } from '../../auth/staffAccess.js'
 import {
+  isValidExternKeyFormat,
+  verifyExternKeyWithEupago,
+} from '../../payments/seller-eupago.js'
+import {
   clearUserAvatar,
   replaceUserAvatar,
 } from '../../../shared/upload/user-avatar.js'
@@ -162,18 +166,36 @@ export class AdminProfileService {
       )
     }
 
-    await prisma.businessProfile.upsert({
-      where: { userId: adminId },
-      create: {
-        userId: adminId,
-        ...(apiKey ? { ibanNumber: apiKey } : {}),
-        ...(externKey ? { eupagoExternKey: externKey } : {}),
-      },
-      update: {
-        ...(apiKey ? { ibanNumber: apiKey } : {}),
-        ...(externKey ? { eupagoExternKey: externKey } : {}),
-      },
-    })
+    if (externKey && !isValidExternKeyFormat(externKey)) {
+      throw httpError(
+        'Invalid EuPago extern key format. It should look like 095c-09ad-5b40-605a-5859',
+        400,
+        'EupagoExternKeyInvalid',
+      )
+    }
+
+    if (apiKey) {
+      await prisma.businessProfile.upsert({
+        where: { userId: adminId },
+        create: { userId: adminId, ibanNumber: apiKey },
+        update: { ibanNumber: apiKey },
+      })
+    }
+
+    if (externKey) {
+      const current = await prisma.businessProfile.findUnique({
+        where: { userId: adminId },
+        select: { eupagoExternKey: true },
+      })
+      if (String(current?.eupagoExternKey || '').trim() !== externKey) {
+        await verifyExternKeyWithEupago(externKey)
+      }
+      await prisma.businessProfile.upsert({
+        where: { userId: adminId },
+        create: { userId: adminId, eupagoExternKey: externKey },
+        update: { eupagoExternKey: externKey },
+      })
+    }
 
     const next = await toBody(adminId, baseUrl)
     return {

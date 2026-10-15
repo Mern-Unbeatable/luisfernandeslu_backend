@@ -6,7 +6,7 @@ import { splitName } from '../../shared/party.js'
 import { addMonths } from '../../shared/dates.js'
 import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
 import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
-import eupagoClient, { MERCHANT_SPLIT_KEY, commissionPercentOf, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
+import eupagoClient, { commissionPercentOf, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
 import { notifyPaymentFailure } from '../payments/payment-failure-notify.js'
 
@@ -234,6 +234,7 @@ export async function payConvertedOffer({
       'SellerPaymentNotConfigured',
     )
   }
+  const adminExternKey = await eupagoClient.getAdminSplitExternKey()
 
   const buyer = await loadBuyer(auth.id)
   const vatRate = await loadBuyerVatRate(auth.id)
@@ -281,7 +282,7 @@ export async function payConvertedOffer({
       beneficiaryType: 'ADMIN',
       sellerId: null,
       amount: adminAmount,
-      externKey: MERCHANT_SPLIT_KEY,
+      externKey: adminExternKey,
       identifier: 'admin-commission',
     },
   ]
@@ -297,14 +298,10 @@ export async function payConvertedOffer({
       adminCallback: env.payments.eupago.callbackUrl || undefined,
       successUrl: `${env.frontendUrl}/order/confirmation?id=${result.session.id}`,
       cancelUrl: `${env.frontendUrl}/order/confirmation?id=${result.session.id}`,
-      beneficiaries: splits
-        .filter((s) => s.beneficiaryType !== 'ADMIN')
-        .map((s) => ({
-          externKey: s.externKey,
-          amount: s.amount,
-          identifier: `${result.session.checkoutNumber}-${s.identifier}`,
-          immediatePayment: false,
-        })),
+      beneficiaries: eupagoClient.toEupagoBeneficiaries(
+        splits,
+        result.session.checkoutNumber,
+      ),
     })
 
     await prisma.checkoutSession.update({

@@ -3,10 +3,11 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import cartService from '../../cart/services/cart.service.js'
 import {
   createSplitPayment,
-  MERCHANT_SPLIT_KEY,
   commissionPercentOf,
+  getAdminSplitExternKey,
   getPaymentProvider,
   isMockPayments,
+  toEupagoBeneficiaries,
 } from '../../payments/eupago.client.js'
 import { recordAffiliateCommissionsForCheckout } from '../../affiliates/services/commission.service.js'
 import { resolveVatRate } from '../../admin/settings/settings.store.js'
@@ -694,6 +695,8 @@ class CheckoutService {
       b.commissionPercent = commissionPercentOf(seller)
     }
 
+    const adminExternKey = await getAdminSplitExternKey()
+
     const splits = []
     let sellerPayoutSum = 0
     for (const b of buckets) {
@@ -719,7 +722,7 @@ class CheckoutService {
       beneficiaryType: 'ADMIN',
       sellerId: null,
       amount: adminAmount,
-      externKey: MERCHANT_SPLIT_KEY,
+      externKey: adminExternKey,
       identifier: 'admin-commission',
     })
 
@@ -831,14 +834,7 @@ class CheckoutService {
         adminCallback: env.payments.eupago.callbackUrl || undefined,
         successUrl: `${env.frontendUrl}/order/confirmation?id=${session.id}`,
         cancelUrl: `${env.frontendUrl}/order/confirmation?id=${session.id}`,
-        beneficiaries: splits
-          .filter((s) => s.beneficiaryType !== 'ADMIN')
-          .map((s) => ({
-            externKey: s.externKey,
-            amount: s.amount,
-            identifier: `${session.checkoutNumber}-${s.identifier}`,
-            immediatePayment: false,
-          })),
+        beneficiaries: toEupagoBeneficiaries(splits, session.checkoutNumber),
       })
     } catch (err) {
       await prisma.$transaction([

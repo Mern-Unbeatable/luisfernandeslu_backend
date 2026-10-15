@@ -9,11 +9,9 @@
 import { env } from '../../config/env.js'
 import { moneyNonNegative as money } from '../../shared/money.js'
 import prisma from '../../../lib/prisma.js'
+import { httpError } from '../../shared/errors.js'
 
-/**
- * Stored on the ADMIN split row only. Construpreço is the merchant and must not
- * be sent as a beneficiary — EuPago transfers the remainder to it automatically.
- */
+/** Placeholder for the ADMIN split row when payments are mocked. */
 export const MERCHANT_SPLIT_KEY = 'MERCHANT'
 
 export function getPaymentProvider() {
@@ -43,6 +41,52 @@ export async function resolveEupagoApiKey() {
     // fall through to env
   }
   return getEupagoApiKeyFromEnv()
+}
+
+/**
+ * Construpreço's own beneficiary key. EuPago never routes the remainder to the
+ * merchant, so the commission must be sent as an explicit beneficiary.
+ * Admin profile first, then env.
+ */
+export async function resolveAdminExternKey() {
+  try {
+    const admin = await prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      orderBy: { createdAt: 'asc' },
+      select: { profile: { select: { eupagoExternKey: true } } },
+    })
+    const fromProfile = admin?.profile?.eupagoExternKey?.trim()
+    if (fromProfile) return fromProfile
+  } catch {
+    // fall through to env
+  }
+  return env.payments.eupago.adminExternKey || ''
+}
+
+/** Split row key for Construpreço's commission; throws when EuPago is live and no key is set. */
+export async function getAdminSplitExternKey() {
+  if (isMockPayments()) return MERCHANT_SPLIT_KEY
+  const key = await resolveAdminExternKey()
+  if (!key) {
+    throw httpError(
+      'Payments are temporarily unavailable. Construpreço EuPago extern key is not configured.',
+      503,
+      'EupagoAdminExternKeyMissing',
+    )
+  }
+  return key
+}
+
+/** Beneficiaries for EuPago: every split with a positive amount, Construpreço included. */
+export function toEupagoBeneficiaries(splits, identifierPrefix) {
+  return (splits || [])
+    .filter((s) => money(s.amount) > 0)
+    .map((s) => ({
+      externKey: s.externKey,
+      amount: s.amount,
+      identifier: `${identifierPrefix}-${s.identifier}`,
+      immediatePayment: false,
+    }))
 }
 
 export function getCommissionPercent() {
@@ -186,6 +230,9 @@ export default {
   createSplitPayment,
   createMockSplitPayment,
   resolveEupagoApiKey,
+  resolveAdminExternKey,
+  getAdminSplitExternKey,
+  toEupagoBeneficiaries,
   getCommissionPercent,
   commissionPercentOf,
   getPaymentProvider,
