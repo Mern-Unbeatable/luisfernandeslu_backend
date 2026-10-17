@@ -27,40 +27,36 @@ export function getEupagoApiKeyFromEnv() {
   return env.payments.eupago.apiKey || ''
 }
 
-/** Admin profile API key (stored in admin `ibanNumber`) first, then env. */
-export async function resolveEupagoApiKey() {
+/** Value saved from the admin dashboard by whichever admin updated it last. */
+async function latestAdminProfileValue(field) {
   try {
-    const admin = await prisma.user.findFirst({
-      where: { role: 'ADMIN' },
-      orderBy: { createdAt: 'asc' },
-      select: { profile: { select: { ibanNumber: true } } },
+    const row = await prisma.businessProfile.findFirst({
+      where: { user: { role: 'ADMIN' }, [field]: { not: '' } },
+      orderBy: { updatedAt: 'desc' },
+      select: { [field]: true },
     })
-    const fromProfile = admin?.profile?.ibanNumber?.trim()
-    if (fromProfile) return fromProfile
+    return String(row?.[field] || '').trim()
   } catch {
-    // fall through to env
+    return ''
   }
-  return getEupagoApiKeyFromEnv()
+}
+
+/** Admin dashboard API key (stored in admin `ibanNumber`) first, then env. */
+export async function resolveEupagoApiKey() {
+  return (await latestAdminProfileValue('ibanNumber')) || getEupagoApiKeyFromEnv()
 }
 
 /**
  * Construpreço's own beneficiary key. EuPago never routes the remainder to the
  * merchant, so the commission must be sent as an explicit beneficiary.
- * Admin profile first, then env.
+ * Admin dashboard first, then env.
  */
 export async function resolveAdminExternKey() {
-  try {
-    const admin = await prisma.user.findFirst({
-      where: { role: 'ADMIN' },
-      orderBy: { createdAt: 'asc' },
-      select: { profile: { select: { eupagoExternKey: true } } },
-    })
-    const fromProfile = admin?.profile?.eupagoExternKey?.trim()
-    if (fromProfile) return fromProfile
-  } catch {
-    // fall through to env
-  }
-  return env.payments.eupago.adminExternKey || ''
+  return (
+    (await latestAdminProfileValue('eupagoExternKey')) ||
+    env.payments.eupago.adminExternKey ||
+    ''
+  )
 }
 
 /** Split row key for Construpreço's commission; throws when EuPago is live and no key is set. */
