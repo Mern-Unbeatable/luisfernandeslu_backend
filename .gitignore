@@ -7,6 +7,11 @@ yarn-error.log*
 # Prisma
 /src/generated/prisma
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # OS
 .DS_Store
 Thumbs.db
