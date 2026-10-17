@@ -1,7 +1,6 @@
 import prisma from '../../../../lib/prisma.js'
 import { liveListingWhere } from '../../listings/includes.js'
-import { resolveProvider, geminiThinkingConfig } from '../../../lib/ai.js'
-import { env } from '../../../config/env.js'
+import { generateText } from '../../../lib/ai.js'
 
 
 
@@ -90,7 +89,6 @@ export class AssistantService {
    * Generates AI advice based on user query and candidate products
    */
   async generateAiResponse(userMessage, candidateProducts, conversationHistory = []) {
-    const provider = resolveProvider()
     const productCatalogSummary = candidateProducts.map((p, i) => 
       `${i + 1}. "${p.title}" (${p.category?.name || 'General'}) - €${p.basePrice.toFixed(2)}/${p.unitOfMeasure}`
     ).join('\n')
@@ -110,64 +108,14 @@ ${productCatalogSummary || 'No exact products found.'}
 
 Please advise the user briefly and recommend the best matching product(s) from the list.`
 
-    if (!provider) {
-      return this.generateFallbackText(userMessage, candidateProducts)
-    }
-
     try {
-      if (provider.kind === 'gemini') {
-        const model = encodeURIComponent(provider.model)
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-        const thinking = geminiThinkingConfig(provider.model)
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': provider.apiKey,
-          },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: systemPrompt }],
-            },
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            generationConfig: {
-              temperature: 0.6,
-              maxOutputTokens: 250,
-              thinkingConfig: thinking,
-            },
-          }),
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          const parts = data?.candidates?.[0]?.content?.parts
-          const content = Array.isArray(parts)
-            ? parts.filter((p) => !p?.thought).map((p) => p?.text || '').join('').trim()
-            : ''
-          if (content) return content
-        }
-      } else if (provider.kind === 'openai') {
-        const res = await fetch(provider.url, {
-          method: 'POST',
-          headers: provider.headers,
-          body: JSON.stringify({
-            model: provider.model,
-            temperature: 0.6,
-            max_tokens: 250,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt },
-            ],
-          }),
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          const content = data?.choices?.[0]?.message?.content?.trim()
-          if (content) return content
-        }
-      }
+      const result = await generateText({
+        system: systemPrompt,
+        prompt: userPrompt,
+        temperature: 0.6,
+        maxTokens: 250,
+      })
+      if (result?.content) return result.content
     } catch (err) {
       console.error('[assistant] AI generation error:', err.message)
     }

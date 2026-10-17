@@ -1,10 +1,9 @@
 /**
  * AI content for supplier / factory product listing fields.
  *
- * Provider selection:
- * - production  → GEMINI_API_KEY (Google Gemini)
- * - development → OPENROUTER_API_KEY (free/dev models)
- * Fallbacks: other configured keys, then local template (dev only on error).
+ * Provider order (any environment): GEMINI_API_KEY → OPENROUTER_API_KEY → OPENAI_API_KEY.
+ * A failing provider falls through to the next configured one; if all fail,
+ * production throws and development returns a local template.
  */
 import { env, isProduction } from '../config/env.js'
 
@@ -140,20 +139,20 @@ function openAiProvider() {
   }
 }
 
-/**
- * Prod → Gemini first. Dev → Gemini first if available (or OpenRouter/OpenAI).
- * Remaining configured providers are fallbacks.
- */
-export function resolveProvider() {
-  // If Gemini API key is configured, use Gemini directly for high reliability and speed
-  return geminiProvider() || openRouterProvider() || openAiProvider()
+export function resolveProviders() {
+  return [geminiProvider(), openRouterProvider(), openAiProvider()].filter(Boolean)
 }
 
+export function resolveProvider() {
+  return resolveProviders()[0] || null
+}
 
-async function callGemini(provider, prompt, field, { thinkingConfig } = {}) {
+async function callGemini(provider, { system, prompt, temperature, maxTokens, thinkingConfig }) {
   const model = encodeURIComponent(provider.model)
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
   const thinking = thinkingConfig || geminiThinkingConfig(provider.model)
+  const retry = (next) =>
+    callGemini(provider, { system, prompt, temperature, maxTokens, thinkingConfig: next })
 
   const res = await fetch(url, {
     method: 'POST',
@@ -163,12 +162,12 @@ async function callGemini(provider, prompt, field, { thinkingConfig } = {}) {
     },
     body: JSON.stringify({
       system_instruction: {
-        parts: [{ text: SYSTEM_PROMPT }],
+        parts: [{ text: system }],
       },
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.5,
-        maxOutputTokens: maxOutputTokensFor(field),
+        temperature,
+        maxOutputTokens: maxTokens,
         thinkingConfig: thinking,
       },
     }),
@@ -181,18 +180,14 @@ async function callGemini(provider, prompt, field, { thinkingConfig } = {}) {
       thinking.thinkingLevel === 'MINIMAL' &&
       /thinking/i.test(text)
     ) {
-      return callGemini(provider, prompt, field, {
-        thinkingConfig: { thinkingLevel: 'LOW' },
-      })
+      return retry({ thinkingLevel: 'LOW' })
     }
     if (
       res.status === 400 &&
       thinking.thinkingBudget === 0 &&
       /thinking|invalid/i.test(text)
     ) {
-      return callGemini(provider, prompt, field, {
-        thinkingConfig: { thinkingLevel: 'MINIMAL' },
-      })
+      return retry({ thinkingLevel: 'MINIMAL' })
     }
     const err = new Error(
       `${provider.name} request failed (${res.status}): ${text.slice(0, 200)}`,
@@ -214,16 +209,16 @@ async function callGemini(provider, prompt, field, { thinkingConfig } = {}) {
   return content ? { content, provider: provider.name } : null
 }
 
-async function callOpenAiCompatible(provider, prompt) {
+async function callOpenAiCompatible(provider, { system, prompt, temperature, maxTokens }) {
   const res = await fetch(provider.url, {
     method: 'POST',
     headers: provider.headers,
     body: JSON.stringify({
       model: provider.model,
-      temperature: 0.5,
-      max_tokens: 220,
+      temperature,
+      max_tokens: maxTokens,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: system },
         { role: 'user', content: prompt },
       ],
     }),
@@ -246,14 +241,31 @@ async function callOpenAiCompatible(provider, prompt) {
     : null
 }
 
-async function callProvider(prompt, field) {
-  const provider = resolveProvider()
-  if (!provider) return null
+/**
+ * Tries each configured provider in order (Gemini → OpenRouter → OpenAI).
+ * Returns `null` when none is configured; throws the last error when all fail.
+ * @param {{ system: string, prompt: string, temperature?: number, maxTokens?: number }} input
+ */
+export async function generateText({ system, prompt, temperature = 0.5, maxTokens = 220 }) {
+  const providers = resolveProviders()
+  if (!providers.length) return null
 
-  if (provider.kind === 'gemini') {
-    return callGemini(provider, prompt, field)
+  const request = { system, prompt, temperature, maxTokens }
+  let lastError = null
+  for (const provider of providers) {
+    try {
+      const result =
+        provider.kind === 'gemini'
+          ? await callGemini(provider, request)
+          : await callOpenAiCompatible(provider, request)
+      if (result) return result
+      lastError = new Error(`${provider.name} returned an empty response`)
+    } catch (err) {
+      lastError = err
+    }
+    console.warn(`[ai] ${provider.name} failed: ${lastError.message}`)
   }
-  return callOpenAiCompatible(provider, prompt)
+  throw lastError
 }
 
 /**
@@ -276,16 +288,20 @@ export async function generateProductCopy({ title, field }) {
     throw err
   }
 
-  const prompt = buildPrompt(title, field)
-  const configured = resolveProvider()
-
   try {
-    const fromAi = await callProvider(prompt, field)
+    const fromAi = await generateText({
+      system: SYSTEM_PROMPT,
+      prompt: buildPrompt(title, field),
+      temperature: 0.5,
+      maxTokens: maxOutputTokensFor(field),
+    })
     if (fromAi) {
       return { field, content: fromAi.content, provider: fromAi.provider }
     }
   } catch (err) {
-    if (isProduction && configured) {
+    if (isProduction) {
+      if (!err.status) err.status = 502
+      if (!err.code) err.code = 'AiProviderError'
       throw err
     }
     console.error('[ai] fallback to template:', err.message)
@@ -298,4 +314,4 @@ export async function generateProductCopy({ title, field }) {
   }
 }
 
-export default { generateProductCopy, isAiField }
+export default { generateProductCopy, generateText, isAiField }
