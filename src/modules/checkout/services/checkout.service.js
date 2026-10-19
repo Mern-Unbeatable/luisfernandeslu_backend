@@ -22,6 +22,7 @@ import {
 import { hasMapboxToken, suggestPlaces } from '../../../shared/distance.js'
 import { env } from '../../../config/env.js'
 import { notifyPaymentFailure } from '../../payments/payment-failure-notify.js'
+import { issueTaxInvoicesForCheckout } from '../../invoicing/tax-invoice.service.js'
 
 function methodEnum(method) {
   const m = String(method || 'multibanco').toLowerCase()
@@ -966,6 +967,8 @@ class CheckoutService {
       await recordAffiliateCommissionsForCheckout(session.id, tx)
     })
 
+    void issueTaxInvoicesForCheckout(session.id)
+
     return { alreadyPaid: false }
   }
 
@@ -1084,6 +1087,8 @@ class CheckoutService {
     }
 
     if (session.paymentStatus === 'PAID') {
+      // Offer checkouts are stored as PAID up front; the webhook is the real payment signal.
+      void issueTaxInvoicesForCheckout(session.id)
       return {
         status: 200,
         body: {

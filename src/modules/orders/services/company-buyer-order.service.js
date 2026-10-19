@@ -10,6 +10,7 @@ import {
   mapCompanyOrderDetail,
   mapCompanyOrderListItem,
 } from '../company-buyer-order.mapper.js'
+import { mapBuyerTaxInvoice } from '../buyer-order.mapper.js'
 
 function assertCompany(auth) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -78,6 +79,9 @@ const detailInclude = {
         },
       },
     },
+  },
+  taxInvoice: {
+    select: { status: true, sequenceNumber: true, atcud: true, permalink: true, finalizedAt: true },
   },
   statusHistory: {
     orderBy: { createdAt: 'asc' },
@@ -192,7 +196,10 @@ class CompanyBuyerOrderService {
     return {
       status: 200,
       body: {
-        order: mapCompanyOrderDetail(order, transporter),
+        order: {
+          ...mapCompanyOrderDetail(order, transporter),
+          taxInvoice: mapBuyerTaxInvoice(order.taxInvoice),
+        },
         message: 'Order details fetched',
       },
     }

@@ -64,6 +64,20 @@ export const env = {
     },
   },
 
+  invoicing: {
+    invoicexpress: {
+      accountName: str('INVOICEXPRESS_ACCOUNT_NAME'),
+      apiKey: str('INVOICEXPRESS_API_KEY'),
+      /** false = drafts only (nothing reaches the Tax Authority). */
+      finalize: bool('INVOICEXPRESS_FINALIZE', false),
+      /** Email the finalized invoice to the buyer from InvoiceXpress. */
+      sendEmail: bool('INVOICEXPRESS_SEND_EMAIL', false),
+      documentType: str('INVOICEXPRESS_DOCUMENT_TYPE', 'invoice_receipts'),
+      /** IVA exemption code (e.g. M07) required when an order has 0% VAT. */
+      taxExemptionCode: str('INVOICEXPRESS_TAX_EXEMPTION_CODE'),
+    },
+  },
+
   smtp: {
     host: str('SMTP_HOST'),
     user: str('SMTP_USER'),

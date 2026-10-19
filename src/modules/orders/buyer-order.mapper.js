@@ -244,6 +244,17 @@ export function mapBuyerInvoice(invoice, baseUrl) {
   }
 }
 
+/** Certified InvoiceXpress invoice — only once finalized (drafts are internal). */
+export function mapBuyerTaxInvoice(row) {
+  if (row?.status !== 'FINALIZED' || !row.permalink) return null
+  return {
+    number: row.sequenceNumber,
+    atcud: row.atcud,
+    url: row.permalink,
+    issuedAt: row.finalizedAt,
+  }
+}
+
 export function mapBuyerOrderDetail(order, baseUrl, transporter) {
   const invoice = order.invoices?.[0] || null
   const mappedInvoice = mapBuyerInvoice(invoice, baseUrl)
@@ -265,6 +276,7 @@ export function mapBuyerOrderDetail(order, baseUrl, transporter) {
     timeline: mapDeliveryTimeline(order),
     hasInvoice,
     invoice: mappedInvoice,
+    taxInvoice: mapBuyerTaxInvoice(order.taxInvoice),
     cancellationReason: order.cancellationReason || null,
     deliveryOtp:
       order.orderStatus === 'IN_TRANSIT' ? order.otpVerificationCode : null,

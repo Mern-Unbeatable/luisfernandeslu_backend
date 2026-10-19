@@ -24,6 +24,10 @@ import {
   renderInvoicePdf,
 } from '../../../invoicing/generate.js'
 import { ensureInvoice } from '../../../invoicing/pdf-store.js'
+import {
+  issueTaxInvoiceForOrder,
+  mapTaxInvoice,
+} from '../../../invoicing/tax-invoice.service.js'
 
 function invoicePdfExists(pdfUrl) {
   if (!pdfUrl) return false
@@ -381,6 +385,7 @@ class AdminOrderService {
             paymentStatus: true,
           },
         },
+        taxInvoice: true,
         statusHistory: {
           orderBy: { createdAt: 'asc' },
           select: { status: true, note: true, createdAt: true },
@@ -534,6 +539,8 @@ class AdminOrderService {
       project: order.project,
       products,
       invoice: invoiceMapped,
+      paymentStatus: order.checkoutSession?.paymentStatus || null,
+      taxInvoice: mapTaxInvoice(order.taxInvoice),
       shipment: mapAdminShipment(order.shipment),
       statusHistory: order.statusHistory.map((h) => ({
         status: factory
@@ -675,6 +682,31 @@ class AdminOrderService {
         id: order.id,
         orderId: order.orderNumber,
         message: 'Order deleted',
+      },
+    }
+  }
+
+  /** Issue, retry, or finalize the InvoiceXpress invoice for a paid order. */
+  async issueTaxInvoice(auth, orderId) {
+    assertAdmin(auth)
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [{ id: orderId }, { orderNumber: orderId }],
+      },
+      select: { id: true, orderNumber: true },
+    })
+    if (!order) throw httpError('Order not found', 404, 'NotFound')
+
+    const row = await issueTaxInvoiceForOrder(order.id)
+    return {
+      status: 200,
+      body: {
+        orderId: order.orderNumber,
+        taxInvoice: mapTaxInvoice(row),
+        message:
+          row.status === 'FINALIZED'
+            ? 'Invoice issued and reported to the Tax Authority'
+            : 'Draft invoice created in InvoiceXpress',
       },
     }
   }

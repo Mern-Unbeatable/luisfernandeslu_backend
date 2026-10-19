@@ -1008,6 +1008,7 @@ model Order {
   statusHistory        OrderStatusHistory[]
   paymentPlan          PaymentPlan?
   invoices             Invoice[]
+  taxInvoice           TaxInvoice?
   shipment             Shipment?
   returnRequests       ReturnRequest[]
   disputes             Dispute[]
@@ -1095,6 +1096,31 @@ model Invoice {
 
   @@unique([orderId, audience])
   @@index([orderId])
+}
+
+/// Certified invoice issued through InvoiceXpress (reported to the Tax Authority when finalized).
+model TaxInvoice {
+  id             String    @id @default(uuid())
+  orderId        String    @unique
+  provider       String    @default("invoicexpress")
+  /// PENDING | DRAFT | FINALIZED | FAILED
+  status         String    @default("PENDING")
+  documentType   String?
+  externalId     String?
+  sequenceNumber String?
+  atcud          String?
+  permalink      String?
+  vatRate        Float?
+  total          Float?
+  error          String?
+  attempts       Int       @default(0)
+  finalizedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }
 
 // ==========================================

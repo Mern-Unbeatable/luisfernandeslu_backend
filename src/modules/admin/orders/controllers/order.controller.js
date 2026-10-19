@@ -37,6 +37,17 @@ class AdminOrderController {
     }
   }
 
+  async issueTaxInvoice(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminOrderService.issueTaxInvoice(req.auth, req.params.id),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async adminDelete(req, res, next) {
     try {
       return sendServiceResult(

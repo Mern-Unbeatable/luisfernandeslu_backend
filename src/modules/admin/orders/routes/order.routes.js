@@ -40,6 +40,12 @@ class AdminOrderRoutes {
       (req, res, next) => adminOrderController.updateStatus(req, res, next),
     )
 
+    this.router.post(
+      '/:id/tax-invoice',
+      validate(adminOrderIdParamSchema, 'params'),
+      (req, res, next) => adminOrderController.issueTaxInvoice(req, res, next),
+    )
+
     this.router.delete(
       '/:id',
       validate(adminOrderIdParamSchema, 'params'),

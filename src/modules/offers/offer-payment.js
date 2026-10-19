@@ -9,6 +9,7 @@ import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js
 import eupagoClient, { commissionPercentOf, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
 import { notifyPaymentFailure } from '../payments/payment-failure-notify.js'
+import { issueTaxInvoicesForCheckout } from '../invoicing/tax-invoice.service.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
   if (offer.status === 'PAID') {
@@ -263,6 +264,9 @@ export async function payConvertedOffer({
     })
     return { ...converted, ...followUp }
   })
+
+  // With EuPago the invoice waits for the payment webhook.
+  if (mock) void issueTaxInvoicesForCheckout(result.session.id)
 
   const commissionPercent = commissionPercentOf(seller)
   const grandTotal = money(result.order.grandTotal)

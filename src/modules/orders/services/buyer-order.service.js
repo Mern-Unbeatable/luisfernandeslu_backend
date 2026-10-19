@@ -388,6 +388,9 @@ class BuyerOrderService {
             pdfUrl: true,
           },
         },
+        taxInvoice: {
+          select: { status: true, sequenceNumber: true, atcud: true, permalink: true, finalizedAt: true },
+        },
         statusHistory: {
           orderBy: { createdAt: 'asc' },
           select: { status: true, note: true, createdAt: true },
