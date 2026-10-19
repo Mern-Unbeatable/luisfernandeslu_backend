@@ -73,8 +73,8 @@ export const env = {
       /** Email the finalized invoice to the buyer from InvoiceXpress. */
       sendEmail: bool('INVOICEXPRESS_SEND_EMAIL', false),
       documentType: str('INVOICEXPRESS_DOCUMENT_TYPE', 'invoice_receipts'),
-      /** IVA exemption code (e.g. M07) required when an order has 0% VAT. */
-      taxExemptionCode: str('INVOICEXPRESS_TAX_EXEMPTION_CODE'),
+      /** AT exemption code for 0% VAT lines (shipping, or orders without VAT). */
+      taxExemptionCode: str('INVOICEXPRESS_TAX_EXEMPTION_CODE', 'M99'),
     },
   },
 

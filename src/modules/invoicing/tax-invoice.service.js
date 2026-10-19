@@ -92,7 +92,8 @@ function buildClient(order) {
   }
 }
 
-function buildItems(order, taxName, rate) {
+/** Checkout charges VAT on merchandise only, so shipping is invoiced at 0% to keep the VAT equal to the order's. */
+function buildItems(order, productTaxName, shippingTaxName) {
   const items = order.orderLineItems.map((line) => {
     const quantity = Math.max(1, Number(line.quantity) || 1)
     return {
@@ -100,7 +101,7 @@ function buildItems(order, taxName, rate) {
       description: line.product?.title || 'Product',
       unit_price: round(Number(line.totalPriceLocked) / quantity, 4),
       quantity,
-      tax: { name: taxName },
+      tax: { name: productTaxName },
     }
   })
 
@@ -109,9 +110,9 @@ function buildItems(order, taxName, rate) {
     items.push({
       name: 'SHIPPING',
       description: 'Transporte / Shipping',
-      unit_price: round(shipping / (1 + rate / 100), 4),
+      unit_price: round(shipping, 4),
       quantity: 1,
-      tax: { name: taxName },
+      tax: { name: shippingTaxName },
     })
   }
   return items
@@ -184,14 +185,16 @@ async function issue(orderId, { requirePaid }) {
   try {
     if (!row.externalId) {
       const rate = orderVatRate(order)
-      if (rate === 0 && !cfg.taxExemptionCode) {
+      const hasZeroVatLine = rate === 0 || Number(order.shippingFee) > 0
+      if (hasZeroVatLine && !cfg.taxExemptionCode) {
         throw httpError(
-          'Order has 0% VAT — set INVOICEXPRESS_TAX_EXEMPTION_CODE (e.g. M07) to issue it.',
+          'Invoice has a 0% VAT line — set INVOICEXPRESS_TAX_EXEMPTION_CODE (e.g. M99) to issue it.',
           422,
           'TaxExemptionRequired',
         )
       }
-      const taxName = await ix.resolveTaxName(rate)
+      const productTaxName = await ix.resolveTaxName(rate)
+      const shippingTaxName = rate === 0 ? productTaxName : await ix.resolveTaxName(0)
       const today = lisbonDate()
       const doc = await ix.createDocument(
         row.documentType || cfg.documentType,
@@ -200,9 +203,9 @@ async function issue(orderId, { requirePaid }) {
           due_date: today,
           reference: order.orderNumber,
           observations: `Construpreço — encomenda ${order.orderNumber}`,
-          ...(rate === 0 ? { tax_exemption: cfg.taxExemptionCode } : {}),
+          ...(hasZeroVatLine ? { tax_exemption: cfg.taxExemptionCode } : {}),
           client: buildClient(order),
-          items: buildItems(order, taxName, rate),
+          items: buildItems(order, productTaxName, shippingTaxName),
         },
         `order-${order.id}`,
       )
