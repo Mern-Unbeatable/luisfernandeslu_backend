@@ -62,6 +62,18 @@ function clientCountry(country) {
   return value
 }
 
+const RESERVED_EMAIL_TLDS = new Set(['local', 'localhost', 'test', 'example', 'invalid', 'internal'])
+
+/** InvoiceXpress rejects the whole document (422) on an email it can't parse; the field is optional. */
+export function invoiceEmail(...candidates) {
+  for (const candidate of candidates) {
+    const email = String(candidate || '').trim().toLowerCase()
+    const match = /^[^\s@]+@[^\s@]+\.([a-z]{2,24})$/.exec(email)
+    if (match && !RESERVED_EMAIL_TLDS.has(match[1])) return email
+  }
+  return undefined
+}
+
 function buildClient(order) {
   const { customer, billingAddress: addr, checkoutSession: session } = order
   const company = customer.role === 'COMPANY' ? customer.profile?.companyName?.trim() : ''
@@ -71,7 +83,7 @@ function buildClient(order) {
   return {
     name: company || person || customer.name || customer.email,
     code: customer.id,
-    email: session?.email || customer.email || undefined,
+    email: invoiceEmail(session?.email, customer.email),
     address: addr?.streetAddress || undefined,
     city: addr?.city || undefined,
     postal_code: addr?.zipCode || undefined,
@@ -109,11 +121,15 @@ async function saveState(orderId, data) {
   return prisma.taxInvoice.update({ where: { orderId }, data })
 }
 
+/** Drafts come back with placeholders ("rascunho", "N/A") instead of a number / ATCUD. */
 function docFields(doc) {
+  const draft = String(doc.status || '').toLowerCase() === 'draft'
+  const number = doc.inverted_sequence_number || doc.sequence_number
+  const atcud = String(doc.atcud || '').trim()
   return {
     externalId: String(doc.id),
-    sequenceNumber: doc.inverted_sequence_number || doc.sequence_number || null,
-    atcud: doc.atcud || null,
+    sequenceNumber: !draft && number && !/rascunho|draft/i.test(number) ? number : null,
+    atcud: !draft && atcud && atcud.toUpperCase() !== 'N/A' ? atcud : null,
     permalink: doc.permalink || null,
     total: Number.isFinite(Number(doc.total)) ? Number(doc.total) : null,
   }
@@ -130,7 +146,7 @@ async function finalizeAndNotify(order, row) {
     error: null,
   })
 
-  const email = order.checkoutSession?.email || order.customer.email
+  const email = invoiceEmail(order.checkoutSession?.email, order.customer.email)
   if (cfg.sendEmail && email) {
     try {
       await ix.emailDocument(docType, row.externalId, {
