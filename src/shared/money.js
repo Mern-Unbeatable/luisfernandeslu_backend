@@ -1,11 +1,6 @@
-import { env } from '../config/env.js'
-
-const CURRENCY_SYMBOLS = {
-  EUR: '\u20ac',
-  USD: '$',
-  GBP: '\u00a3',
-  BRL: 'R$',
-}
+/** The marketplace trades in euro only. */
+export const CURRENCY = 'EUR'
+const CURRENCY_SYMBOL = '\u20ac'
 
 /**
  * Rounds to 2 decimals. Nullish and non-numeric input become 0, and negative
@@ -24,12 +19,12 @@ export function moneyNonNegative(n) {
   return Math.max(0, money(n))
 }
 
-export function currencySymbol(currency = env.currency) {
-  return CURRENCY_SYMBOLS[String(currency).toUpperCase()] || ''
+export function currencySymbol() {
+  return CURRENCY_SYMBOL
 }
 
-export function formatMoney(n, currency = env.currency) {
-  return `${currencySymbol(currency)}${money(n).toFixed(2)}`
+export function formatMoney(n) {
+  return `${CURRENCY_SYMBOL}${money(n).toFixed(2)}`
 }
 
 export function moneyText(n) {

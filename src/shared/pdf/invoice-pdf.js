@@ -4,8 +4,6 @@ import os from 'node:os'
 import PDFDocument from 'pdfkit'
 import { ordinalLabel } from '../ordinal.js'
 import { currencySymbol, money as moneyValue } from '../money.js'
-import { env } from '../../config/env.js'
-
 function findUnicodeFont() {
   const candidates = [
     'C:\\Windows\\Fonts\\arial.ttf',
@@ -32,8 +30,8 @@ function findBoldFont() {
 }
 
 /** Thousands-separated amount with currency symbol, for PDF display only. */
-function money(n, currency = env.currency) {
-  return `${currencySymbol(currency) || `${currency} `}${moneyValue(n).toLocaleString(
+function money(n) {
+  return `${currencySymbol()}${moneyValue(n).toLocaleString(
     'en-US',
     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )}`
@@ -238,7 +236,6 @@ export async function buildSupplierInvoicePdf(data) {
     doc.text('Total', cols.total, y + 6, { width: colWidths.total, align: 'right' })
     y += 28
 
-    const currency = data.currency || 'EUR'
     const items = data.items || []
     items.forEach((item, idx) => {
       if (y > doc.page.height - 160) {
@@ -256,13 +253,13 @@ export async function buildSupplierInvoicePdf(data) {
         width: colWidths.qty,
         align: 'right',
       })
-      doc.text(money(item.unitPrice, currency), cols.unit, y, {
+      doc.text(money(item.unitPrice), cols.unit, y, {
         width: colWidths.unit,
         align: 'right',
       })
       doc
         .font(boldFont)
-        .text(money(item.total, currency), cols.total, y, {
+        .text(money(item.total), cols.total, y, {
           width: colWidths.total,
           align: 'right',
         })
@@ -301,10 +298,10 @@ export async function buildSupplierInvoicePdf(data) {
             ? `Term: ${data.paymentPlan.termMonths} months`
             : null,
           data.paymentPlan.downPayment != null
-            ? `Down payment: ${money(data.paymentPlan.downPayment, currency)}`
+            ? `Down payment: ${money(data.paymentPlan.downPayment)}`
             : null,
           data.paymentPlan.remainingBalance != null
-            ? `Remaining: ${money(data.paymentPlan.remainingBalance, currency)}`
+            ? `Remaining: ${money(data.paymentPlan.remainingBalance)}`
             : null,
         ].filter(Boolean)
         if (planBits.length) {
@@ -347,7 +344,7 @@ export async function buildSupplierInvoicePdf(data) {
         })
         doc
           .font(boldFont)
-          .text(money(inst.amount, currency), left + contentW * 0.74, y, {
+          .text(money(inst.amount), left + contentW * 0.74, y, {
             width: contentW * 0.24,
             align: 'right',
           })
@@ -374,16 +371,16 @@ export async function buildSupplierInvoicePdf(data) {
 
     const rows = [
       data.showShippingVat
-        ? ['Subtotal', money(data.subtotal, currency), dark]
+        ? ['Subtotal', money(data.subtotal), dark]
         : null,
       data.discount > 0
-        ? ['Discount', `-${money(data.discount, currency)}`, greenFg]
+        ? ['Discount', `-${money(data.discount)}`, greenFg]
         : null,
       data.showShippingVat
-        ? ['Shipping', money(data.shipping, currency), dark]
+        ? ['Shipping', money(data.shipping), dark]
         : null,
       data.showShippingVat && Number(data.vat) > 0
-        ? ['VAT', money(data.vat, currency), dark]
+        ? ['VAT', money(data.vat), dark]
         : null,
     ].filter(Boolean)
 
@@ -415,7 +412,7 @@ export async function buildSupplierInvoicePdf(data) {
       .font(boldFont)
       .fontSize(16)
       .fillColor(totalColor)
-      .text(money(data.total, currency), sumX + labelW, y - 2, {
+      .text(money(data.total), sumX + labelW, y - 2, {
         width: valueW,
         align: 'right',
       })

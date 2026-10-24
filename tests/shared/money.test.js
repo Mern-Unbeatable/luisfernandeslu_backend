@@ -42,11 +42,10 @@ test('moneyText always renders two decimals', () => {
   assert.equal(moneyText(0), '0.00')
 })
 
-test('formatMoney uses the currency symbol', () => {
-  assert.equal(formatMoney(1200, 'EUR'), '\u20ac1200.00')
-  assert.equal(formatMoney(1200, 'USD'), '$1200.00')
+test('formatMoney always renders euro', () => {
+  assert.equal(formatMoney(1200), '\u20ac1200.00')
 })
 
-test('currencySymbol falls back to empty string for unknown codes', () => {
-  assert.equal(currencySymbol('XYZ'), '')
+test('currencySymbol is the euro sign', () => {
+  assert.equal(currencySymbol(), '\u20ac')
 })

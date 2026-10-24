@@ -727,7 +727,7 @@ model PromotionPlan {
   label         String
   durationDays  Int
   price         Float
-  currency      String             @default("USD")
+  currency      String             @default("EUR")
   isActive      Boolean            @default(true)
   sortOrder     Int                @default(0)
   createdAt     DateTime           @default(now())

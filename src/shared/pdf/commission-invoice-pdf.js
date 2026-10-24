@@ -3,8 +3,6 @@ import path from 'node:path'
 import os from 'node:os'
 import PDFDocument from 'pdfkit'
 import { currencySymbol, money as moneyValue } from '../money.js'
-import { env } from '../../config/env.js'
-
 function findUnicodeFont() {
   const candidates = [
     'C:\\Windows\\Fonts\\arial.ttf',
@@ -25,8 +23,8 @@ function findBoldFont() {
   return candidates.find((p) => fs.existsSync(p)) || null
 }
 
-function money(n, currency = env.currency) {
-  return `${currencySymbol(currency) || `${currency} `}${moneyValue(n).toLocaleString(
+function money(n) {
+  return `${currencySymbol()}${moneyValue(n).toLocaleString(
     'en-US',
     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )}`
@@ -35,7 +33,6 @@ function money(n, currency = env.currency) {
 export function buildCommissionInvoicePdf(data) {
   const fontPath = findUnicodeFont()
   const boldPath = findBoldFont()
-  const currency = data.currency || env.currency
   const dark = '#1F2937'
   const muted = '#6B7280'
   const line = '#E5E7EB'
@@ -68,10 +65,10 @@ export function buildCommissionInvoicePdf(data) {
       ['Role', data.role],
       ['Customer', data.customer],
       ['Date', data.date],
-      ['Order total', money(data.orderTotal, currency)],
+      ['Order total', money(data.orderTotal)],
       ['Commission rate', `${data.commissionPercent}%`],
-      ['Commission amount', money(data.amount, currency)],
-      ['Party payout', money(data.partyPayout, currency)],
+      ['Commission amount', money(data.amount)],
+      ['Party payout', money(data.partyPayout)],
     ]
 
     for (const [label, value] of rows) {

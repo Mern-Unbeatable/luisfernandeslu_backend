@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { CURRENCY } from '../shared/money.js'
 
 function str(name, fallback = '') {
   const value = process.env[name]
@@ -29,7 +30,7 @@ export const env = {
   frontendUrlExtra: str('FRONTEND_URL_EXTRA', ''),
   apiUrl: trimTrailingSlash(str('BETTER_AUTH_URL', 'http://localhost:8080')),
 
-  currency: str('CART_CURRENCY', 'EUR'),
+  currency: CURRENCY,
   /**
    * Legacy unused by cart/checkout. Shipping = distance × admin vehicleRates.
    * Kept only so old .env keys do not break boot.
