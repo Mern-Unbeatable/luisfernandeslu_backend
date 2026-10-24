@@ -13,7 +13,7 @@ import {
   stockAvailability,
   marketplaceAvailability,
   b2bDiscountPercent,
-  dollarPriceLabel,
+  basePriceLabel,
 } from '../../src/modules/listings/read.js'
 import { mapSupplierProduct } from '../../src/modules/listings/supplier.mapper.js'
 import { mapFactoryProduct } from '../../src/modules/listings/factory.mapper.js'
@@ -147,7 +147,7 @@ test('supplier mapper: inventory-only approved product is a draft card', () => {
   assert.equal(mapped.quantity, 40)
   assert.equal(mapped.listedQuantity, 0)
   assert.equal(mapped.b2bDiscount, 20)
-  assert.equal(mapped.priceLabel, dollarPriceLabel({ basePrice: 10, unitOfMeasure: 'bag', weightKg: 25 }))
+  assert.equal(mapped.priceLabel, basePriceLabel({ basePrice: 10, unitOfMeasure: 'bag', weightKg: 25 }))
   assert.equal(mapped.category.name, 'Root')
   assert.equal(mapped.productType.name, 'Type')
 })
@@ -171,7 +171,7 @@ test('factory mapper: approved listing is active with no inventory', () => {
   )
   assert.equal(mapped.status, 'active')
   assert.equal(mapped.hasInventory, false)
-  assert.equal(mapped.priceLabel, '$12.00 Per bag')
+  assert.equal(mapped.priceLabel, '€12.00 Per bag')
 })
 
 test('factory mapper: list includes description', () => {
