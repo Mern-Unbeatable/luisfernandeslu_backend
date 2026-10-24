@@ -79,10 +79,16 @@ export const inventoryListInclude = {
   category: categoryTreeInclude,
 }
 
+/** Sellers can only sell once an admin has approved their documents. */
+export const approvedSellerWhere = {
+  profile: { is: { verificationStatus: 'APPROVED' } },
+}
+
 /** Live supplier marketplace listing filter */
 export function liveListingWhere() {
   return {
     approvalStatus: 'APPROVED',
+    seller: approvedSellerWhere,
     inventory: {
       is: {
         listedQuantity: { gt: 0 },
@@ -93,5 +99,5 @@ export function liveListingWhere() {
 
 export const factoryCatalogWhere = {
   approvalStatus: 'APPROVED',
-  seller: { role: 'FACTORY' },
+  seller: { role: 'FACTORY', ...approvedSellerWhere },
 }

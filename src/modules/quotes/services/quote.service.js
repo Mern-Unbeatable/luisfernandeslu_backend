@@ -6,6 +6,7 @@ import { listQuoteMessages, postQuoteTextMessage } from '../../chat/messages.js'
 import { httpError } from '../../../shared/errors.js'
 import { formatMoney } from '../../../shared/money.js'
 import { partyName } from '../../../shared/party.js'
+import { approvedSellerWhere } from '../../listings/includes.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import {
   mapMessage,
@@ -31,6 +32,7 @@ function liveProductWhere(productId) {
   return {
     id: productId,
     approvalStatus: 'APPROVED',
+    seller: approvedSellerWhere,
     inventory: { is: { listedQuantity: { gt: 0 } } },
   }
 }

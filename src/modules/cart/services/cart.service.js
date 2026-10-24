@@ -5,6 +5,7 @@ import { httpError } from '../../../shared/errors.js'
 import { moneyNonNegative as money } from '../../../shared/money.js'
 import { resolveVatRate } from '../../admin/settings/settings.store.js'
 import { isSellerPayable } from '../../payments/seller-eupago.js'
+import { approvedSellerWhere } from '../../listings/includes.js'
 
 /** Flat env fee removed — shipping = distance × admin vehicle rate at checkout. */
 const VAT_FIXED = env.vatFixed
@@ -141,6 +142,9 @@ const productCartSelect = {
   b2bPrice: true,
   unitOfMeasure: true,
   approvalStatus: true,
+  seller: {
+    select: { profile: { select: { verificationStatus: true } } },
+  },
   categoryId: true,
   category: {
     select: {
@@ -590,6 +594,7 @@ class CartService {
         where: {
           id: productId,
           approvalStatus: 'APPROVED',
+          seller: approvedSellerWhere,
           inventory: { is: { listedQuantity: { gt: 0 } } },
         },
         select: {
@@ -759,7 +764,10 @@ class CartService {
     }
 
     for (const row of items) {
-      if (row.product.approvalStatus !== 'APPROVED') {
+      if (
+        row.product.approvalStatus !== 'APPROVED' ||
+        row.product.seller?.profile?.verificationStatus !== 'APPROVED'
+      ) {
         throw httpError(
           `Product ${row.product.title} is not available`,
           400,
@@ -808,6 +816,7 @@ class CartService {
       where: {
         id: productId,
         approvalStatus: 'APPROVED',
+        seller: approvedSellerWhere,
       },
       select: productCartSelect,
     })

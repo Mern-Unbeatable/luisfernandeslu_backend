@@ -673,13 +673,27 @@ class CheckoutService {
       select: {
         id: true,
         vatRate: true,
-        profile: { select: { eupagoExternKey: true, companyName: true } },
+        profile: {
+          select: {
+            eupagoExternKey: true,
+            companyName: true,
+            verificationStatus: true,
+          },
+        },
       },
     })
     const sellerMap = new Map(sellers.map((s) => [s.id, s]))
 
     for (const b of buckets) {
       const seller = sellerMap.get(b.sellerId)
+      if (seller?.profile?.verificationStatus !== 'APPROVED') {
+        throw httpError(
+          'One or more products are not available',
+          400,
+          'ProductUnavailable',
+          { productIds: b.items.map((i) => i.productId) },
+        )
+      }
       const key = seller?.profile?.eupagoExternKey?.trim()
       if (!key && !mock) {
         throw httpError(

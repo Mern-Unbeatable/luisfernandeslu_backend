@@ -7,6 +7,8 @@ import { httpError, notFound } from '../../../shared/errors.js'
 import { UPLOAD_ROOT } from '../../../shared/storage.js'
 import { avatarRelativeUrlFromFiles } from '../../../shared/upload/evidence-upload.js'
 
+const DOCUMENT_SUBMIT_STATUSES = ['UNVERIFIED', 'PENDING_REVIEW', 'REJECTED']
+
 function assertTransporter(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
   if (String(auth.role || '').toLowerCase() !== 'transporter') {
@@ -218,8 +220,8 @@ export class TransporterProfileService {
       select: { verificationStatus: true },
     })
 
-    if (!profile || profile.verificationStatus !== 'REJECTED') {
-      throw httpError('Only rejected accounts can re-submit documents', 400, 'InvalidStatus')
+    if (!profile || !DOCUMENT_SUBMIT_STATUSES.includes(profile.verificationStatus)) {
+      throw httpError('Documents can only be submitted before approval', 400, 'InvalidStatus')
     }
 
     const documentFields = [
@@ -240,6 +242,10 @@ export class TransporterProfileService {
         if (!byField[fieldName]) byField[fieldName] = []
         byField[fieldName].push(`/uploads/transporter/resubmit/${file.filename}`)
       }
+    }
+
+    if (Object.keys(byField).length === 0) {
+      throw httpError('Upload at least one document', 400, 'DocumentsRequired')
     }
 
     for (const [fieldName, urls] of Object.entries(byField)) {

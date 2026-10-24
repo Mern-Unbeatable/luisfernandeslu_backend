@@ -52,7 +52,11 @@ function buildProfileData(roleEnum, body, filesByField) {
 
   const roleKey = String(roleEnum || '').toLowerCase()
   let verificationStatus = 'PENDING_REVIEW'
-  if (roleKey === 'customer' || roleKey === 'company') {
+  if (['supplier', 'factory', 'transporter'].includes(roleKey)) {
+    // These roles submit documents from the dashboard after signing up
+    verificationStatus =
+      Object.keys(filesByField || {}).length > 0 ? 'PENDING_REVIEW' : 'UNVERIFIED'
+  } else if (roleKey === 'customer' || roleKey === 'company') {
     verificationStatus = 'UNVERIFIED'
   } else if (roleKey === 'affiliate') {
     // Affiliate is auto-approved on register (no admin review)

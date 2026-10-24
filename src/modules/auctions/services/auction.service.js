@@ -1100,6 +1100,17 @@ class AuctionService {
       'transporter',
       'Only transporters can bid on auctions',
     )
+    const profile = await prisma.businessProfile.findUnique({
+      where: { userId: transporterId },
+      select: { verificationStatus: true },
+    })
+    if (profile?.verificationStatus !== 'APPROVED') {
+      throw httpError(
+        'Your account must be verified before bidding on deliveries',
+        403,
+        'AccountNotVerified',
+      )
+    }
     await this.finalizeAuctionIfExpired(auctionId)
 
     const auction = await prisma.shipmentAuction.findFirst({

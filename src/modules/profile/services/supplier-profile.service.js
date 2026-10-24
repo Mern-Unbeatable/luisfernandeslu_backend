@@ -10,6 +10,8 @@ import {
   replaceUserAvatar,
 } from '../../../shared/upload/user-avatar.js'
 
+const DOCUMENT_SUBMIT_STATUSES = ['UNVERIFIED', 'PENDING_REVIEW', 'REJECTED']
+
 function warehouseLine(address) {
   if (!address) return ''
   const line = formatAddressLine(address)
@@ -336,8 +338,8 @@ export class SupplierProfileService {
       select: { verificationStatus: true },
     })
 
-    if (!profile || profile.verificationStatus !== 'REJECTED') {
-      throw httpError('Only rejected accounts can re-submit documents', 400, 'InvalidStatus')
+    if (!profile || !DOCUMENT_SUBMIT_STATUSES.includes(profile.verificationStatus)) {
+      throw httpError('Documents can only be submitted before approval', 400, 'InvalidStatus')
     }
 
     const documentFields = [
@@ -359,6 +361,10 @@ export class SupplierProfileService {
         if (!byField[fieldName]) byField[fieldName] = []
         byField[fieldName].push(`/uploads/supplier/resubmit/${file.filename}`)
       }
+    }
+
+    if (Object.keys(byField).length === 0) {
+      throw httpError('Upload at least one document', 400, 'DocumentsRequired')
     }
 
     for (const [fieldName, urls] of Object.entries(byField)) {
