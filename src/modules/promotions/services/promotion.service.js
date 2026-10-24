@@ -2,6 +2,7 @@ import prisma from '../../../../lib/prisma.js'
 import { httpError, conflict } from '../../../shared/errors.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import { mapProductMedia } from '../../listings/read.js'
+import { env } from '../../../config/env.js'
 
 /** Homepage sponsored grid has a fixed number of public slots. */
 export const MAX_SPONSORED_SLOTS = 8
@@ -34,7 +35,7 @@ function mapPlan(plan) {
     label: plan.label,
     durationDays: plan.durationDays,
     price: plan.price,
-    currency: plan.currency,
+    currency: env.currency,
     isActive: plan.isActive,
     sortOrder: plan.sortOrder,
   }
@@ -169,7 +170,7 @@ function mapAdminMarketingCard(row, baseUrl) {
     weightKg: product?.weightKg || 0,
     boostTier: Number(row.amountPaid ?? row.plan?.price ?? 0),
     durationDays: row.durationDays,
-    currency: row.plan?.currency || 'EUR',
+    currency: env.currency,
     isFeatured,
     endDate: row.endDate || null,
     timeLeft: daysLeftLabel(row.endDate),

@@ -1,5 +1,6 @@
 import { absolutizeUrl } from '../../lib/requestUrl.js'
 import { getStockBreakdown } from '../../shared/stock-listing.js'
+import { formatMoney } from '../../shared/money.js'
 
 export function mapProductMedia(product, baseUrl, { bannerKey = 'bannerImage' } = {}) {
   const bannerImage =
@@ -84,9 +85,8 @@ export function b2bDiscountPercent(basePrice, b2bPrice) {
   return 0
 }
 
-/** Supplier + factory owner UIs historically format with a dollar sign. */
-export function dollarPriceLabel(product) {
-  return `$${Number(product.basePrice).toFixed(2)} Per ${
+export function basePriceLabel(product) {
+  return `${formatMoney(product.basePrice)} Per ${
     product.unitOfMeasure || 'bag'
   }${product.weightKg ? ` ( ${product.weightKg}kg )` : ''}`
 }

@@ -1,5 +1,5 @@
 /**
- * Seed default sponsored-product pricing plans (matches UI: $40/7d, $60/15d, $100/30d).
+ * Seed default sponsored-product pricing plans (matches UI: €40/7d, €60/15d, €100/30d).
  *
  * Usage: pnpm seed:promotion-plans
  */
@@ -18,7 +18,7 @@ async function main() {
       where: { durationDays: plan.durationDays },
       create: {
         ...plan,
-        currency: 'USD',
+        currency: 'EUR',
         isActive: true,
       },
       update: {
@@ -28,7 +28,7 @@ async function main() {
         isActive: true,
       },
     })
-    console.log(`Plan upserted: ${plan.durationDays} days @ $${plan.price}`)
+    console.log(`Plan upserted: ${plan.durationDays} days @ €${plan.price}`)
   }
 }
 

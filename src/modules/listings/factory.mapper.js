@@ -1,6 +1,6 @@
 import { mapCategoryNode, categoryPathStrict } from '../../shared/catalog.js'
 import {
-  dollarPriceLabel,
+  basePriceLabel,
   featureTexts,
   mapProductMedia,
 } from './read.js'
@@ -29,7 +29,7 @@ export function mapFactoryProduct(product, baseUrl, { list = false } = {}) {
     basePrice: product.basePrice,
     weightKg: product.weightKg,
     unitOfMeasure: product.unitOfMeasure || 'bag',
-    priceLabel: dollarPriceLabel(product),
+    priceLabel: basePriceLabel(product),
     description: product.longDescription,
     additionalInfo: product.shortDescription,
     specifications: product.specifications,

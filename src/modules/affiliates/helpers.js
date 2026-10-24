@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto'
 import { env } from '../../config/env.js'
+import { formatMoney } from '../../shared/money.js'
 
 /** Referral commission window: months after referred user registers. */
 export const REFERRAL_ACTIVE_MONTHS = 2
@@ -65,6 +66,5 @@ export function dateOnly(d) {
 }
 
 export function moneyLabel(n) {
-  const v = Number(n || 0)
-  return `$${v.toFixed(2)}`
+  return formatMoney(n)
 }

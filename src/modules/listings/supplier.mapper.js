@@ -1,7 +1,7 @@
 import { mapCategoryNode, categoryPathStrict } from '../../shared/catalog.js'
 import {
   b2bDiscountPercent,
-  dollarPriceLabel,
+  basePriceLabel,
   featureTexts,
   mapProductMedia,
   warehouseAvailability,
@@ -56,7 +56,7 @@ export function mapSupplierProduct(product, baseUrl, categoryPath = null) {
     minB2bQuantity: product.minB2bQuantity,
     weightKg: product.weightKg,
     unitOfMeasure: product.unitOfMeasure || 'bag',
-    priceLabel: dollarPriceLabel(product),
+    priceLabel: basePriceLabel(product),
     description: product.longDescription,
     additionalInfo: product.shortDescription,
     specifications: product.specifications,
