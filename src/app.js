@@ -5,6 +5,7 @@ import cors from 'cors'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth/auth.js'
 import authRoutes from './modules/auth/routes/auth.routes.js'
+import socialAuthRoutes from './modules/auth/routes/social-auth.routes.js'
 import {
   categoryRoutes,
   subCategoryRoutes,
@@ -133,6 +134,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/uploads', express.static(UPLOAD_ROOT))
 
 app.use('/api/auth', authRoutes)
+app.use('/api/social', socialAuthRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/subcategories', subCategoryRoutes)
 app.use('/api/marketplace/products', marketplaceRoutes)

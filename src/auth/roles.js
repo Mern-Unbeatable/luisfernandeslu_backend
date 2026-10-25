@@ -11,7 +11,7 @@ export const PUBLIC_ROLES = [
 /** Roles allowed on login routes (includes admin — no public signup). */
 export const LOGIN_ROLES = [...PUBLIC_ROLES, 'admin']
 
-/** Roles allowed to use Google / Facebook. */
+/** Roles allowed to use Google sign-in. */
 export const SOCIAL_ROLES = new Set(['customer', 'company'])
 
 /** Email/password signup OTP — ONLY customer + company. Never other roles. */

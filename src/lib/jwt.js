@@ -47,6 +47,25 @@ export function verifyAccessToken(token) {
   return jwt.verify(token, getSecret())
 }
 
+/** Separate key so a social login code can never be used as an access token. */
+function socialLoginSecret() {
+  return `${getSecret()}:social-login`
+}
+
+/** One-time code handed to the frontend after Google sign-in (2 minutes). */
+export function signSocialLoginCode(userId, jti) {
+  return jwt.sign({ sub: userId, purpose: 'social_login' }, socialLoginSecret(), {
+    expiresIn: '2m',
+    jwtid: jti,
+  })
+}
+
+export function verifySocialLoginCode(code) {
+  const payload = jwt.verify(code, socialLoginSecret())
+  if (payload?.purpose !== 'social_login') throw new Error('Invalid login code')
+  return payload
+}
+
 /** Extract Bearer token from Express/Node headers object. */
 export function extractBearerToken(headers = {}) {
   const raw =
@@ -65,4 +84,6 @@ export default {
   signPasswordResetToken,
   verifyAccessToken,
   extractBearerToken,
+  signSocialLoginCode,
+  verifySocialLoginCode,
 }

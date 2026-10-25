@@ -117,10 +117,6 @@ export const env = {
       clientId: str('GOOGLE_CLIENT_ID'),
       clientSecret: str('GOOGLE_CLIENT_SECRET'),
     },
-    facebook: {
-      clientId: str('FACEBOOK_CLIENT_ID'),
-      clientSecret: str('FACEBOOK_CLIENT_SECRET'),
-    },
   },
 }
 

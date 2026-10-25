@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { getOAuthState } from 'better-auth/api'
 import prisma from '../../lib/prisma.js'
 import {
   defaultStatusForRole,
@@ -14,10 +15,22 @@ const baseURL = env.apiUrl
 
 const socialProviders = {}
 
-for (const provider of ['google', 'facebook']) {
-  const { clientId, clientSecret } = env.betterAuth[provider]
-  if (clientId && clientSecret) {
-    socialProviders[provider] = { clientId, clientSecret }
+const google = env.betterAuth.google
+if (google.clientId && google.clientSecret) {
+  socialProviders.google = {
+    clientId: google.clientId,
+    clientSecret: google.clientSecret,
+    prompt: 'select_account',
+  }
+}
+
+/** Role chosen on the login/sign-up page, carried through the Google redirect. */
+async function oauthSignupRole() {
+  try {
+    const state = await getOAuthState()
+    return state?.role || null
+  } catch {
+    return null
   }
 }
 
@@ -76,7 +89,7 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const rawRole = user.role || 'CUSTOMER'
+          const rawRole = (await oauthSignupRole()) || user.role || 'CUSTOMER'
           const role = toUserRole(rawRole)
 
           if (!role || role === 'ADMIN') {
@@ -91,7 +104,7 @@ export const auth = betterAuth({
             user.emailVerified === true || Boolean(user.image)
           if (looksLikeSocial && !isSocialRole(role)) {
             throw new Error(
-              'Google/Facebook signup is only available for customer and company',
+              'Google signup is only available for customer and company',
             )
           }
 
