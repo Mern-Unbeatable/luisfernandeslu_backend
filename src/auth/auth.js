@@ -129,6 +129,21 @@ export const auth = betterAuth({
         },
       },
     },
+    account: {
+      create: {
+        // Same email already used by a supplier/factory/transporter/admin: never link Google to it
+        before: async (account) => {
+          if (account.providerId !== 'google' || !account.userId) return
+          const owner = await prisma.user.findUnique({
+            where: { id: account.userId },
+            select: { role: true },
+          })
+          if (owner && !isSocialRole(owner.role)) {
+            throw new Error('Google sign-in is not available for this account')
+          }
+        },
+      },
+    },
   },
 })
 

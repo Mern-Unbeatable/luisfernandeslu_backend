@@ -109,6 +109,8 @@ export class SocialAuthService {
     const next = resolveNextPath(query.next)
     const fail = (error) => frontendCallbackUrl(origin, { error })
 
+    // Better Auth reports a blocked link (see account hook in auth.js) this way
+    if (query.error === 'unable_to_link_account') return fail('email_in_use')
     if (query.error) return fail(String(query.error))
 
     const session = await auth.api
@@ -122,7 +124,7 @@ export class SocialAuthService {
       select: { id: true, role: true, status: true, emailVerified: true },
     })
     if (!user) return fail('session_missing')
-    if (!isSocialRole(user.role)) return fail('role_not_allowed')
+    if (!isSocialRole(user.role)) return fail('email_in_use')
     if (isAuthDeniedStatus(user.status)) return fail('account_disabled')
 
     // Google already confirmed the email, so the signup OTP step is not needed
