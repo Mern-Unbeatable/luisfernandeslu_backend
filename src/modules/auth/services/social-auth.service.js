@@ -61,9 +61,10 @@ function frontendCallbackUrl(origin, params) {
   return `${origin}${FRONTEND_CALLBACK_PATH}#${hash}`
 }
 
-function completeUrl(origin, next) {
+function completeUrl(origin, next, role) {
   const url = new URL(`${env.apiUrl}/api/social/google/complete`)
   url.searchParams.set('redirect', origin)
+  url.searchParams.set('role', role)
   if (next) url.searchParams.set('next', next)
   return url.toString()
 }
@@ -74,7 +75,7 @@ export class SocialAuthService {
     const role = isSocialRole(query.role) ? String(query.role).toLowerCase() : 'customer'
     const origin = resolveFrontendOrigin(query.redirect)
     const next = resolveNextPath(query.next)
-    const callbackURL = completeUrl(origin, next)
+    const callbackURL = completeUrl(origin, next, role)
 
     try {
       const result = await auth.api.signInSocial({
@@ -126,6 +127,13 @@ export class SocialAuthService {
     if (!user) return fail('session_missing')
     if (!isSocialRole(user.role)) return fail('email_in_use')
     if (isAuthDeniedStatus(user.status)) return fail('account_disabled')
+
+    // Same rule as email/password login: the login page's role must match the account
+    const accountRole = String(user.role).toLowerCase()
+    const expectedRole = isSocialRole(query.role) ? String(query.role).toLowerCase() : null
+    if (expectedRole && expectedRole !== accountRole) {
+      return fail(`registered_as_${accountRole}`)
+    }
 
     // Google already confirmed the email, so the signup OTP step is not needed
     if (!user.emailVerified || user.status === 'PENDING_VERIFICATION') {
