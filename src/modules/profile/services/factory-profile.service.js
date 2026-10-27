@@ -8,8 +8,11 @@ import {
   clearUserAvatar,
   replaceUserAvatar,
 } from '../../../shared/upload/user-avatar.js'
-
-const DOCUMENT_SUBMIT_STATUSES = ['UNVERIFIED', 'PENDING_REVIEW', 'REJECTED']
+import {
+  DOCUMENT_SUBMIT_STATUSES,
+  documentSelect,
+  mapProfileDocuments,
+} from '../profile-documents.js'
 
 function assertFactory(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -52,6 +55,7 @@ function mapProfile(user, warehouses, baseUrl) {
     hasEupagoCredentials: Boolean(user.profile?.eupagoExternKey?.trim()),
     rejectionReason: user.profile?.rejectionReason || null,
     verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
+    documents: mapProfileDocuments(user.profile, 'factory', baseUrl),
   }
 }
 
@@ -73,6 +77,7 @@ async function loadUser(userId) {
           eupagoExternKey: true,
           rejectionReason: true,
           verificationStatus: true,
+          ...documentSelect('factory'),
         },
       },
       addresses: {
@@ -351,7 +356,7 @@ export class FactoryProfileService {
     })
 
     if (!profile || !DOCUMENT_SUBMIT_STATUSES.includes(profile.verificationStatus)) {
-      throw httpError('Documents can only be submitted before approval', 400, 'InvalidStatus')
+      throw httpError('Documents cannot be submitted for this account', 400, 'InvalidStatus')
     }
 
     // Prisma column is companyCertificateUrl; accept factoryCertificateUrl as alias

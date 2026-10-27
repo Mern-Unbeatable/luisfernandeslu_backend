@@ -161,7 +161,7 @@ export const supplierRegisterSchema = withPasswordConfirm(
     companyName: z.string().trim().min(2, 'Company name is required'),
     email: emailField,
     phone: z.string().trim().min(6, 'Phone is required'),
-    iban: z.string().trim().min(5, 'IBAN is required'),
+    iban: optionalString,
     password: passwordField,
   }),
 )
@@ -171,7 +171,7 @@ export const factoryRegisterSchema = withPasswordConfirm(
     factoryName: z.string().trim().min(2, 'Factory name is required'),
     email: emailField,
     phone: z.string().trim().min(6, 'Phone is required'),
-    iban: z.string().trim().min(5, 'IBAN is required'),
+    iban: optionalString,
     password: passwordField,
   }),
 )
@@ -181,7 +181,7 @@ export const transporterRegisterSchema = withPasswordConfirm(
     fullName: z.string().trim().min(2, 'Name is required'),
     email: emailField,
     phone: z.string().trim().min(6, 'Phone is required'),
-    iban: z.string().trim().min(5, 'IBAN is required'),
+    iban: optionalString,
     password: passwordField,
   }),
 )
@@ -191,7 +191,7 @@ export const affiliateRegisterSchema = withPasswordConfirm(
     fullName: z.string().trim().min(2, 'Full name is required'),
     email: emailField,
     phone: z.string().trim().min(6, 'Phone is required'),
-    iban: z.string().trim().min(5, 'IBAN is required'),
+    iban: optionalString,
     password: passwordField,
     affiliateCode: optionalString,
   }),

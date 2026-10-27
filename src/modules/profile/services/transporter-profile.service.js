@@ -6,8 +6,11 @@ import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { httpError, notFound } from '../../../shared/errors.js'
 import { UPLOAD_ROOT } from '../../../shared/storage.js'
 import { avatarRelativeUrlFromFiles } from '../../../shared/upload/evidence-upload.js'
-
-const DOCUMENT_SUBMIT_STATUSES = ['UNVERIFIED', 'PENDING_REVIEW', 'REJECTED']
+import {
+  DOCUMENT_SUBMIT_STATUSES,
+  documentSelect,
+  mapProfileDocuments,
+} from '../profile-documents.js'
 
 function assertTransporter(auth, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
@@ -29,6 +32,7 @@ function mapProfile(user, baseUrl) {
     iban: user.profile?.ibanNumber || '',
     rejectionReason: user.profile?.rejectionReason || null,
     verificationStatus: user.profile?.verificationStatus || 'UNVERIFIED',
+    documents: mapProfileDocuments(user.profile, 'transporter', baseUrl),
   }
 }
 
@@ -47,6 +51,7 @@ async function loadUser(userId) {
           ibanNumber: true,
           rejectionReason: true,
           verificationStatus: true,
+          ...documentSelect('transporter'),
         },
       },
     },
@@ -221,7 +226,7 @@ export class TransporterProfileService {
     })
 
     if (!profile || !DOCUMENT_SUBMIT_STATUSES.includes(profile.verificationStatus)) {
-      throw httpError('Documents can only be submitted before approval', 400, 'InvalidStatus')
+      throw httpError('Documents cannot be submitted for this account', 400, 'InvalidStatus')
     }
 
     const documentFields = [
