@@ -43,6 +43,22 @@ export class SupplierDeliveryController {
     }
   }
 
+  async earnings(req, res, next) {
+    try {
+      return sendServiceResult(res, await supplierDeliveryService.earnings(req.auth))
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async withdraw(req, res, next) {
+    try {
+      return sendServiceResult(res, await supplierDeliveryService.withdraw(req.auth, req.body))
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async listForAdmin(req, res, next) {
     try {
       return sendServiceResult(res, await supplierDeliveryService.listForAdmin(req.query))

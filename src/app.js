@@ -66,6 +66,7 @@ import {
   adminSelfDeliveryRoutes,
   supplierDeliveryRoutes,
 } from './modules/deliveries/supplier-delivery.routes.js'
+import adminPayoutRoutes from './modules/admin/payouts/payout.routes.js'
 import factoryOrderRoutes from './modules/orders/routes/factory-order.routes.js'
 import factoryOfferRoutes from './modules/offers/routes/factory-offer.routes.js'
 import erpApiKeysRoutes from './modules/supplier-erp/routes/api-keys.routes.js'
@@ -206,6 +207,7 @@ app.use('/api/admin/orders', adminOrderRoutes)
 app.use('/api/admin/disputes', adminDisputesRoutes)
 app.use('/api/admin/logistics', adminLogisticsRoutes)
 app.use('/api/admin/self-deliveries', adminSelfDeliveryRoutes)
+app.use('/api/admin/payouts', adminPayoutRoutes)
 app.use('/api/admin/affiliates', adminAffiliateRoutes)
 app.use('/api/admin/affiliate-tiers', adminAffiliateTierRoutes)
 app.use('/api/admin/roles-permissions', adminRolesPermissionsRoutes)

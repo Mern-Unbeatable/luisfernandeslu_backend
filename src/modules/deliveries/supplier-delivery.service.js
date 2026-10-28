@@ -5,6 +5,7 @@ import { httpError } from '../../shared/errors.js'
 import { formatAddressLine } from '../../shared/address.js'
 import { money } from '../../shared/money.js'
 import { companyDisplayName, partyName } from '../../shared/party.js'
+import { payoutStatusLabel } from '../../shared/payout-status.js'
 import { SELF_DELIVERY_HOURS } from '../admin/settings/catalog.js'
 import {
   deliveryDecisionMinutes,
@@ -332,23 +333,113 @@ class SupplierDeliveryService {
 
     const deliveredAt = new Date()
     const late = order.selfDeliveryDeadline != null && deliveredAt > order.selfDeliveryDeadline
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        orderStatus: 'DELIVERED',
-        deliveredAt,
-        statusHistory: {
-          create: {
-            status: 'DELIVERED',
-            note: late ? 'Delivered by the supplier after the deadline' : 'Delivered by the supplier',
+    const gross = money(order.shippingFee)
+    const payout = selfDeliveryPayout(order)
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          orderStatus: 'DELIVERED',
+          deliveredAt,
+          statusHistory: {
+            create: {
+              status: 'DELIVERED',
+              note: late ? 'Delivered by the supplier after the deadline' : 'Delivered by the supplier',
+            },
           },
         },
-      },
+      })
+      if (payout > 0) {
+        const wallet = await tx.wallet.upsert({
+          where: { userId: sellerId },
+          create: { userId: sellerId, availableBalance: payout },
+          update: { availableBalance: { increment: payout } },
+          select: { id: true },
+        })
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            grossAmount: gross,
+            platformFee: money(gross - payout),
+            netAmount: payout,
+            description: `Self delivery ${order.orderNumber}`,
+          },
+        })
+      }
     })
 
     return {
       status: 200,
-      body: { orderId: order.id, deliveredAt, isLate: late, message: 'Order marked as delivered' },
+      body: { orderId: order.id, deliveredAt, isLate: late, payout, message: 'Order marked as delivered' },
+    }
+  }
+
+  /** Balance earned from self deliveries, still-to-earn amount, and withdrawal history. */
+  async earnings(auth) {
+    const sellerId = assertSupplier(auth)
+    const [wallet, openSelf, withdrawals, profile] = await Promise.all([
+      prisma.wallet.findUnique({
+        where: { userId: sellerId },
+        select: { availableBalance: true, transactions: { select: { netAmount: true } } },
+      }),
+      prisma.order.findMany({
+        where: { sellerId, deliveryMode: 'SELF', deliveredAt: null, orderStatus: { notIn: CLOSED_STATUSES } },
+        select: { shippingFee: true, seller: { select: { vatRate: true } } },
+      }),
+      prisma.withdrawalRequest.findMany({
+        where: { userId: sellerId },
+        orderBy: { requestedAt: 'desc' },
+        take: 20,
+      }),
+      prisma.businessProfile.findUnique({ where: { userId: sellerId }, select: { ibanNumber: true } }),
+    ])
+
+    return {
+      status: 200,
+      body: {
+        availableBalance: money(wallet?.availableBalance || 0),
+        totalEarned: money((wallet?.transactions || []).reduce((sum, t) => sum + Number(t.netAmount || 0), 0)),
+        pendingEarnings: money(openSelf.reduce((sum, o) => sum + selfDeliveryPayout(o), 0)),
+        defaultAccountNumber: profile?.ibanNumber || '',
+        withdrawals: withdrawals.map((w) => ({
+          id: w.id,
+          amount: money(w.amount),
+          accountNumber: w.accountNumber,
+          status: payoutStatusLabel(w.status),
+          requestedAt: w.requestedAt,
+          processedAt: w.processedAt,
+        })),
+        message: 'Delivery earnings fetched',
+      },
+    }
+  }
+
+  async withdraw(auth, body = {}) {
+    const sellerId = assertSupplier(auth)
+    const amount = money(body.amount)
+    const accountNumber = String(body.accountNumber || '').trim()
+
+    const request = await prisma.$transaction(async (tx) => {
+      const debited = await tx.wallet.updateMany({
+        where: { userId: sellerId, availableBalance: { gte: amount } },
+        data: { availableBalance: { decrement: amount } },
+      })
+      if (!debited.count) {
+        throw httpError('Amount cannot exceed your available balance', 400, 'InsufficientBalance')
+      }
+      return tx.withdrawalRequest.create({
+        data: { userId: sellerId, amount, accountNumber, status: 'PENDING' },
+      })
+    })
+
+    return {
+      status: 201,
+      body: {
+        id: request.id,
+        amount,
+        status: payoutStatusLabel(request.status),
+        message: 'Withdrawal requested',
+      },
     }
   }
 

@@ -8,11 +8,21 @@ import {
 } from '../../middlewares/auth.middleware.js'
 
 const orderIdParamSchema = z.object({ orderId: z.string().uuid() })
+const withdrawalBodySchema = z.object({
+  amount: z.coerce.number().positive().max(1_000_000),
+  accountNumber: z.string().trim().min(5).max(64),
+})
 
 /** Mounted at `/api/supplier/deliveries`. */
 export const supplierDeliveryRoutes = Router()
 supplierDeliveryRoutes.use(requireAccessToken, requireRoles('supplier'))
 supplierDeliveryRoutes.get('/', (req, res, next) => controller.list(req, res, next))
+supplierDeliveryRoutes.get('/earnings', (req, res, next) => controller.earnings(req, res, next))
+supplierDeliveryRoutes.post(
+  '/withdrawals',
+  validate(withdrawalBodySchema),
+  (req, res, next) => controller.withdraw(req, res, next),
+)
 supplierDeliveryRoutes.post(
   '/:orderId/self',
   validate(orderIdParamSchema, 'params'),
