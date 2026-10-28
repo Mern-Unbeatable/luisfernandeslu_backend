@@ -20,6 +20,7 @@
         "seed:catalog": "tsx src/scripts/seed-catalog.js",
         "seed:promotion-plans": "tsx src/scripts/seed-promotion-plans.js",
         "seed:demo": "tsx src/scripts/seed-demo.js",
+        "seed:accounts": "tsx src/scripts/seed-accounts.js",
         "seed:admin-products": "tsx src/scripts/seed-admin-products.js",
         "seed:marketplace-50": "tsx src/scripts/seed-marketplace-50.js",
         "seed:eupago-keys": "tsx src/scripts/seed-eupago-keys.js",

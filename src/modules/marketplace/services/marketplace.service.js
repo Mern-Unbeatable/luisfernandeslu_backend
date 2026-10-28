@@ -3,6 +3,7 @@ import { httpError } from '../../../shared/errors.js'
 import { categoryFilter } from '../../../shared/catalog.js'
 import { parsePagination, paginationMeta } from '../../../shared/pagination.js'
 import {
+  factoryCatalogWhere,
   liveListingWhere,
   marketplaceListInclude,
   marketplaceDetailInclude,
@@ -47,8 +48,24 @@ class MarketplaceService {
     return { categoryId, categoryName }
   }
 
-  buildCatalogWhere(query, { categoryId, forceSponsored } = {}) {
-    const and = [liveListingWhere()]
+  /** Suppliers also browse factory products; everyone else only sees supplier listings. */
+  catalogScope(buyer) {
+    if (buyer?.role === 'supplier') {
+      return { OR: [liveListingWhere(), factoryCatalogWhere] }
+    }
+    return liveListingWhere()
+  }
+
+  /** A supplier never sees his own products in the storefront. */
+  excludeOwnProducts(viewer) {
+    if (viewer?.role !== 'supplier' || !viewer.id) return null
+    return { sellerId: { not: viewer.id } }
+  }
+
+  buildCatalogWhere(query, { categoryId, forceSponsored, buyer, viewer = buyer } = {}) {
+    const and = [this.catalogScope(buyer)]
+    const ownFilter = this.excludeOwnProducts(viewer)
+    if (ownFilter) and.push(ownFilter)
     const search = query.search?.trim() || ''
 
     if (forceSponsored === true) {
@@ -87,7 +104,7 @@ class MarketplaceService {
   async listSponsored(auth, query, baseUrl) {
     const buyer = resolveBuyerView(auth)
     const { page, limit, skip } = parsePagination(query, { defaultLimit: 8 })
-    const { where } = this.buildCatalogWhere(query, { forceSponsored: true })
+    const { where } = this.buildCatalogWhere(query, { forceSponsored: true, viewer: buyer })
 
     const [total, rows] = await Promise.all([
       prisma.product.count({ where }),
@@ -114,7 +131,8 @@ class MarketplaceService {
   async listTopSelling(auth, query, baseUrl) {
     const buyer = resolveBuyerView(auth)
     const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
-    const live = liveListingWhere()
+    const ownFilter = this.excludeOwnProducts(buyer)
+    const live = ownFilter ? { AND: [liveListingWhere(), ownFilter] } : liveListingWhere()
 
     const [soldGroups, rows] = await Promise.all([
       prisma.orderLineItem.groupBy({
@@ -163,7 +181,7 @@ class MarketplaceService {
     const buyer = resolveBuyerView(auth)
     const { page, limit, skip } = parsePagination(query, { defaultLimit: 12 })
     const { categoryId, categoryName } = await this.resolveCategory(query)
-    const { where, search } = this.buildCatalogWhere(query, { categoryId })
+    const { where, search } = this.buildCatalogWhere(query, { categoryId, buyer })
 
     const [total, rows] = await Promise.all([
       prisma.product.count({ where }),
@@ -212,8 +230,10 @@ class MarketplaceService {
     }
 
     const buyer = resolveBuyerView(auth)
+    const ownFilter = this.excludeOwnProducts(buyer)
     const and = [
-      liveListingWhere(),
+      this.catalogScope(buyer),
+      ...(ownFilter ? [ownFilter] : []),
       {
         OR: [
           { title: { contains: q, mode: 'insensitive' } },
@@ -231,6 +251,7 @@ class MarketplaceService {
         include: {
           media: { orderBy: { sortOrder: 'asc' }, take: 2 },
           category: { select: { id: true, name: true, slug: true } },
+          seller: { select: { role: true } },
         },
         orderBy: [{ isFeatured: 'desc' }, { updatedAt: 'desc' }],
         take: 5,
@@ -268,6 +289,7 @@ class MarketplaceService {
         unitOfMeasure: p.unitOfMeasure || 'bag',
         image: imageUrl,
         category: p.category ? { id: p.category.id, name: p.category.name, slug: p.category.slug } : null,
+        isFactory: p.seller?.role === 'FACTORY',
       }
     })
 

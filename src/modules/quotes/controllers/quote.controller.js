@@ -22,6 +22,19 @@ export class QuoteController {
     }
   }
 
+  async openChatForProduct(req, res, next) {
+    try {
+      const result = await quoteService.openChatForProduct(
+        req.auth,
+        req.params.id,
+        resolveRequestBaseUrl(req),
+      )
+      return sendResult(res, result)
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async list(req, res, next) {
     try {
       const result = await quoteService.list(

@@ -23,6 +23,7 @@ import { hasMapboxToken, suggestPlaces } from '../../../shared/distance.js'
 import { env } from '../../../config/env.js'
 import { notifyPaymentFailure } from '../../payments/payment-failure-notify.js'
 import { issueTaxInvoicesForCheckout } from '../../invoicing/tax-invoice.service.js'
+import supplierDeliveryService from '../../deliveries/supplier-delivery.service.js'
 
 function methodEnum(method) {
   const m = String(method || 'multibanco').toLowerCase()
@@ -951,6 +952,7 @@ class CheckoutService {
       return { alreadyPaid: true }
     }
 
+    let paidOrderIds = []
     await prisma.$transaction(async (tx) => {
       await tx.checkoutSession.update({
         where: { id: session.id },
@@ -979,9 +981,11 @@ class CheckoutService {
       }
 
       await recordAffiliateCommissionsForCheckout(session.id, tx)
+      paidOrderIds = orders.map((order) => order.id)
     })
 
     void issueTaxInvoicesForCheckout(session.id)
+    void supplierDeliveryService.scheduleDecisions(paidOrderIds)
 
     return { alreadyPaid: false }
   }
@@ -1103,6 +1107,7 @@ class CheckoutService {
     if (session.paymentStatus === 'PAID') {
       // Offer checkouts are stored as PAID up front; the webhook is the real payment signal.
       void issueTaxInvoicesForCheckout(session.id)
+      void supplierDeliveryService.scheduleDecisions(session.orders.map((order) => order.id))
       return {
         status: 200,
         body: {

@@ -16,6 +16,9 @@ export const VEHICLE_TYPE_IDS = VEHICLE_TYPES.map((item) => item.id)
 
 const auctionMins = Math.max(1, Number(env.auctionDurationMinutes) || 1)
 
+export const DEFAULT_DELIVERY_DECISION_MINUTES = 10
+export const SELF_DELIVERY_HOURS = 2
+
 export const SETTINGS_DEFAULTS = {
   shipping: {
     vehicleRates: VEHICLE_TYPES.map((item) => ({
@@ -30,5 +33,6 @@ export const SETTINGS_DEFAULTS = {
   auction: {
     hours: Math.floor(auctionMins / 60),
     minutes: auctionMins % 60,
+    decisionMinutes: DEFAULT_DELIVERY_DECISION_MINUTES,
   },
 }

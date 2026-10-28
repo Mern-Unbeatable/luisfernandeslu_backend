@@ -28,6 +28,7 @@ export const marketplaceListInclude = {
     select: {
       id: true,
       name: true,
+      role: true,
       profile: { select: { companyName: true, eupagoExternKey: true } },
     },
   },
@@ -88,7 +89,7 @@ export const approvedSellerWhere = {
 export function liveListingWhere() {
   return {
     approvalStatus: 'APPROVED',
-    seller: approvedSellerWhere,
+    seller: { role: 'SUPPLIER', ...approvedSellerWhere },
     inventory: {
       is: {
         listedQuantity: { gt: 0 },

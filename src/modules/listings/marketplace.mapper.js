@@ -43,10 +43,17 @@ export function resolveBuyerView(auth) {
   const role = String(auth?.role || '').toLowerCase()
   const isCompany = role === 'company'
   return {
+    id: auth?.id || null,
     role: role || 'guest',
     isCompany,
     isAuthenticated: Boolean(auth?.id),
   }
+}
+
+const CART_ROLES = new Set(['guest', 'customer', 'company'])
+
+function canUseCart(buyer) {
+  return CART_ROLES.has(buyer?.role)
 }
 
 function mapSeller(product) {
@@ -92,6 +99,8 @@ export function mapMarketplaceListProduct(product, baseUrl, buyer) {
   const minOrder =
     minQty != null && Number(minQty) > 0 ? Number(minQty) : null
 
+  const isFactory = product.seller?.role === 'FACTORY'
+
   const row = {
     id: product.id,
     slug: publicSlug(product.slug),
@@ -109,8 +118,9 @@ export function mapMarketplaceListProduct(product, baseUrl, buyer) {
     rating: Number(product.averageRating ?? 0),
     isSponsored: Boolean(product.isSponsored),
     minOrder,
-    hasBulkOption: hasVisibleBulkOption(product, buyer),
-    purchasable: isSellerPayable(product.seller),
+    hasBulkOption: !isFactory && hasVisibleBulkOption(product, buyer),
+    purchasable: !isFactory && isSellerPayable(product.seller),
+    isFactory,
   }
 
   return row
@@ -180,9 +190,12 @@ export function mapMarketplaceDetailProduct(product, baseUrl, buyer) {
     pricingView: buyer.isCompany ? 'company' : 'retail',
     purchasable,
     actions: {
-      addToCart: purchasable,
-      buyNow: purchasable,
-      ...(buyer.isCompany ? { sendQuote: true } : {}),
+      addToCart: purchasable && canUseCart(buyer),
+      buyNow: purchasable && canUseCart(buyer),
+      ...(buyer.isCompany ||
+      (buyer.role === 'supplier' && product.sellerId !== buyer.id)
+        ? { sendQuote: true }
+        : {}),
     },
   }
 

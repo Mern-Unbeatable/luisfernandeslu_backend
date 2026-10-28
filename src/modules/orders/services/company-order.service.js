@@ -37,7 +37,7 @@ class SupplierCompanyOrderService {
   }
 
   where(sellerId) {
-    return sellerBuyerWhere(sellerId, 'COMPANY')
+    return sellerBuyerWhere(sellerId, { in: ['COMPANY', 'SUPPLIER'] })
   }
 
   directWhere(sellerId) {

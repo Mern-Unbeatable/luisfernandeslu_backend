@@ -84,6 +84,10 @@ export class AdminSettingsService {
       auction: {
         hours: Number(body.hours),
         minutes: Number(body.minutes),
+        decisionMinutes:
+          body.decisionMinutes != null
+            ? Number(body.decisionMinutes)
+            : current.auction.decisionMinutes,
       },
     })
     return {

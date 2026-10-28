@@ -1,6 +1,7 @@
 import { env, assertEnv } from './config/env.js'
 import app from './app.js'
 import { setupSocket } from './socket/index.js'
+import { startDeliveryScheduler, stopDeliveryScheduler } from './modules/deliveries/delivery-scheduler.js'
 
 assertEnv()
 
@@ -16,6 +17,8 @@ const server = app.listen(PORT, () => {
 })
 
 setupSocket(server)
+startDeliveryScheduler()
+server.on('close', stopDeliveryScheduler)
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server')

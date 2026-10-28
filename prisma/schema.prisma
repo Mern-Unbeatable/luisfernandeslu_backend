@@ -83,6 +83,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum DeliveryMode {
+  SELF
+  CARRIER
+}
+
 enum OrderSource {
   DIRECT_CART
   QUOTE_CONVERSION
@@ -992,6 +997,10 @@ model Order {
   siteConditions       String?
   cancellationReason   String?
   otpVerificationCode  String?              // 4-digit OTP for Transporter delivery
+  deliveryMode         DeliveryMode?
+  deliveryDecisionDeadline DateTime?        // supplier must pick SELF or CARRIER before this
+  selfDeliveryDeadline DateTime?
+  deliveredAt          DateTime?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
@@ -1018,6 +1027,7 @@ model Order {
   @@index([customerId, orderStatus])
   @@index([sellerId, orderStatus])
   @@index([checkoutSessionId])
+  @@index([deliveryMode, deliveryDecisionDeadline])
 }
 
 model OrderLineItem {

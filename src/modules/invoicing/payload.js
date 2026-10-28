@@ -86,7 +86,12 @@ export function buildInvoicePayload(order, invoice, options = {}) {
       address:
         formatAddressLine(ship) || formatAddressLine(order.billingAddress),
       role: buyerRole || null,
-      roleLabel: buyerRole === 'COMPANY' ? 'Company' : 'Customer',
+      roleLabel:
+        buyerRole === 'COMPANY'
+          ? 'Company'
+          : buyerRole === 'SUPPLIER'
+            ? 'Supplier'
+            : 'Customer',
     },
     items: (order.orderLineItems || []).map((li) => ({
       title: li.product?.title || 'Product',

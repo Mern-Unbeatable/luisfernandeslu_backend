@@ -26,4 +26,5 @@ export const saveVatBodySchema = z.object({
 export const saveAuctionBodySchema = z.object({
   hours: z.number().int().min(0).max(999),
   minutes: z.number().int().min(0).max(59),
+  decisionMinutes: z.number().int().min(1).max(1440).optional(),
 })

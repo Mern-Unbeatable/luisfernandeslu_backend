@@ -28,6 +28,7 @@ const listSelect = {
   id: true,
   orderNumber: true,
   orderStatus: true,
+  orderSource: true,
   grandTotal: true,
   shippingFee: true,
   createdAt: true,
@@ -87,7 +88,7 @@ function mapListRow(o, viewer) {
     orderNumber: o.orderNumber,
     orderStatus: o.orderStatus,
     status: factoryStatusLabel(o.orderStatus),
-    orderSource: FACTORY_ORDER_SOURCE,
+    orderSource: o.orderSource || FACTORY_ORDER_SOURCE,
     factoryId: o.sellerId,
     factoryName: companyDisplayName(o.seller),
     companyId: o.customerId,
@@ -115,8 +116,12 @@ function mapListRow(o, viewer) {
 }
 
 class FactoryOrderService {
+  /** Supplier purchases: from factories and from other suppliers (quote chat). */
   supplierWhere(buyerId) {
-    return { ...factoryOrderBase(), customerId: buyerId }
+    return {
+      orderSource: { in: [FACTORY_ORDER_SOURCE, 'QUOTE_CONVERSION'] },
+      customerId: buyerId,
+    }
   }
 
   factoryWhere(sellerId) {

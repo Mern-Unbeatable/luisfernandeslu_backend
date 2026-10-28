@@ -33,6 +33,7 @@ function normalize(raw) {
   const src = raw && typeof raw === 'object' ? raw : {}
   const hours = Number(src.auction?.hours)
   const minutes = Number(src.auction?.minutes)
+  const decisionMinutes = Number(src.auction?.decisionMinutes)
   return {
     shipping: {
       vehicleRates: mergeVehicleRates(src.shipping?.vehicleRates),
@@ -45,6 +46,9 @@ function normalize(raw) {
       minutes: Number.isFinite(minutes)
         ? Math.min(59, Math.max(0, Math.trunc(minutes)))
         : defaults.auction.minutes,
+      decisionMinutes: Number.isFinite(decisionMinutes) && decisionMinutes >= 1
+        ? Math.min(1440, Math.trunc(decisionMinutes))
+        : defaults.auction.decisionMinutes,
     },
   }
 }
@@ -88,6 +92,10 @@ export function auctionDurationMinutes(settings) {
     Number(settings?.auction?.hours || 0) * 60 +
     Number(settings?.auction?.minutes || 0)
   return Math.max(1, total)
+}
+
+export function deliveryDecisionMinutes(settings) {
+  return Math.max(1, Number(settings?.auction?.decisionMinutes) || 1)
 }
 
 export function rateForVehicle(settings, vehicleType) {

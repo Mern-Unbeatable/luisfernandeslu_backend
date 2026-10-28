@@ -13,6 +13,13 @@ import {
   loadPlatformSettings,
 } from '../../admin/settings/settings.store.js'
 
+const DEFAULT_AUCTION_VEHICLE = 'HEAVY_TRUCK'
+
+const SUPPLIER_AUCTION_ORDER_INCLUDE = {
+  shippingAddress: true,
+  project: { select: { projectName: true, location: true } },
+}
+
 function assertRole(auth, role, message) {
   if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
   if (String(auth.role || '').toLowerCase() !== role) {
@@ -419,13 +426,37 @@ class AuctionService {
     const orderRef = String(body.orderId || '').trim()
     const order = await prisma.order.findFirst({
       where: this.orderLookup(orderRef, supplierId),
-      include: {
-        shippingAddress: true,
-        project: { select: { projectName: true, location: true } },
-      },
+      include: SUPPLIER_AUCTION_ORDER_INCLUDE,
     })
     if (!order) throw httpError('Order not found', 404, 'NotFound')
 
+    const { auction, bidStartPrice } = await this.openSupplierAuction(
+      order,
+      body.requiredVehicleType,
+    )
+
+    return {
+      status: 201,
+      body: {
+        id: auction.id,
+        auctionId: auction.auctionCode,
+        bidStartPrice,
+        message: 'Shipment auction created',
+      },
+    }
+  }
+
+  /** Opens (or reopens) the carrier auction for a supplier order and marks it CARRIER. */
+  async openSupplierAuctionForOrder(orderId, requiredVehicleType) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: SUPPLIER_AUCTION_ORDER_INCLUDE,
+    })
+    if (!order) throw httpError('Order not found', 404, 'NotFound')
+    return this.openSupplierAuction(order, requiredVehicleType)
+  }
+
+  async openSupplierAuction(order, requiredVehicleType = DEFAULT_AUCTION_VEHICLE) {
     if (!(Number(order.shippingFee) > 0)) {
       throw httpError(
         'Order shipping charge must be greater than 0',
@@ -473,7 +504,7 @@ class AuctionService {
         data: {
           shipmentId: shipment.id,
           auctionCode: await nextAuctionCode(),
-          requiredVehicleType: body.requiredVehicleType,
+          requiredVehicleType,
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
           bidStartPrice,
@@ -496,7 +527,7 @@ class AuctionService {
       auction = await prisma.shipmentAuction.update({
         where: { id: existing.id },
         data: {
-          requiredVehicleType: body.requiredVehicleType,
+          requiredVehicleType,
           expiresAt,
           auctionStatus: 'PENDING_BIDS',
           auctionCode: code,
@@ -506,15 +537,14 @@ class AuctionService {
       })
     }
 
-    return {
-      status: 201,
-      body: {
-        id: auction.id,
-        auctionId: auction.auctionCode,
-        bidStartPrice,
-        message: 'Shipment auction created',
-      },
+    if (order.deliveryMode !== 'CARRIER') {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { deliveryMode: 'CARRIER' },
+      })
     }
+
+    return { auction, bidStartPrice }
   }
 
   async getCreateInfoForSupplier(auth, orderId) {

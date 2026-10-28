@@ -11,7 +11,7 @@ import {
   invoiceOrderInclude,
 } from '../generate.js'
 
-const BUYER_ROLES = ['CUSTOMER', 'COMPANY']
+const BUYER_ROLES = ['CUSTOMER', 'COMPANY', 'SUPPLIER']
 
 class SupplierDocumentService {
   assertSupplier(auth) {

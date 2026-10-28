@@ -30,6 +30,14 @@ class MarketplaceQuoteRoutes {
       validate(sendQuoteBodySchema, 'body'),
       (req, res, next) => quoteController.createForProduct(req, res, next),
     )
+
+    this.router.post(
+      '/:id/message',
+      requireAccessToken,
+      requireRoles('supplier'),
+      validate(productIdParamSchema, 'params'),
+      (req, res, next) => quoteController.openChatForProduct(req, res, next),
+    )
   }
 
   getRoutes() {

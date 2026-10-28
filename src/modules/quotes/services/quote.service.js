@@ -136,10 +136,11 @@ class QuoteService {
     return assertQuoteParticipantRole(auth)
   }
 
-  assertCompany(auth) {
+  /** Companies buy from suppliers; suppliers also buy from other suppliers. */
+  assertQuoteBuyer(auth) {
     if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
-    if (auth.role !== 'company') {
-      throw httpError('Only company users can send quotes', 403, 'Forbidden')
+    if (auth.role !== 'company' && auth.role !== 'supplier') {
+      throw httpError('Only companies or suppliers can send quotes', 403, 'Forbidden')
     }
   }
 
@@ -166,7 +167,7 @@ class QuoteService {
    * Company → Send Quote. Opens chat thread with supplier.
    */
   async createForProduct(auth, productId, body, baseUrl) {
-    this.assertCompany(auth)
+    this.assertQuoteBuyer(auth)
 
     const product = await prisma.product.findFirst({
       where: liveProductWhere(productId),
@@ -290,6 +291,85 @@ ${quantityNote}.`,
     }
   }
 
+  /**
+   * Supplier → "Enviar mensagem" on another supplier's product.
+   * Opens (or reuses) the chat directly; the seller sends the offer inside it.
+   */
+  async openChatForProduct(auth, productId, baseUrl) {
+    if (!auth?.id) throw httpError('Unauthorized', 401, 'Unauthorized')
+    if (auth.role !== 'supplier') {
+      throw httpError('Only suppliers can message other suppliers', 403, 'Forbidden')
+    }
+
+    const product = await prisma.product.findFirst({
+      where: liveProductWhere(productId),
+      select: { id: true, sellerId: true, minOrderQuantity: true, b2bPrice: true, basePrice: true },
+    })
+    if (!product) {
+      throw httpError('Product not found or not available', 404, 'NotFound')
+    }
+    if (product.sellerId === auth.id) {
+      throw httpError('You cannot message yourself about your own product', 400, 'InvalidSeller')
+    }
+
+    const existing = await prisma.quoteRequest.findFirst({
+      where: {
+        buyerId: auth.id,
+        sellerId: product.sellerId,
+        status: { in: ['PENDING', 'IN_CHAT'] },
+        quoteItems: { some: { productId: product.id } },
+      },
+      include: quoteDetailInclude,
+      orderBy: { updatedAt: 'desc' },
+    })
+    if (existing) {
+      return {
+        status: 200,
+        body: { quote: mapQuote(existing, baseUrl, auth.id), message: 'Chat opened' },
+      }
+    }
+
+    const quote = await prisma.$transaction(async (tx) => {
+      const created = await tx.quoteRequest.create({
+        data: {
+          buyerId: auth.id,
+          sellerId: product.sellerId,
+          status: 'IN_CHAT',
+          quoteItems: {
+            create: {
+              productId: product.id,
+              quantity: product.minOrderQuantity || 1,
+              offeredUnitPrice: product.b2bPrice ?? product.basePrice,
+            },
+          },
+        },
+      })
+      await tx.chatThread.create({
+        data: {
+          type: 'QUOTE',
+          quoteRequestId: created.id,
+          participants: {
+            create: [{ userId: auth.id }, { userId: product.sellerId }],
+          },
+        },
+      })
+      return tx.quoteRequest.findUnique({
+        where: { id: created.id },
+        include: quoteDetailInclude,
+      })
+    })
+
+    broadcastQuoteEvent(quote.id, 'quote:opened', {
+      quoteId: quote.id,
+      quote: mapQuote(quote, baseUrl, null),
+    })
+
+    return {
+      status: 201,
+      body: { quote: mapQuote(quote, baseUrl, auth.id), message: 'Chat opened' },
+    }
+  }
+
   /** List quotes — company sees sent; supplier sees incoming */
   async list(auth, query, baseUrl) {
     const role = this.assertParticipantRole(auth)
@@ -299,7 +379,7 @@ ${quantityNote}.`,
     const where =
       role === 'company'
         ? { buyerId: auth.id }
-        : { sellerId: auth.id }
+        : { OR: [{ sellerId: auth.id }, { buyerId: auth.id }] }
     if (status !== 'all') where.status = status
 
     const [total, rows] = await Promise.all([
@@ -332,7 +412,7 @@ ${quantityNote}.`,
     const quotes = rows.map((q) => {
       const last = q.chatMessages?.[0] || null
       const mapped = mapQuote(q, baseUrl, auth.id)
-      const partner = role === 'company' ? mapped.seller : mapped.buyer
+      const partner = q.buyerId === auth.id ? mapped.seller : mapped.buyer
       return {
         ...mapped,
         // Messenger sidebar shape
@@ -500,10 +580,10 @@ ${quantityNote}.`,
   }
 
   async negotiateOffer(auth, quoteId, offerId, baseUrl) {
-    this.assertCompany(auth)
+    this.assertQuoteBuyer(auth)
     const quote = await this.getAccessibleQuote(auth, quoteId)
     if (quote.buyerId !== auth.id) {
-      throw httpError('Only the company buyer can negotiate', 403, 'Forbidden')
+      throw httpError('Only the buyer can negotiate', 403, 'Forbidden')
     }
 
     const offer = await prisma.quoteOffer.findFirst({
@@ -548,10 +628,10 @@ ${quantityNote}.`,
   }
 
   async acceptOffer(auth, quoteId, offerId, baseUrl) {
-    this.assertCompany(auth)
+    this.assertQuoteBuyer(auth)
     const quote = await this.getAccessibleQuote(auth, quoteId)
     if (quote.buyerId !== auth.id) {
-      throw httpError('Only the company buyer can accept', 403, 'Forbidden')
+      throw httpError('Only the buyer can accept', 403, 'Forbidden')
     }
 
     const offer = await prisma.quoteOffer.findFirst({
@@ -602,10 +682,10 @@ ${quantityNote}.`,
    * Company → Pay offer (demo/mock). Creates QUOTE_CONVERSION chat order.
    */
   async payOffer(auth, quoteId, offerId, baseUrl, shippingFee = 0, paymentMethod = 'multibanco', mbwayPhone) {
-    const role = this.assertParticipantRole(auth)
+    this.assertParticipantRole(auth)
     const quote = await this.getAccessibleQuote(auth, quoteId)
-    if (quote.buyerId !== auth.id && quote.sellerId !== auth.id) {
-      throw httpError('Only quote participants can pay this offer', 403, 'Forbidden')
+    if (quote.buyerId !== auth.id) {
+      throw httpError('Only the buyer can pay this offer', 403, 'Forbidden')
     }
 
     const offer = await prisma.quoteOffer.findFirst({

@@ -62,6 +62,10 @@ import supplierDisputesRoutes from './modules/disputes/routes/supplier-disputes.
 import adminDisputesRoutes from './modules/disputes/routes/admin-disputes.routes.js'
 import supplierFactoryCatalogRoutes from './modules/listings/routes/factory-catalog.routes.js'
 import supplierFactoryOrderRoutes from './modules/orders/routes/supplier-factory-order.routes.js'
+import {
+  adminSelfDeliveryRoutes,
+  supplierDeliveryRoutes,
+} from './modules/deliveries/supplier-delivery.routes.js'
 import factoryOrderRoutes from './modules/orders/routes/factory-order.routes.js'
 import factoryOfferRoutes from './modules/offers/routes/factory-offer.routes.js'
 import erpApiKeysRoutes from './modules/supplier-erp/routes/api-keys.routes.js'
@@ -175,6 +179,7 @@ app.use('/api/factory/orders', factoryOrderRoutes)
 app.use('/api/supplier/erp/api-keys', erpApiKeysRoutes)
 app.use('/api/supplier/erp/inventory', supplierErpInventoryRoutes)
 app.use('/api/supplier/auctions', supplierAuctionRoutes)
+app.use('/api/supplier/deliveries', supplierDeliveryRoutes)
 app.use('/api/factory/auctions', factoryAuctionRoutes)
 app.use('/api/factory/profile', factoryProfileRoutes)
 app.use('/api/transporter/auctions', transporterAuctionRoutes)
@@ -200,6 +205,7 @@ app.use('/api/admin/auctions', adminAuctionRoutes)
 app.use('/api/admin/orders', adminOrderRoutes)
 app.use('/api/admin/disputes', adminDisputesRoutes)
 app.use('/api/admin/logistics', adminLogisticsRoutes)
+app.use('/api/admin/self-deliveries', adminSelfDeliveryRoutes)
 app.use('/api/admin/affiliates', adminAffiliateRoutes)
 app.use('/api/admin/affiliate-tiers', adminAffiliateTierRoutes)
 app.use('/api/admin/roles-permissions', adminRolesPermissionsRoutes)

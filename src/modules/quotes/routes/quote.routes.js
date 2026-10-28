@@ -66,17 +66,17 @@ class QuoteRoutes {
       (req, res, next) => quoteController.getBuyerProjects(req, res, next),
     )
 
-    // Company respond to offer
+    // Buyer (company, or a supplier buying from another supplier) responds to offer
     this.router.post(
       '/:id/offers/:offerId/negotiate',
-      requireRoles('company'),
+      requireRoles('company', 'supplier'),
       validate(offerIdParamSchema, 'params'),
       (req, res, next) => quoteController.negotiateOffer(req, res, next),
     )
 
     this.router.post(
       '/:id/offers/:offerId/accept',
-      requireRoles('company'),
+      requireRoles('company', 'supplier'),
       validate(offerIdParamSchema, 'params'),
       (req, res, next) => quoteController.acceptOffer(req, res, next),
     )

@@ -245,7 +245,7 @@ class AdminOrderService {
       and.push({
         seller: { role: 'SUPPLIER' },
         orderSource: { in: ['DIRECT_CART', 'QUOTE_CONVERSION'] },
-        customer: { role: { in: ['CUSTOMER', 'COMPANY'] } },
+        customer: { role: { in: ['CUSTOMER', 'COMPANY', 'SUPPLIER'] } },
       })
       const customerType = normalizeCustomerType(query.customerType)
       if (customerType) and.push({ customer: { role: customerType } })
