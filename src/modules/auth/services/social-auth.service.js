@@ -3,6 +3,11 @@ import { fromNodeHeaders } from 'better-auth/node'
 import prisma from '../../../../lib/prisma.js'
 import { auth } from '../../../auth/auth.js'
 import { isSocialRole } from '../../../auth/roles.js'
+import {
+  generateReferralCode,
+  generateTrackingCode,
+  buildShareLink,
+} from '../../affiliates/helpers.js'
 import { env, getCorsOrigins } from '../../../config/env.js'
 import { formatProfileForResponse } from '../../../lib/requestUrl.js'
 import {
@@ -144,6 +149,59 @@ export class SocialAuthService {
           ...(user.status === 'PENDING_VERIFICATION' ? { status: 'ACTIVE' } : {}),
         },
       })
+    }
+
+    // Ensure wallet and profile exist for all public roles
+    await prisma.wallet.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, availableBalance: 0, pendingBalance: 0 },
+      update: {},
+    }).catch(() => null)
+
+    await prisma.userProfile.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, companyName: '' },
+      update: {},
+    }).catch(() => null)
+
+    // Ensure referral code and primary affiliate link for affiliates
+    if (accountRole === 'affiliate') {
+      const fullUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { referralCode: true },
+      })
+      if (!fullUser?.referralCode) {
+        let code = null
+        for (let i = 0; i < 8; i += 1) {
+          const candidate = generateReferralCode()
+          try {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { referralCode: candidate },
+            })
+            code = candidate
+            break
+          } catch (err) {
+            if (err?.code !== 'P2002') break
+          }
+        }
+        if (code) {
+          const existingLink = await prisma.affiliateLink.findFirst({
+            where: { affiliateId: user.id },
+            select: { id: true },
+          })
+          if (!existingLink) {
+            await prisma.affiliateLink.create({
+              data: {
+                affiliateId: user.id,
+                campaignName: 'PRIMARY CHANNEL',
+                targetUrl: buildShareLink(code),
+                trackingCode: generateTrackingCode(),
+              },
+            }).catch(() => null)
+          }
+        }
+      }
     }
 
     const code = signSocialLoginCode(user.id, randomUUID())
