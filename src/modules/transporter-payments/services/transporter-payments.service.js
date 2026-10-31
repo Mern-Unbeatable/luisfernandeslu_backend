@@ -216,9 +216,9 @@ export class TransporterPaymentsService {
       throw httpError('Amount must be greater than 0', 400, 'ValidationError')
     }
 
-    const accountNumber = String(body.accountNumber || '').trim()
+    const accountNumber = String(body.iban || body.accountNumber || '').trim()
     if (!accountNumber) {
-      throw httpError('Account number is required', 400, 'ValidationError')
+      throw httpError('IBAN is required', 400, 'ValidationError')
     }
 
     const ledger = await buildLedger(transporterId, resolveYear('thisYear'))

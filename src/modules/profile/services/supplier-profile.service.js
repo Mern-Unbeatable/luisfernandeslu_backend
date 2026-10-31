@@ -140,9 +140,7 @@ export class SupplierProfileService {
       }))
       .filter((row) => row.address)
 
-    if (!incoming.length) {
-      throw httpError('Add at least one warehouse address', 400, 'ValidationError')
-    }
+    // If no warehouses provided, all existing warehouse links will be removed
 
     const existing = await prisma.userAddressBridge.findMany({
       where: { userId: sellerId, addressType: 'WAREHOUSE' },

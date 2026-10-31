@@ -20,7 +20,7 @@ export const saveFactoryWarehousesBodySchema = z.object({
         address: z.string().trim().min(1),
       }),
     )
-    .min(1),
+    .default([]),
 })
 
 export const changeFactoryPasswordBodySchema = z

@@ -19,9 +19,14 @@ export const listTransporterPaymentsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 })
 
-export const withdrawTransporterFundsBodySchema = z.object({
-  amount: z.preprocess(parseAmount, z.number().positive()),
-  businessName: z.string().trim().min(2),
-  routingNumber: z.string().trim().min(3),
-  accountNumber: z.string().trim().min(5),
-})
+export const withdrawTransporterFundsBodySchema = z
+  .object({
+    amount: z.preprocess(parseAmount, z.number().positive()),
+    businessName: z.string().trim().optional(),
+    routingNumber: z.string().trim().optional(),
+    accountNumber: z.string().trim().min(5).optional(),
+    iban: z.string().trim().min(5).optional(),
+  })
+  .refine((b) => b.accountNumber || b.iban, {
+    message: 'IBAN is required',
+  })

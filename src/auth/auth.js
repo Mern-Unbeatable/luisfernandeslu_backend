@@ -104,7 +104,7 @@ export const auth = betterAuth({
             user.emailVerified === true || Boolean(user.image)
           if (looksLikeSocial && !isSocialRole(role)) {
             throw new Error(
-              'Google signup is only available for customer and company',
+              'Google signup is not available for this role',
             )
           }
 

@@ -12,7 +12,7 @@ export const PUBLIC_ROLES = [
 export const LOGIN_ROLES = [...PUBLIC_ROLES, 'admin']
 
 /** Roles allowed to use Google sign-in. */
-export const SOCIAL_ROLES = new Set(['customer', 'company'])
+export const SOCIAL_ROLES = new Set(PUBLIC_ROLES)
 
 /** Email/password signup OTP — ONLY customer + company. Never other roles. */
 export const EMAIL_OTP_ROLES = new Set(['customer', 'company'])
