@@ -4,7 +4,10 @@ import { sendServiceResult } from '../../../utils/apiResponse.js'
 export class SupplierReturnsController {
   async list(req, res, next) {
     try {
-      return sendServiceResult(res, await supplierReturnsService.list())
+      return sendServiceResult(
+        res,
+        await supplierReturnsService.list(req.auth?.id),
+      )
     } catch (err) {
       next(err)
     }
@@ -14,7 +17,10 @@ export class SupplierReturnsController {
     try {
       return sendServiceResult(
         res,
-        await supplierReturnsService.getById(req.params.returnId),
+        await supplierReturnsService.getById(
+          req.params.returnId,
+          req.auth?.id,
+        ),
       )
     } catch (err) {
       next(err)
@@ -28,6 +34,7 @@ export class SupplierReturnsController {
         await supplierReturnsService.updateStatus(
           req.params.returnId,
           req.body.status,
+          req.auth?.id,
         ),
       )
     } catch (err) {

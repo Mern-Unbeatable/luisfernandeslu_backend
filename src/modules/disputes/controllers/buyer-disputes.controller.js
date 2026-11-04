@@ -20,7 +20,13 @@ export class BuyerDisputesController {
 
   async list(req, res, next) {
     try {
-      return sendServiceResult(res, await buyerDisputesService.list())
+      return sendServiceResult(
+        res,
+        await buyerDisputesService.list(
+          req.auth,
+          resolveRequestBaseUrl(req),
+        ),
+      )
     } catch (err) {
       next(err)
     }
@@ -30,7 +36,11 @@ export class BuyerDisputesController {
     try {
       return sendServiceResult(
         res,
-        await buyerDisputesService.getById(req.params.disputeId),
+        await buyerDisputesService.getById(
+          req.params.disputeId,
+          req.auth,
+          resolveRequestBaseUrl(req),
+        ),
       )
     } catch (err) {
       next(err)
