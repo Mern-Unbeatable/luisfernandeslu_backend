@@ -18,10 +18,7 @@ import {
 } from '../modules/chat/threads.js'
 import { postQuoteTextMessage } from '../modules/chat/messages.js'
 import { chatRoom, quoteRoom, disputeRoom, emitToChat, emitToDispute } from './io.js'
-import {
-  addDisputeMessage,
-  getDisputeMessages,
-} from '../modules/disputes/data/disputes.store.js'
+// disputes.store removed — using prisma directly
 import prisma from '../../lib/prisma.js'
 
 function parseToken(socket) {
@@ -448,7 +445,26 @@ export function registerLiveChatSocket(io) {
         await socket.join(disputeRoom(disputeId))
         socket.data.activeDisputeId = disputeId
 
-        const messages = getDisputeMessages(disputeId)
+        const rawMessages = await prisma.disputeMessage.findMany({
+          where: { disputeId },
+          include: { sender: { select: { id: true, name: true, role: true } } },
+          orderBy: { createdAt: 'asc' },
+        })
+        const messages = rawMessages.map((m) => {
+          const isSenderSelf = socket.user?.id && m.senderId === socket.user.id
+          return {
+            id: m.id,
+            senderId: m.senderId,
+            author: m.sender?.name || (isSenderSelf ? 'Eu' : 'Utilizador'),
+            roleLabel: String(m.sender?.role || m.senderRole || '').toLowerCase(),
+            role: String(m.sender?.role || m.senderRole || '').toLowerCase(),
+            align: isSenderSelf ? 'right' : 'left',
+            at: m.createdAt
+              ? m.createdAt.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+              : '',
+            text: m.messageText || '',
+          }
+        })
 
         if (typeof ack === 'function') {
           ack({ ok: true, disputeId, room: disputeRoom(disputeId), messages })
@@ -491,13 +507,26 @@ export function registerLiveChatSocket(io) {
         if (!disputeId) throw new Error('disputeId is required')
         if (!text || !String(text).trim()) throw new Error('text is required')
 
-        const message = addDisputeMessage(disputeId, {
-          senderId: socket.user.id,
-          author: socket.user.name,
-          role: socket.user.role,
-          text,
-          attachments: payload.attachments || [],
+        const roleUpper = (socket.user?.role || 'CUSTOMER').toUpperCase()
+        const created = await prisma.disputeMessage.create({
+          data: {
+            disputeId,
+            senderId: socket.user.id,
+            senderRole: roleUpper,
+            messageText: text,
+          },
+          include: { sender: { select: { id: true, name: true, role: true } } },
         })
+        const message = {
+          id: created.id,
+          senderId: created.senderId,
+          author: created.sender?.name || socket.user?.name || 'Eu',
+          roleLabel: String(created.sender?.role || socket.user?.role || '').toLowerCase(),
+          role: String(created.sender?.role || socket.user?.role || '').toLowerCase(),
+          align: 'right',
+          at: created.createdAt.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+          text: created.messageText || '',
+        }
 
         emitToDispute(disputeId, 'dispute:message', {
           disputeId,
