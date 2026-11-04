@@ -4,7 +4,10 @@ import { sendServiceResult } from '../../../utils/apiResponse.js'
 export class SupplierReviewsController {
   async list(req, res, next) {
     try {
-      return sendServiceResult(res, await supplierReviewsService.list())
+      return sendServiceResult(
+        res,
+        await supplierReviewsService.list(req.auth?.id),
+      )
     } catch (err) {
       next(err)
     }

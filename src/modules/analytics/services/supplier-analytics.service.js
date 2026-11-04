@@ -1,59 +1,169 @@
-/**
- * Static dashboard payload matching frontend DEMO_SUPPLIER_ANALYTICS
- * and `analyticsApi` transformResponse.
- */
-const DASHBOARD = {
-  stats: {
-    totalRevenue: '€174,170',
-    totalRevenueGrowth: '+4.3% vs last month',
-    procurementExpenses: '€106,170',
-    netProfit: '€68,000',
-    outstandingDues: '€42,100',
-  },
-  revenueExpensesProfit: {
-    revenue: [
-      12000, 13500, 11800, 14200, 15000, 13800, 15500, 16200, 14800, 17000,
-      16500, 17400,
-    ],
-    expenses: [
-      7200, 8100, 7000, 8600, 9100, 8400, 9400, 9800, 9000, 10300, 10000,
-      10600,
-    ],
-    profit: [
-      4800, 5400, 4800, 5600, 5900, 5400, 6100, 6400, 5800, 6700, 6500, 6800,
-    ],
-  },
-  revenueBreakdown: {
-    regular: {
-      percent: 26,
-      amount: '€45,230',
-      value: 45230,
-      color: '#3B82F6',
-    },
-    company: {
-      percent: 74,
-      amount: '€128,940',
-      value: 128940,
-      color: '#14B8A6',
-    },
-  },
-  salesByCustomerType: {
-    regular: [
-      3200, 4100, 3800, 4500, 5600, 5200, 4800, 6100, 5500, 6800, 7200, 8000,
-    ],
-    company: [
-      3500, 4200, 4000, 4800, 5900, 5400, 5000, 6400, 5800, 7000, 7500, 8500,
-    ],
-  },
-  insight:
-    'Insight: Company (B2B) sales account for 74% of total revenue, showing strong enterprise adoption. Regular customer sales grew 7.7% month-over-month.',
+import prisma from '../../../../lib/prisma.js'
+
+function formatMoney(amount) {
+  const val = Number(amount) || 0
+  return `€${val.toLocaleString('pt-PT', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`
 }
 
 export class SupplierAnalyticsService {
-  async getDashboard() {
+  async getDashboard(supplierId) {
+    if (!supplierId) {
+      return {
+        status: 200,
+        body: this.emptyDashboard(),
+      }
+    }
+
+    try {
+      const orders = await prisma.order.findMany({
+        where: {
+          sellerId: supplierId,
+          orderStatus: { notIn: ['CANCELLED'] },
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      })
+
+      if (!orders || orders.length === 0) {
+        return {
+          status: 200,
+          body: this.emptyDashboard(),
+        }
+      }
+
+      const currentYear = new Date().getFullYear()
+      const revenueMonthly = Array(12).fill(0)
+      const expensesMonthly = Array(12).fill(0)
+      const profitMonthly = Array(12).fill(0)
+      const regularMonthly = Array(12).fill(0)
+      const companyMonthly = Array(12).fill(0)
+
+      let totalRevenueNum = 0
+      let regularRevenueNum = 0
+      let companyRevenueNum = 0
+
+      for (const ord of orders) {
+        const amount = Number(ord.subTotal || ord.grandTotal || 0)
+        totalRevenueNum += amount
+
+        const isCompany =
+          String(ord.customer?.role || '').toLowerCase() === 'company'
+        if (isCompany) {
+          companyRevenueNum += amount
+        } else {
+          regularRevenueNum += amount
+        }
+
+        const date = new Date(ord.createdAt)
+        if (date.getFullYear() === currentYear) {
+          const month = date.getMonth()
+          revenueMonthly[month] += amount
+          profitMonthly[month] += amount
+          if (isCompany) {
+            companyMonthly[month] += amount
+          } else {
+            regularMonthly[month] += amount
+          }
+        }
+      }
+
+      const regularPercent =
+        totalRevenueNum > 0
+          ? Math.round((regularRevenueNum / totalRevenueNum) * 100)
+          : 0
+      const companyPercent =
+        totalRevenueNum > 0 ? 100 - regularPercent : 0
+
+      return {
+        status: 200,
+        body: {
+          stats: {
+            totalRevenue: formatMoney(totalRevenueNum),
+            totalRevenueGrowth: '0%',
+            procurementExpenses: '€0',
+            netProfit: formatMoney(totalRevenueNum),
+            outstandingDues: '€0',
+          },
+          revenueExpensesProfit: {
+            revenue: revenueMonthly,
+            expenses: expensesMonthly,
+            profit: profitMonthly,
+          },
+          revenueBreakdown: {
+            regular: {
+              percent: regularPercent,
+              amount: formatMoney(regularRevenueNum),
+              value: regularRevenueNum,
+              color: '#3B82F6',
+            },
+            company: {
+              percent: companyPercent,
+              amount: formatMoney(companyRevenueNum),
+              value: companyRevenueNum,
+              color: '#14B8A6',
+            },
+          },
+          salesByCustomerType: {
+            regular: regularMonthly,
+            company: companyMonthly,
+          },
+          insight:
+            totalRevenueNum > 0
+              ? `Vendas B2B representam ${companyPercent}% da receita total.`
+              : '',
+        },
+      }
+    } catch {
+      return {
+        status: 200,
+        body: this.emptyDashboard(),
+      }
+    }
+  }
+
+  emptyDashboard() {
     return {
-      status: 200,
-      body: DASHBOARD,
+      stats: {
+        totalRevenue: '€0',
+        totalRevenueGrowth: '0%',
+        procurementExpenses: '€0',
+        netProfit: '€0',
+        outstandingDues: '€0',
+      },
+      revenueExpensesProfit: {
+        revenue: Array(12).fill(0),
+        expenses: Array(12).fill(0),
+        profit: Array(12).fill(0),
+      },
+      revenueBreakdown: {
+        regular: {
+          percent: 0,
+          amount: '€0',
+          value: 0,
+          color: '#3B82F6',
+        },
+        company: {
+          percent: 0,
+          amount: '€0',
+          value: 0,
+          color: '#14B8A6',
+        },
+      },
+      salesByCustomerType: {
+        regular: Array(12).fill(0),
+        company: Array(12).fill(0),
+      },
+      insight: '',
     }
   }
 }

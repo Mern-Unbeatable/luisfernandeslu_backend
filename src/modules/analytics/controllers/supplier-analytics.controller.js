@@ -6,7 +6,7 @@ export class SupplierAnalyticsController {
     try {
       return sendServiceResult(
         res,
-        await supplierAnalyticsService.getDashboard(),
+        await supplierAnalyticsService.getDashboard(req.auth?.id),
       )
     } catch (err) {
       next(err)
