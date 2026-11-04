@@ -158,7 +158,7 @@ export class SocialAuthService {
       update: {},
     }).catch(() => null)
 
-    await prisma.userProfile.upsert({
+    await prisma.businessProfile.upsert({
       where: { userId: user.id },
       create: { userId: user.id, companyName: '' },
       update: {},
