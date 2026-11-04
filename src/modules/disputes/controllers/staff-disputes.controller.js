@@ -4,7 +4,7 @@ import { sendServiceResult } from '../../../utils/apiResponse.js'
 export class StaffDisputesController {
   async list(req, res, next) {
     try {
-      return sendServiceResult(res, await staffDisputesService.list())
+      return sendServiceResult(res, await staffDisputesService.list(req.auth))
     } catch (err) {
       next(err)
     }
@@ -14,7 +14,7 @@ export class StaffDisputesController {
     try {
       return sendServiceResult(
         res,
-        await staffDisputesService.getById(req.params.disputeId),
+        await staffDisputesService.getById(req.params.disputeId, req.auth),
       )
     } catch (err) {
       next(err)
@@ -28,6 +28,7 @@ export class StaffDisputesController {
         await staffDisputesService.updateStatus(
           req.params.disputeId,
           req.body.status,
+          req.auth,
         ),
       )
     } catch (err) {

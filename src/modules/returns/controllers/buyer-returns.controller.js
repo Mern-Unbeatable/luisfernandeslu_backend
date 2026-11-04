@@ -6,7 +6,13 @@ import { mergeEvidence } from '../../../shared/upload/evidence-upload.js'
 export class BuyerReturnsController {
   async listOrders(req, res, next) {
     try {
-      return sendServiceResult(res, await buyerReturnsService.listOrders())
+      return sendServiceResult(
+        res,
+        await buyerReturnsService.listOrders(
+          req.auth?.id,
+          resolveRequestBaseUrl(req),
+        ),
+      )
     } catch (err) {
       next(err)
     }
@@ -16,7 +22,11 @@ export class BuyerReturnsController {
     try {
       return sendServiceResult(
         res,
-        await buyerReturnsService.getOrder(req.params.orderId),
+        await buyerReturnsService.getOrder(
+          req.params.orderId,
+          req.auth?.id,
+          resolveRequestBaseUrl(req),
+        ),
       )
     } catch (err) {
       next(err)
@@ -25,7 +35,13 @@ export class BuyerReturnsController {
 
   async listRequests(req, res, next) {
     try {
-      return sendServiceResult(res, await buyerReturnsService.listRequests())
+      return sendServiceResult(
+        res,
+        await buyerReturnsService.listRequests(
+          req.auth?.id,
+          resolveRequestBaseUrl(req),
+        ),
+      )
     } catch (err) {
       next(err)
     }
@@ -35,7 +51,11 @@ export class BuyerReturnsController {
     try {
       return sendServiceResult(
         res,
-        await buyerReturnsService.getRequest(req.params.returnId),
+        await buyerReturnsService.getRequest(
+          req.params.returnId,
+          req.auth?.id,
+          resolveRequestBaseUrl(req),
+        ),
       )
     } catch (err) {
       next(err)
@@ -49,6 +69,7 @@ export class BuyerReturnsController {
         await buyerReturnsService.createRequest(
           req.auth,
           mergeEvidence(req.body, req.files, resolveRequestBaseUrl(req)),
+          resolveRequestBaseUrl(req),
         ),
       )
     } catch (err) {
