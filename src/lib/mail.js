@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer'
 import { env, isProduction } from '../config/env.js'
+import prisma from '../../lib/prisma.js'
+import { decryptText } from '../shared/encryption.js'
 
 let transporter = null
 
@@ -16,17 +18,65 @@ export function smtpConfigured() {
   return true
 }
 
-function getTransporter() {
-  if (transporter) return transporter
-  if (!smtpConfigured()) return null
+export function invalidateMailTransporter() {
+  if (transporter) {
+    try {
+      transporter.close()
+    } catch {}
+  }
+  transporter = null
+}
 
-  const { host, user, pass, port, secure } = env.smtp
+/**
+ * Returns effective SMTP credentials.
+ * Prioritizes DB `admin.smtp_settings` table, falling back to `.env`.
+ */
+export async function getEffectiveSmtpConfig() {
+  try {
+    const row = await prisma.systemSetting.findUnique({
+      where: { key: 'admin.smtp_settings' },
+      select: { value: true },
+    })
+    if (row?.value) {
+      const parsed = JSON.parse(row.value)
+      if (parsed.host && parsed.user && parsed.pass) {
+        const decryptedPass = decryptText(parsed.pass)
+        if (decryptedPass) {
+          const fromName = parsed.fromName || 'Construpreço'
+          const fromEmail = parsed.fromEmail || parsed.user
+          return {
+            host: parsed.host,
+            port: Number(parsed.port) || 587,
+            secure: parsed.secure ?? (Number(parsed.port) === 465),
+            user: parsed.user,
+            pass: decryptedPass,
+            from: `"${fromName}" <${fromEmail}>`,
+            isDbConfig: true,
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[mail] Failed to load DB SMTP settings:', err.message)
+  }
+
+  // Fallback to env.smtp
+  return {
+    ...env.smtp,
+    isDbConfig: false,
+  }
+}
+
+function createTransporter(cfg) {
+  if (transporter) return transporter
+  if (!cfg?.host || !cfg?.user || !cfg?.pass) return null
+  if (PLACEHOLDER_HOSTS.has(String(cfg.host).toLowerCase())) return null
 
   transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: secure || port === 465,
-    auth: { user, pass },
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.secure || cfg.port === 465,
+    auth: { user: cfg.user, pass: cfg.pass },
     pool: true,
     maxConnections: 1,
     connectionTimeout: 8_000,
@@ -42,8 +92,9 @@ function getTransporter() {
  * Errors are logged clearly so OTP failures are visible in the server log.
  */
 export async function sendMail({ to, subject, text, html }) {
-  const from = env.smtp.from
-  const mailer = getTransporter()
+  const cfg = await getEffectiveSmtpConfig()
+  const from = cfg.from || env.smtp.from
+  const mailer = createTransporter(cfg)
 
   if (!mailer) {
     console.info(
@@ -131,4 +182,12 @@ export function sendStaffInviteEmail({
   return sendMail({ to: email, subject, text, html })
 }
 
-export default { sendMail, sendOtpEmail, sendDeliveryOtpEmail, sendStaffInviteEmail, smtpConfigured }
+export default {
+  sendMail,
+  sendOtpEmail,
+  sendDeliveryOtpEmail,
+  sendStaffInviteEmail,
+  smtpConfigured,
+  invalidateMailTransporter,
+  getEffectiveSmtpConfig,
+}

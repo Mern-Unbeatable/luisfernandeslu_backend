@@ -48,3 +48,17 @@ export const saveAdminIbanBodySchema = z
       Boolean(b.externKey?.trim()),
     { message: 'Provide API key or EuPago extern key' },
   )
+
+export const saveAdminSmtpBodySchema = z.object({
+  host: z.string().trim().min(1, 'Servidor SMTP (Host) é obrigatório'),
+  port: z.coerce.number().int().positive().default(587),
+  secure: z.boolean().optional(),
+  user: z.string().trim().email('Email válido é obrigatório para utilizador SMTP'),
+  pass: z.string().trim().optional(),
+  fromEmail: z.string().trim().email('Email de remetente válido').optional(),
+  fromName: z.string().trim().optional(),
+})
+
+export const testAdminSmtpBodySchema = z.object({
+  toEmail: z.string().trim().email('Email de destino válido é obrigatório').optional(),
+})

@@ -83,6 +83,39 @@ export class AdminProfileController {
       next(err)
     }
   }
+
+  async getSmtp(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminProfileService.getSmtp(req.auth),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async saveSmtp(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminProfileService.saveSmtp(req.auth, req.body),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async testSmtp(req, res, next) {
+    try {
+      return sendServiceResult(
+        res,
+        await adminProfileService.testSmtp(req.auth, req.body),
+      )
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 export default new AdminProfileController()
