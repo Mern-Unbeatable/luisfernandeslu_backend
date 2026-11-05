@@ -38,3 +38,4 @@ export function decryptText(encryptedText) {
     return ''
   }
 }
+
