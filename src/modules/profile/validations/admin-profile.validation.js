@@ -61,4 +61,11 @@ export const saveAdminSmtpBodySchema = z.object({
 
 export const testAdminSmtpBodySchema = z.object({
   toEmail: z.string().trim().email('Email de destino válido é obrigatório').optional(),
+  host: z.string().trim().optional(),
+  port: z.coerce.number().int().positive().optional(),
+  secure: z.boolean().optional(),
+  user: z.string().trim().optional(),
+  pass: z.string().trim().optional(),
+  fromName: z.string().trim().optional(),
+  fromEmail: z.string().trim().optional(),
 })

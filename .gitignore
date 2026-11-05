@@ -8,8 +8,6 @@ yarn-error.log*
 /src/generated/prisma
 
 # Environment variables
-.env
-.env.*
 !.env.example
 
 # OS
@@ -17,7 +15,6 @@ yarn-error.log*
 Thumbs.db
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -34,3 +31,5 @@ build/
 temp_auto_push.bat
 temp_interactive_push.bat
 branch_structure.json
+config.bat
+.gitignore

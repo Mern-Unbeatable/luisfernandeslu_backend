@@ -344,38 +344,66 @@ export class AdminProfileService {
       throw httpError('Email de destino é obrigatório para teste', 400, 'ValidationError')
     }
 
-    const row = await prisma.systemSetting.findUnique({
-      where: { key: 'admin.smtp_settings' },
-      select: { value: true },
-    })
+    let host = body.host ? String(body.host).trim() : null
+    let port = body.port ? Number(body.port) : null
+    let secure = typeof body.secure === 'boolean' ? body.secure : null
+    let smtpUser = body.user ? String(body.user).trim().toLowerCase() : null
+    let pass = body.pass ? String(body.pass).trim() : null
+    let fromName = body.fromName ? String(body.fromName).trim() : null
+    let fromEmail = body.fromEmail ? String(body.fromEmail).trim().toLowerCase() : null
 
-    if (!row?.value) {
-      throw httpError('Guarde as configurações SMTP antes de enviar um email de teste', 400, 'NotConfigured')
+    if (!host || !smtpUser || !pass) {
+      const row = await prisma.systemSetting.findUnique({
+        where: { key: 'admin.smtp_settings' },
+        select: { value: true },
+      })
+
+      if (row?.value) {
+        const config = JSON.parse(row.value)
+        host = host || config.host
+        port = port || Number(config.port) || 587
+        secure = secure !== null ? secure : (config.secure ?? (port === 465))
+        smtpUser = smtpUser || config.user
+        pass = pass || decryptText(config.pass)
+        fromName = fromName || config.fromName || 'Construpreço'
+        fromEmail = fromEmail || config.fromEmail || smtpUser
+      } else if (!pass) {
+        throw httpError(
+          'Preencha a palavra-passe nos campos acima ou guarde as credenciais antes de enviar o teste.',
+          400,
+          'NotConfigured',
+        )
+      }
     }
 
-    const config = JSON.parse(row.value)
-    const pass = decryptText(config.pass)
-    if (!config.host || !config.user || !pass) {
-      throw httpError('Credenciais SMTP incompletas', 400, 'IncompleteCredentials')
+    port = port || 587
+    secure = secure !== null ? secure : (port === 465)
+    fromName = fromName || 'Construpreço'
+    fromEmail = fromEmail || smtpUser
+
+    if (!host || !smtpUser || !pass) {
+      throw httpError(
+        'Credenciais SMTP incompletas para teste. Preencha o servidor, email e palavra-passe.',
+        400,
+        'IncompleteCredentials',
+      )
     }
 
     const testMailer = nodemailer.createTransport({
-      host: config.host,
-      port: Number(config.port) || 587,
-      secure: config.secure ?? (Number(config.port) === 465),
-      auth: { user: config.user, pass },
+      host,
+      port,
+      secure,
+      auth: { user: smtpUser, pass },
       connectionTimeout: 10_000,
     })
 
     try {
       await testMailer.verify()
-      const fromName = config.fromName || 'Construpreço'
-      const fromEmail = config.fromEmail || config.user
       await testMailer.sendMail({
         from: `"${fromName}" <${fromEmail}>`,
         to: toEmail,
         subject: 'Construpreço — Teste de Configuração SMTP',
-        text: `Olá!\n\nEste é um email de teste enviado pelo marketplace Construpreço.\nA sua configuração SMTP (${config.host}) está a funcionar perfeitamente!\n\nAtenciosamente,\nEquipa Construpreço`,
+        text: `Olá!\n\nEste é um email de teste enviado pelo marketplace Construpreço.\nA sua configuração SMTP (${host}) está a funcionar perfeitamente!\n\nAtenciosamente,\nEquipa Construpreço`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
             <h2 style="color: #1f2937; margin-bottom: 8px;">Construpreço</h2>
@@ -383,7 +411,7 @@ export class AdminProfileService {
             <p style="color: #4b5563; font-size: 15px;">Este é um email de teste automático para confirmar a ligação SMTP do seu marketplace.</p>
             <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 12px 16px; margin: 16px 0; border-radius: 6px;">
               <p style="color: #065f46; font-weight: bold; margin: 0;">✓ Configuração verificada com sucesso!</p>
-              <p style="color: #047857; margin: 6px 0 0; font-size: 14px;">Servidor: <strong>${config.host}:${config.port}</strong> | Remetente: <strong>${fromEmail}</strong></p>
+              <p style="color: #047857; margin: 6px 0 0; font-size: 14px;">Servidor: <strong>${host}:${port}</strong> | Remetente: <strong>${fromEmail}</strong></p>
             </div>
             <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">Marketplace Construpreço · Todos os direitos reservados.</p>
           </div>
