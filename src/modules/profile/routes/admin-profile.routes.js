@@ -3,6 +3,8 @@ import adminProfileController from '../controllers/admin-profile.controller.js'
 import {
   changeAdminPasswordBodySchema,
   saveAdminIbanBodySchema,
+  saveAdminSmtpBodySchema,
+  testAdminSmtpBodySchema,
   updateAdminProfileBodySchema,
 } from '../validations/admin-profile.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
@@ -45,6 +47,22 @@ class AdminProfileRoutes {
       '/iban',
       validate(saveAdminIbanBodySchema, 'body'),
       (req, res, next) => adminProfileController.saveIban(req, res, next),
+    )
+
+    this.router.get('/smtp', (req, res, next) =>
+      adminProfileController.getSmtp(req, res, next),
+    )
+
+    this.router.put(
+      '/smtp',
+      validate(saveAdminSmtpBodySchema, 'body'),
+      (req, res, next) => adminProfileController.saveSmtp(req, res, next),
+    )
+
+    this.router.post(
+      '/smtp/test',
+      validate(testAdminSmtpBodySchema, 'body'),
+      (req, res, next) => adminProfileController.testSmtp(req, res, next),
     )
 
     this.router.post(
