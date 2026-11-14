@@ -7,9 +7,10 @@ export const factoryPayContext = {
   buyerNameFallback: 'Supplier',
   emailFallback: 'supplier@local',
   projectFallback: 'Factory chat order',
-  historyNote: 'Factory offer paid (demo) — awaiting factory acceptance',
-  responseMessage: 'Demo payment confirmed. Factory chat order created.',
-  sessionNotes: (offer) => `Factory offer ${offer.id} demo pay`,
+  historyNote: 'Factory offer order created — awaiting payment',
+  responseMessage: 'Factory order created — complete the payment to confirm it.',
+  sessionNotes: (offer) => `Factory offer ${offer.id}`,
+  chargesShipping: false,
   sellerId: ({ offer }) => offer.createdById,
 
   async afterPaid(tx, { auth, offer, order, offerId }) {
@@ -18,7 +19,7 @@ export const factoryPayContext = {
         senderId: auth.id,
         chatThreadId: offer.chatThreadId,
         messageType: 'SYSTEM',
-        messageText: `Demo payment confirmed for factory offer. Order ${order.orderNumber} created.`,
+        messageText: `Payment confirmed for the factory offer. Order ${order.orderNumber} created.`,
         offerId,
       },
       include: messageInclude,

@@ -5,12 +5,11 @@ import { money } from '../../shared/money.js'
 import { splitName } from '../../shared/party.js'
 import { addMonths } from '../../shared/dates.js'
 import { checkoutNumber, orderNumber } from '../../shared/numbering.js'
-import { mapMessage, mapOfferCard, offerInstallmentsInclude } from './mappers.js'
-import eupagoClient, { commissionPercentOf, isMockPayments, createMockSplitPayment } from '../payments/eupago.client.js'
+import { assertUnloadingVehicle, quoteShippingForSellers } from '../../shared/shipping-quote.js'
+import { mapOfferCard, offerInstallmentsInclude } from './mappers.js'
+import eupagoClient, { commissionPercentOf, isMockPayments } from '../payments/eupago.client.js'
 import { resolveVatRate } from '../admin/settings/settings.store.js'
 import { notifyPaymentFailure } from '../payments/payment-failure-notify.js'
-import { issueTaxInvoicesForCheckout } from '../invoicing/tax-invoice.service.js'
-import supplierDeliveryService from '../deliveries/supplier-delivery.service.js'
 
 export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
   if (offer.status === 'PAID') {
@@ -19,6 +18,12 @@ export function assertOfferPayable(offer, { rejectRejected = false } = {}) {
   if (rejectRejected && offer.status === 'REJECTED') {
     throw httpError('Rejected offers cannot be paid', 400, 'OfferRejected')
   }
+}
+
+function methodEnum(method) {
+  if (method === 'mbway') return 'MBWAY'
+  if (method === 'creditcard') return 'CREDITCARD'
+  return 'MULTIBANCO'
 }
 
 async function loadBuyer(userId) {
@@ -38,12 +43,51 @@ async function loadBuyer(userId) {
   })
 }
 
-async function loadBuyerVatRate(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { vatRate: true },
+function savedBuyerAddress(buyer) {
+  return (
+    buyer?.addresses?.find((a) => a.addressType === 'SHIPPING') ||
+    buyer?.addresses?.find((a) => a.addressType === 'BILLING') ||
+    buyer?.addresses?.[0] ||
+    null
+  )
+}
+
+function hasStreet(address) {
+  const street = String(address?.streetAddress || '').trim()
+  return Boolean(street && street !== '—')
+}
+
+/** Delivery address chosen at checkout: an owned address id, a typed address, or null. */
+async function resolveDeliveryAddress(buyer, delivery = {}) {
+  if (delivery.shippingAddressId) {
+    const owned = buyer?.addresses?.find((a) => a.addressId === delivery.shippingAddressId)
+    if (!owned?.address) throw httpError('Address not found', 404, 'AddressNotFound')
+    return { id: owned.address.id, address: owned.address }
+  }
+  if (hasStreet(delivery.shippingAddress)) {
+    return { id: null, address: delivery.shippingAddress }
+  }
+  return null
+}
+
+/** Cancels earlier unpaid attempts for the same offer so only one payment can complete it. */
+async function cancelStaleOfferSessions(offerId) {
+  const stale = await prisma.checkoutSession.findMany({
+    where: { quoteOfferId: offerId, paymentStatus: { in: ['PENDING_PAYMENT', 'FAILED'] } },
+    select: { id: true },
   })
-  return resolveVatRate(user?.vatRate)
+  if (!stale.length) return
+  const ids = stale.map((s) => s.id)
+  await prisma.$transaction([
+    prisma.checkoutSession.updateMany({
+      where: { id: { in: ids }, paymentStatus: { in: ['PENDING_PAYMENT', 'FAILED'] } },
+      data: { paymentStatus: 'CANCELLED' },
+    }),
+    prisma.order.updateMany({
+      where: { checkoutSessionId: { in: ids }, orderStatus: 'NEW' },
+      data: { orderStatus: 'CANCELLED', cancellationReason: 'Replaced by a new payment attempt' },
+    }),
+  ])
 }
 
 async function createConversionRecords(tx, {
@@ -53,10 +97,11 @@ async function createConversionRecords(tx, {
   buyer,
   context,
   extra,
+  deliveryAddress,
+  unloadingType,
   shippingFee = 0,
   vatAmount = 0,
   paymentMethod = 'multibanco',
-  mbwayPhone,
 }) {
   const quantity = Math.max(1, Math.round(Number(offer.totalQuantity) || 1))
   const total = money(offer.totalPrice)
@@ -65,29 +110,38 @@ async function createConversionRecords(tx, {
   const { firstName, lastName } = splitName(buyer?.name, context.buyerNameFallback)
   const phone = buyer?.phoneNumber || '000000000'
   const email = buyer?.email || context.emailFallback
-  const savedAddress =
-    buyer?.addresses?.find((a) => a.addressType === 'SHIPPING') ||
-    buyer?.addresses?.find((a) => a.addressType === 'BILLING') ||
-    buyer?.addresses?.[0] ||
-    null
+  const savedAddress = savedBuyerAddress(buyer)
 
-  let shippingAddressId = savedAddress?.addressId || null
-  let billingAddressId = savedAddress?.addressId || null
-
+  let shippingAddressId = deliveryAddress?.id || null
+  if (!shippingAddressId && deliveryAddress?.address) {
+    const typed = deliveryAddress.address
+    const created = await tx.address.create({
+      data: {
+        title: typed.title || offer.projectName || 'Delivery',
+        streetAddress: String(typed.streetAddress).trim(),
+        city: String(typed.city || '').trim() || '—',
+        state: String(typed.state || '').trim() || '—',
+        zipCode: String(typed.zipCode || '').trim() || '—',
+        country: String(typed.country || '').trim() || 'Portugal',
+      },
+    })
+    shippingAddressId = created.id
+  }
+  if (!shippingAddressId) shippingAddressId = savedAddress?.addressId || null
   if (!shippingAddressId) {
-    const createdAddress = await tx.address.create({
+    const created = await tx.address.create({
       data: {
         title: offer.projectName || 'Delivery',
         streetAddress: offer.deliveryLocation || 'Delivery address',
-        city: 'Lisbon',
-        state: 'Lisboa',
-        zipCode: '1000-001',
+        city: '—',
+        state: '—',
+        zipCode: '—',
         country: 'Portugal',
       },
     })
-    shippingAddressId = createdAddress.id
-    billingAddressId = createdAddress.id
+    shippingAddressId = created.id
   }
+  const billingAddressId = savedAddress?.addressId || shippingAddressId
 
   const project = await tx.project.create({
     data: {
@@ -97,12 +151,13 @@ async function createConversionRecords(tx, {
     },
   })
 
+  const grandTotal = money(total + shippingFee + vatAmount)
   const session = await tx.checkoutSession.create({
     data: {
       checkoutNumber: checkoutNumber(),
       customerId: auth.id,
-      paymentStatus: 'PAID',
-      paymentMethod: String(paymentMethod || 'multibanco').toUpperCase(),
+      paymentStatus: 'PENDING_PAYMENT',
+      paymentMethod: methodEnum(paymentMethod),
       firstName,
       lastName,
       email,
@@ -110,16 +165,16 @@ async function createConversionRecords(tx, {
       billingAddressId,
       shippingAddressId,
       projectId: project.id,
-      unloadingType: offer.unloadingType || null,
+      quoteOfferId: offer.id,
+      unloadingType: unloadingType || offer.unloadingType || null,
       accessConditions: offer.accessConditions || null,
       additionalNotes: context.sessionNotes(offer),
       subTotal: total,
       vatAmount: money(vatAmount),
       shippingFee: money(shippingFee),
       discountAmount: 0,
-      grandTotal: money(total + shippingFee + vatAmount),
+      grandTotal,
       currency: env.currency,
-      paidAt: now,
     },
   })
 
@@ -141,8 +196,8 @@ async function createConversionRecords(tx, {
       vatAmount: money(vatAmount),
       shippingFee: money(shippingFee),
       discountAmount: 0,
-      grandTotal: money(total + shippingFee + vatAmount),
-      unloadingType: offer.unloadingType || null,
+      grandTotal,
+      unloadingType: unloadingType || offer.unloadingType || null,
       siteConditions: offer.accessConditions || null,
       orderLineItems: {
         create: {
@@ -162,7 +217,6 @@ async function createConversionRecords(tx, {
   const offerInstallments = offer.installments?.length
     ? offer.installments
     : [{ installmentNumber: 1, amount: total, quantity }]
-  const grandTotal = money(total + shippingFee + vatAmount)
   const firstAmount = money(offerInstallments[0]?.amount || total)
   const remaining = money(Math.max(0, grandTotal - firstAmount))
 
@@ -178,35 +232,29 @@ async function createConversionRecords(tx, {
           installmentNumber: row.installmentNumber || index + 1,
           amount: money(row.amount),
           dueDate: addMonths(now, index),
-          status: index === 0 ? 'COMPLETED' : 'PENDING',
-          paidAt: index === 0 ? now : null,
+          status: 'PENDING',
+          paidAt: null,
         })),
       },
     },
   })
 
-  const paidOffer = await tx.quoteOffer.update({
-    where: { id: offer.id },
-    data: { status: 'PAID' },
-    include: offerInstallmentsInclude,
-  })
-
-  return { order, session, offer: paidOffer }
+  return { order, session }
 }
 
 /**
- * Demo-pay an offer: checkout + order + payment plan + PAID status.
- * Quote vs factory differences live in `context` (seller, source, hooks).
+ * Pays an offer through EuPago: creates a pending checkout + order + payment plan.
+ * The offer becomes PAID only when the payment is confirmed (webhook, or at once in mock mode).
+ * Quote vs factory differences live in `context` (seller, source, shipping, hooks).
  */
 export async function payConvertedOffer({
   auth,
   offer,
   productId,
   offerId,
-  baseUrl,
   context,
   extra = {},
-  shippingFee = 0,
+  delivery = {},
   paymentMethod = 'multibanco',
   mbwayPhone,
 }) {
@@ -239,38 +287,43 @@ export async function payConvertedOffer({
   const adminExternKey = await eupagoClient.getAdminSplitExternKey()
 
   const buyer = await loadBuyer(auth.id)
-  const vatRate = await loadBuyerVatRate(auth.id)
+  const vatRate = await resolveVatRate(buyer?.vatRate)
   const subtotal = money(Number(offer.totalPrice) || 0)
   const vatAmount = money(subtotal * (vatRate / 100))
+  const deliveryAddress = await resolveDeliveryAddress(buyer, delivery)
 
-  const result = await prisma.$transaction(async (tx) => {
-    const converted = await createConversionRecords(tx, {
+  let shippingFee = 0
+  let unloadingType = null
+  if (context.chargesShipping) {
+    if (!deliveryAddress) {
+      throw httpError('Provide the delivery address', 400, 'ShippingRequired')
+    }
+    unloadingType = assertUnloadingVehicle(delivery.unloadingType || offer.unloadingType)
+    const quote = await quoteShippingForSellers({
+      sellerIds: [sellerId],
+      deliveryAddress: deliveryAddress.address,
+      unloadingType,
+    })
+    shippingFee = money(quote.shipping)
+  }
+
+  await cancelStaleOfferSessions(offer.id)
+
+  const result = await prisma.$transaction((tx) =>
+    createConversionRecords(tx, {
       auth,
       offer,
       productId,
       buyer,
       context,
       extra,
+      deliveryAddress,
+      unloadingType,
       shippingFee,
       vatAmount,
       paymentMethod,
-      mbwayPhone,
-    })
-    const followUp = await context.afterPaid(tx, {
-      auth,
-      offer,
-      offerId,
-      extra,
-      ...converted,
-    })
-    return { ...converted, ...followUp }
-  })
-
-  // With EuPago the invoice waits for the payment webhook.
-  if (mock) {
-    void issueTaxInvoicesForCheckout(result.session.id)
-    void supplierDeliveryService.scheduleDecisions([result.order.id])
-  }
+    }),
+  )
 
   const commissionPercent = commissionPercentOf(seller)
   const grandTotal = money(result.order.grandTotal)
@@ -294,11 +347,14 @@ export async function payConvertedOffer({
       identifier: 'admin-commission',
     },
   ]
+  await prisma.checkoutPaymentSplit.createMany({
+    data: splits.map((s) => ({ ...s, checkoutSessionId: result.session.id })),
+  })
 
-  let eupagoUrl = null
   const method = String(paymentMethod || 'multibanco').toLowerCase()
+  let eupago
   try {
-    const eupago = await eupagoClient.createSplitPayment({
+    eupago = await eupagoClient.createSplitPayment({
       paymentMethod: method,
       amount: grandTotal,
       identifier: result.session.checkoutNumber,
@@ -311,22 +367,17 @@ export async function payConvertedOffer({
         result.session.checkoutNumber,
       ),
     })
-
-    await prisma.checkoutSession.update({
-      where: { id: result.session.id },
-      data: {
-        eupagoEntity: eupago.entity,
-        eupagoReference: eupago.reference || eupago.raw?.url || eupago.raw?.redirectUrl || null,
-      },
-    })
-
-    if (eupago.url) {
-      eupagoUrl = eupago.url
-    } else if (eupago.raw?.redirectUrl || eupago.raw?.url) {
-      eupagoUrl = eupago.raw.redirectUrl || eupago.raw.url
-    }
   } catch (err) {
-    console.error('EuPago split payment failed, using mock fallback:', err.message)
+    await prisma.$transaction([
+      prisma.checkoutSession.update({
+        where: { id: result.session.id },
+        data: { paymentStatus: 'FAILED' },
+      }),
+      prisma.order.updateMany({
+        where: { checkoutSessionId: result.session.id, orderStatus: 'NEW' },
+        data: { orderStatus: 'CANCELLED' },
+      }),
+    ])
     void notifyPaymentFailure({
       sellerIds: [sellerId],
       buyerId: auth.id,
@@ -335,50 +386,63 @@ export async function payConvertedOffer({
       paymentMethod: method,
       error: err,
     })
-    const mockResult = createMockSplitPayment({ amount: grandTotal, identifier: result.session.checkoutNumber, paymentMethod: method })
-    await prisma.checkoutSession.update({
-      where: { id: result.session.id },
-      data: {
-        eupagoEntity: mockResult.entity,
-        eupagoReference: mockResult.reference,
-      },
-    })
-    if (mockResult.url) {
-      eupagoUrl = `${env.frontendUrl || 'http://localhost:5173'}/order/confirmation?id=${result.session.id}`
-    }
+    throw httpError(
+      err.message || 'Payment provider error',
+      err.statusCode || 502,
+      err.code || 'EupagoError',
+      err.details,
+    )
   }
 
-  const offerCard = mapOfferCard(result.offer)
-  const chatMessage = mapMessage(result.chatMessage, auth.id, baseUrl)
-  const publicMessage = mapMessage(result.chatMessage, null, baseUrl)
-
-  context.emitPaid({
-    extra,
-    offerId,
-    offerCard,
-    chatMessage: publicMessage,
-    threadId: result.threadId,
+  const redirectUrl = eupago.url || eupago.raw?.redirectUrl || eupago.raw?.url || null
+  const session = await prisma.checkoutSession.update({
+    where: { id: result.session.id },
+    data: {
+      eupagoEntity: eupago.entity,
+      eupagoReference: eupago.reference || redirectUrl,
+      eupagoTransactionId: eupago.raw?.transactionID || eupago.raw?.transactionId || null,
+    },
   })
+
+  if (mock) {
+    const { default: checkoutService } = await import('../checkout/services/checkout.service.js')
+    await checkoutService.markCheckoutPaid(session, 'Mock payment confirmed')
+  }
+
+  const [freshOffer, freshSession] = await Promise.all([
+    prisma.quoteOffer.findUnique({ where: { id: offer.id }, include: offerInstallmentsInclude }),
+    prisma.checkoutSession.findUnique({
+      where: { id: session.id },
+      select: { id: true, checkoutNumber: true, paymentStatus: true, eupagoEntity: true, eupagoReference: true },
+    }),
+  ])
 
   return {
     status: 201,
     body: {
-      offer: offerCard,
-      chatMessage,
-      url: eupagoUrl,
+      offer: mapOfferCard(freshOffer),
+      url: method === 'creditcard' && !mock ? redirectUrl : null,
+      payment: {
+        entity: freshSession.eupagoEntity,
+        reference: freshSession.eupagoReference,
+      },
       order: {
         id: result.order.id,
         orderNumber: result.order.orderNumber,
         orderStatus: result.order.orderStatus,
         orderSource: result.order.orderSource,
-        grandTotal: money(result.order.grandTotal),
+        grandTotal,
       },
       checkout: {
-        id: result.session.id,
-        checkoutNumber: result.session.checkoutNumber,
-        paymentStatus: result.session.paymentStatus,
+        id: freshSession.id,
+        checkoutNumber: freshSession.checkoutNumber,
+        paymentStatus: freshSession.paymentStatus,
       },
-      message: context.responseMessage,
+      offerId,
+      message:
+        freshSession.paymentStatus === 'PAID'
+          ? 'Payment confirmed — order created.'
+          : context.responseMessage,
     },
   }
 }

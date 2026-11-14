@@ -98,13 +98,22 @@ export function buildFactoryOrderActions(order, viewer) {
   const status = order.orderStatus
   const isFactory = viewer === 'factory'
   const isSupplier = viewer === 'supplier'
+  const isFactoryOrder = (order.orderSource || FACTORY_ORDER_SOURCE) === FACTORY_ORDER_SOURCE
+  const transportStatus = order.transportPayment?.status || null
+  const auctionStatus = order.shipment?.auction?.auctionStatus || null
 
   return {
     canViewDetails: true,
-    canDelete: isSupplier && canSupplierDeleteFactoryOrder(status),
+    canDelete:
+      isSupplier && canSupplierDeleteFactoryOrder(status) && transportStatus !== 'PAID',
     canMarkInProduction: isFactory && status === 'NEW',
     canMarkProduced: isFactory && status === 'IN_PRODUCTION',
     canMarkReady: isFactory && status === 'PRODUCED',
+    canChooseTransport: isFactory && isFactoryOrder && status === 'READY' && transportStatus !== 'PAID',
+    canMarkDelivered: isFactory && status === 'READY' && order.deliveryMode === 'SELF',
+    canReopenAuction: isFactory && transportStatus === 'PAID' && auctionStatus === 'EXPIRED',
+    canPayTransport:
+      isSupplier && (transportStatus === 'PENDING_PAYMENT' || transportStatus === 'FAILED'),
     nextStatus: isFactory
       ? status === 'NEW'
         ? 'IN_PRODUCTION'

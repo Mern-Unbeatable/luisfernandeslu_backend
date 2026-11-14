@@ -1,7 +1,5 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import prisma from '../../../lib/prisma.js'
-import { UPLOAD_ROOT } from '../../shared/storage.js'
+import { saveUploadBuffer } from '../../shared/storage.js'
 import { invoiceNumber } from '../../shared/numbering.js'
 
 export async function ensureInvoice(order, audience, numbering = {}) {
@@ -21,15 +19,12 @@ export async function ensureInvoice(order, audience, numbering = {}) {
  * documents, omitted for the supplier order-detail invoice.
  */
 export async function writeInvoicePdf({ sellerId, invoice, buffer, subdir }) {
-  const dir = subdir
-    ? path.join(UPLOAD_ROOT, 'invoices', sellerId, subdir)
-    : path.join(UPLOAD_ROOT, 'invoices', sellerId)
-  fs.mkdirSync(dir, { recursive: true })
   const filename = `${invoice.invoiceNumber}.pdf`.replace(/[^\w.-]/g, '_')
-  fs.writeFileSync(path.join(dir, filename), buffer)
-  const publicPath = subdir
-    ? `/uploads/invoices/${sellerId}/${subdir}/${filename}`
-    : `/uploads/invoices/${sellerId}/${filename}`
+  const key = subdir
+    ? `invoices/${sellerId}/${subdir}/${filename}`
+    : `invoices/${sellerId}/${filename}`
+  await saveUploadBuffer(key, buffer, 'application/pdf')
+  const publicPath = `/uploads/${key}`
   await prisma.invoice.update({
     where: { id: invoice.id },
     data: { pdfUrl: publicPath },

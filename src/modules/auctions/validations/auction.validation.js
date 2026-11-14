@@ -44,6 +44,15 @@ export const createAuctionBodySchema = z.object({
   requiredVehicleType: vehicleTypeEnum,
 })
 
+export const factoryAuctionInfoQuerySchema = z.object({
+  vehicleType: vehicleTypeEnum.optional(),
+})
+
+export const reopenFactoryAuctionBodySchema = z.object({
+  orderId: orderRef,
+  requiredVehicleType: vehicleTypeEnum.optional(),
+})
+
 export const createBidBodySchema = z.object({
   bidAmount: z.coerce.number().positive('Bid must be greater than 0'),
 })
