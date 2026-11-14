@@ -116,7 +116,11 @@ class AuctionController {
     try {
       return sendServiceResult(
         res,
-        await auctionService.getFactoryCreateInfo(req.auth, req.params.orderId),
+        await auctionService.getFactoryCreateInfo(
+          req.auth,
+          req.params.orderId,
+          req.query?.vehicleType,
+        ),
       )
     } catch (err) {
       next(err)
@@ -128,28 +132,6 @@ class AuctionController {
       return sendServiceResult(
         res,
         await auctionService.createFactoryAuction(req.auth, req.body),
-      )
-    } catch (err) {
-      next(err)
-    }
-  }
-
-  async confirmFactoryAuctionPayment(req, res, next) {
-    try {
-      return sendServiceResult(
-        res,
-        await auctionService.confirmFactoryAuctionPayment(req.auth, req.params.id),
-      )
-    } catch (err) {
-      next(err)
-    }
-  }
-
-  async declineFactoryAuctionPayment(req, res, next) {
-    try {
-      return sendServiceResult(
-        res,
-        await auctionService.declineFactoryAuctionPayment(req.auth, req.params.id),
       )
     } catch (err) {
       next(err)

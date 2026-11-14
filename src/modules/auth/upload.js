@@ -1,7 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import multer from 'multer'
-import { UPLOAD_ROOT } from '../../shared/storage.js'
+import {
+  UPLOAD_ROOT,
+  persistLocalFile,
+  uploadStorage,
+} from '../../shared/storage.js'
 
 export { UPLOAD_ROOT }
 
@@ -35,7 +39,8 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true })
 }
 
-const storage = multer.diskStorage({
+const storage = uploadStorage({
+  defer: true,
   destination(req, _file, cb) {
     const role = String(req.params.role || 'misc').toLowerCase()
     const dir = path.join(UPLOAD_ROOT, role, 'pending')
@@ -106,8 +111,8 @@ export function urlsJsonForField(filesByField, fieldName) {
   return JSON.stringify(urls)
 }
 
-/** Move pending uploads into uploads/{role}/{userId}/ after signup. */
-export function relocateUploads(role, userId, files = []) {
+/** Move pending uploads into uploads/{role}/{userId}/ (then R2) after signup. */
+export async function relocateUploads(role, userId, files = []) {
   const list = normalizeMulterFiles(files)
   if (!list.length) return []
   const destDir = path.join(UPLOAD_ROOT, role, userId)
@@ -119,6 +124,7 @@ export function relocateUploads(role, userId, files = []) {
     if (fs.existsSync(file.path)) {
       fs.renameSync(file.path, dest)
       file.path = dest
+      await persistLocalFile(dest, file.mimetype)
     }
     moved.push(file)
   }

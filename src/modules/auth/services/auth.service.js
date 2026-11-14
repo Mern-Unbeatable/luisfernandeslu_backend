@@ -235,7 +235,7 @@ export class AuthService {
     }
 
     // --- Full path: documents / referral / non-OTP roles ---
-    const relocated = relocateUploads(roleParam, userId, fileList)
+    const relocated = await relocateUploads(roleParam, userId, fileList)
     const filesByField = groupFiles(relocated)
     const profileData = buildProfileData(role, body, filesByField)
     const createProfile = shouldCreateProfile(roleParam, profileData)

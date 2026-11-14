@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import multer from 'multer'
-import { UPLOAD_ROOT } from '../storage.js'
+import { UPLOAD_ROOT, persistLocalFile, uploadStorage } from '../storage.js'
 
 const IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
 
@@ -9,7 +9,7 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true })
 }
 
-const storage = multer.diskStorage({
+const storage = uploadStorage({
   destination(req, _file, cb) {
     const sellerId = req.auth?.id || 'pending'
     const dir = path.join(UPLOAD_ROOT, 'products', sellerId)
@@ -139,6 +139,7 @@ export async function downloadRemoteProductImage(sellerId, imageUrl, label = 'im
   const filename = `${Date.now()}-${safeLabel}.${ext === 'jpeg' ? 'jpg' : ext}`
   const fullPath = path.join(dir, filename)
   fs.writeFileSync(fullPath, buf)
+  await persistLocalFile(fullPath, mime || `image/${ext}`)
 
   return {
     path: fullPath,

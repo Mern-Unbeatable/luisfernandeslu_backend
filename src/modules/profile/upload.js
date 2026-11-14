@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import multer from 'multer'
-import { UPLOAD_ROOT } from '../../shared/storage.js'
+import { UPLOAD_ROOT, uploadStorage } from '../../shared/storage.js'
 
 const ALLOWED_MIME = new Set([
   'image/jpeg',
@@ -15,10 +15,10 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true })
 }
 
-const resubmitStorage = multer.diskStorage({
+const resubmitStorage = uploadStorage({
   destination(req, _file, cb) {
     const role = String(req.auth?.role || 'misc').toLowerCase()
-    const dir = path.join(UPLOAD_ROOT, role, 'resubmit')
+    const dir = path.join(UPLOAD_ROOT, role, req.auth?.id || 'resubmit')
     ensureDir(dir)
     cb(null, dir)
   },

@@ -1,31 +1,10 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import prisma from '../../../lib/prisma.js'
 import { httpError } from '../errors.js'
-import { UPLOAD_ROOT } from '../storage.js'
+import { deleteStoredFile } from '../storage.js'
 import { avatarRelativeUrlFromFiles } from './evidence-upload.js'
 
-function localUploadPath(stored) {
-  if (!stored) return null
-  const value = String(stored)
-  const stripped = value.replace(/^https?:\/\/[^/]+/i, '')
-  const marker = '/uploads/'
-  const idx = stripped.indexOf(marker)
-  if (idx === -1) return null
-  const relative = stripped.slice(idx + marker.length)
-  const disk = path.resolve(UPLOAD_ROOT, relative)
-  if (!disk.startsWith(path.resolve(UPLOAD_ROOT))) return null
-  return disk
-}
-
 export function unlinkLocalUpload(stored) {
-  const disk = localUploadPath(stored)
-  if (!disk || !fs.existsSync(disk)) return
-  try {
-    fs.unlinkSync(disk)
-  } catch {
-    // ignore missing files
-  }
+  void deleteStoredFile(stored)
 }
 
 /** Replace `user.image` from multipart avatar/image fields. Returns relative URL. */

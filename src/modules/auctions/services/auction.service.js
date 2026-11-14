@@ -162,6 +162,32 @@ async function factorySupplierRoute(factoryLoc, supplierLoc) {
   }
 }
 
+/** Order include needed by `factoryOrderRoute`. */
+export const FACTORY_ROUTE_ORDER_INCLUDE = {
+  seller: { select: partyAddressSelect },
+  customer: { select: partyAddressSelect },
+  shippingAddress: true,
+  orderLineItems: {
+    take: 1,
+    select: {
+      warehouseLocation: true,
+      product: { select: { warehouseLocation: true } },
+    },
+  },
+}
+
+/** Driving route factory warehouse → buying supplier for a factory order. */
+export async function factoryOrderRoute(order) {
+  const factoryAddr = pickFactoryPickup(order)
+  const supplierAddr = pickPartyAddress(order.customer, order.shippingAddress)
+  const route = await factorySupplierRoute(factoryAddr, supplierAddr)
+  return {
+    pickupText: route.pickupText || 'Factory address not set',
+    deliveryText: route.deliveryText || 'Supplier address not set',
+    distanceKm: route.distanceKm,
+  }
+}
+
 function pickLocations(order) {
   const ship = order.shippingAddress
   const pickupLocation =
@@ -389,30 +415,22 @@ class AuctionService {
         data: { status: 'ACCEPTED' },
       })
 
-      if (auction.isFactoryOrder) {
-        // Factory orders require supplier payment before assignment
-        await tx.shipmentAuction.update({
-          where: { id: auctionId },
-          data: { auctionStatus: 'PENDING_PAYMENT' },
-        })
-      } else {
-        await tx.shipmentAuction.update({
-          where: { id: auctionId },
-          data: { auctionStatus: 'ASSIGNED' },
-        })
-        await tx.order.update({
-          where: { id: auction.shipment.orderId },
-          data: {
-            orderStatus: 'ASSIGNED',
-            statusHistory: {
-              create: {
-                status: 'ASSIGNED',
-                note: 'Transporter auto-assigned from lowest shipment auction bid',
-              },
+      await tx.shipmentAuction.update({
+        where: { id: auctionId },
+        data: { auctionStatus: 'ASSIGNED' },
+      })
+      await tx.order.update({
+        where: { id: auction.shipment.orderId },
+        data: {
+          orderStatus: 'ASSIGNED',
+          statusHistory: {
+            create: {
+              status: 'ASSIGNED',
+              note: 'Transporter auto-assigned from lowest shipment auction bid',
             },
           },
-        })
-      }
+        },
+      })
     })
   }
 
@@ -1193,7 +1211,7 @@ class AuctionService {
 
   // ─── Factory Order Auctions ────────────────────────────────────────
 
-  async getFactoryCreateInfo(auth, orderId) {
+  async getFactoryCreateInfo(auth, orderId, vehicleType) {
     const factoryId = assertRole(auth, 'factory', 'Only factories can prepare factory auctions')
     const orderRef = String(orderId || '').trim()
 
@@ -1240,7 +1258,7 @@ class AuctionService {
     let pricePerKm = env.transportPricePerKm
     try {
       const settings = await loadPlatformSettings()
-      pricePerKm = auctionPricePerKm(settings, null)
+      pricePerKm = auctionPricePerKm(settings, vehicleType || null)
       const route = await factorySupplierRoute(factoryAddr, supplierAddr)
       distanceKm = route.distanceKm
       bidStartFrom = Math.round(distanceKm * pricePerKm * 100) / 100
@@ -1274,6 +1292,58 @@ class AuctionService {
     }
   }
 
+  /**
+   * Opens (or reopens) the transporter auction of a factory order whose transport
+   * the supplier already paid. The paid amount is the maximum bid.
+   */
+  async openFactoryAuction({ orderId, requiredVehicleType, bidStartPrice }) {
+    const shipment = await prisma.shipment.findUnique({
+      where: { orderId },
+      select: { id: true, auction: { select: { id: true, auctionStatus: true, expiresAt: true, auctionCode: true } } },
+    })
+    if (!shipment) throw httpError('Shipment not found for this order', 404, 'NotFound')
+
+    const settings = await loadPlatformSettings()
+    const expiresAt = new Date(Date.now() + auctionDurationMinutes(settings) * 60 * 1000)
+    const existing = shipment.auction
+
+    if (!existing) {
+      return prisma.shipmentAuction.create({
+        data: {
+          shipmentId: shipment.id,
+          auctionCode: await nextAuctionCode(),
+          requiredVehicleType,
+          expiresAt,
+          auctionStatus: 'PENDING_BIDS',
+          isFactoryOrder: true,
+          bidStartPrice,
+        },
+      })
+    }
+
+    if (existing.auctionStatus === 'PENDING_BIDS' && existing.expiresAt > new Date()) {
+      throw httpError('An active auction already exists for this order', 409, 'Conflict')
+    }
+    if (existing.auctionStatus === 'ASSIGNED') {
+      throw httpError('Transporter already assigned for this order', 409, 'AlreadyAssigned')
+    }
+
+    await prisma.transporterBid.deleteMany({ where: { auctionId: existing.id } })
+    return prisma.shipmentAuction.update({
+      where: { id: existing.id },
+      data: {
+        requiredVehicleType,
+        expiresAt,
+        auctionStatus: 'PENDING_BIDS',
+        isFactoryOrder: true,
+        bidStartPrice,
+        auctionCode: existing.auctionCode || (await nextAuctionCode()),
+        createdAt: new Date(),
+      },
+    })
+  }
+
+  /** Factory reopens the auction after no transporter bid; the supplier already paid the transport. */
   async createFactoryAuction(auth, body) {
     const factoryId = assertRole(auth, 'factory', 'Only factories can create factory auctions')
 
@@ -1284,192 +1354,39 @@ class AuctionService {
         orderSource: 'FACTORY_CONVERSION',
         OR: [{ id: orderRef }, { orderNumber: orderRef }],
       },
-      include: {
-        seller: {
-          select: partyAddressSelect,
-        },
-        customer: {
-          select: partyAddressSelect,
-        },
-        shippingAddress: true,
-        orderLineItems: {
-          take: 1,
-          select: {
-            warehouseLocation: true,
-            product: { select: { warehouseLocation: true } },
-          },
+      select: {
+        id: true,
+        transportPayment: {
+          select: { status: true, amount: true, requiredVehicleType: true, distanceKm: true, pricePerKm: true },
         },
       },
     })
     if (!order) throw httpError('Factory order not found', 404, 'NotFound')
 
-    const factoryAddr = pickFactoryPickup(order)
-    const supplierAddr = pickPartyAddress(order.customer, order.shippingAddress)
-    const route = await factorySupplierRoute(factoryAddr, supplierAddr)
-
-    const pickupText = route.pickupText || 'Factory address not set'
-    const deliveryText = route.deliveryText || 'Supplier address not set'
-    const distanceKm = route.distanceKm
-
-    const settings = await loadPlatformSettings()
-    const pricePerKm = auctionPricePerKm(settings, body.requiredVehicleType)
-    const bidStartPrice = Math.round(distanceKm * pricePerKm * 100) / 100
-    if (bidStartPrice <= 0) {
-      throw httpError('Calculated bid start price must be greater than 0', 400, 'InvalidPrice')
+    const payment = order.transportPayment
+    if (payment?.status !== 'PAID') {
+      throw httpError(
+        'The supplier must pay the transport before the auction opens',
+        409,
+        'TransportNotPaid',
+      )
     }
 
-    const durationMs = auctionDurationMinutes(settings) * 60 * 1000
-    const expiresAt = new Date(Date.now() + durationMs)
-
-    const shipment = await prisma.shipment.upsert({
-      where: { orderId: order.id },
-      update: { pickupAddressText: pickupText, deliveryAddressText: deliveryText, distanceKm },
-      create: { orderId: order.id, pickupAddressText: pickupText, deliveryAddressText: deliveryText, distanceKm },
-      select: { id: true },
+    const auction = await this.openFactoryAuction({
+      orderId: order.id,
+      requiredVehicleType: payment.requiredVehicleType,
+      bidStartPrice: payment.amount,
     })
-
-    const existing = await prisma.shipmentAuction.findUnique({
-      where: { shipmentId: shipment.id },
-      select: { id: true, auctionStatus: true, expiresAt: true, auctionCode: true },
-    })
-
-    let auction
-    if (!existing) {
-      auction = await prisma.shipmentAuction.create({
-        data: {
-          shipmentId: shipment.id,
-          auctionCode: await nextAuctionCode(),
-          requiredVehicleType: body.requiredVehicleType,
-          expiresAt,
-          auctionStatus: 'PENDING_BIDS',
-          isFactoryOrder: true,
-          bidStartPrice,
-        },
-      })
-    } else {
-      if (existing.auctionStatus === 'PENDING_BIDS' && existing.expiresAt > new Date()) {
-        throw httpError('An active auction already exists for this order', 409, 'Conflict')
-      }
-      if (existing.auctionStatus === 'ASSIGNED') {
-        throw httpError('Transporter already assigned for this order', 409, 'AlreadyAssigned')
-      }
-      if (existing.auctionStatus === 'PENDING_PAYMENT') {
-        throw httpError('Auction is awaiting supplier payment', 409, 'PendingPayment')
-      }
-
-      await prisma.transporterBid.deleteMany({ where: { auctionId: existing.id } })
-      const code = existing.auctionCode || (await nextAuctionCode())
-      auction = await prisma.shipmentAuction.update({
-        where: { id: existing.id },
-        data: {
-          requiredVehicleType: body.requiredVehicleType,
-          expiresAt,
-          auctionStatus: 'PENDING_BIDS',
-          isFactoryOrder: true,
-          bidStartPrice,
-          auctionCode: code,
-          createdAt: new Date(),
-        },
-      })
-    }
 
     return {
       status: 201,
       body: {
         id: auction.id,
         auctionId: auction.auctionCode,
-        message: 'Factory shipment auction created',
-        distanceKm,
-        bidStartPrice,
-        pricePerKm,
-      },
-    }
-  }
-
-  async confirmFactoryAuctionPayment(auth, auctionId) {
-    const supplierId = assertRole(auth, 'supplier', 'Only suppliers can confirm payment')
-
-    const auction = await prisma.shipmentAuction.findFirst({
-      where: {
-        id: auctionId,
-        isFactoryOrder: true,
-        auctionStatus: 'PENDING_PAYMENT',
-        shipment: { order: { customerId: supplierId } },
-      },
-      select: {
-        id: true,
-        bidStartPrice: true,
-        requiredVehicleType: true,
-        shipment: { select: { orderId: true, distanceKm: true } },
-        bids: {
-          where: { status: 'ACCEPTED' },
-          select: { id: true, transporterId: true, bidAmount: true },
-          take: 1,
-        },
-      },
-    })
-    if (!auction) throw httpError('Auction not found or not pending payment', 404, 'NotFound')
-
-    const settings = await loadPlatformSettings()
-    const pricePerKm = auctionPricePerKm(settings, auction.requiredVehicleType)
-    const totalAmount = Math.round(
-      (auction.shipment.distanceKm || 0) * pricePerKm * 100,
-    ) / 100
-
-    await prisma.$transaction(async (tx) => {
-      await tx.shipmentAuction.update({
-        where: { id: auctionId },
-        data: { auctionStatus: 'ASSIGNED' },
-      })
-
-      await tx.order.update({
-        where: { id: auction.shipment.orderId },
-        data: {
-          orderStatus: 'ASSIGNED',
-          statusHistory: {
-            create: {
-              status: 'ASSIGNED',
-              note: `Transporter assigned after supplier paid €${totalAmount} for factory shipment`,
-            },
-          },
-        },
-      })
-    })
-
-    return {
-      status: 200,
-      body: {
-        id: auctionId,
-        message: 'Payment confirmed, transporter assigned',
-        totalAmount,
-      },
-    }
-  }
-
-  async declineFactoryAuctionPayment(auth, auctionId) {
-    const supplierId = assertRole(auth, 'supplier', 'Only suppliers can decline payment')
-
-    const auction = await prisma.shipmentAuction.findFirst({
-      where: {
-        id: auctionId,
-        isFactoryOrder: true,
-        auctionStatus: 'PENDING_PAYMENT',
-        shipment: { order: { customerId: supplierId } },
-      },
-      select: { id: true },
-    })
-    if (!auction) throw httpError('Auction not found or not pending payment', 404, 'NotFound')
-
-    await prisma.shipmentAuction.update({
-      where: { id: auctionId },
-      data: { auctionStatus: 'CANCELLED' },
-    })
-
-    return {
-      status: 200,
-      body: {
-        id: auctionId,
-        message: 'Auction payment declined, auction cancelled',
+        message: 'Factory shipment auction reopened',
+        distanceKm: payment.distanceKm,
+        bidStartPrice: payment.amount,
+        pricePerKm: payment.pricePerKm,
       },
     }
   }

@@ -1,9 +1,7 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import prisma from '../../../../lib/prisma.js'
 import { money } from '../../../shared/money.js'
 import { httpError, notFound } from '../../../shared/errors.js'
-import { UPLOAD_ROOT } from '../../../shared/storage.js'
+import { readStoredFile } from '../../../shared/storage.js'
 import { parseStoredUrls } from '../../../lib/requestUrl.js'
 import { buildInsurancePolicyPdf } from '../../../shared/pdf/insurance-policy-pdf.js'
 import { documentRelativeUrlsFromFiles } from '../../../shared/upload/evidence-upload.js'
@@ -65,15 +63,10 @@ function storeDocuments(urls) {
   return JSON.stringify(urls)
 }
 
-function firstDocumentPath(stored) {
+function firstDocumentUrl(stored) {
   const parsed = parseStoredUrls(stored, '')
   if (!parsed) return null
-  const value = Array.isArray(parsed) ? parsed[0] : parsed
-  if (!value) return null
-  const relative = String(value)
-    .replace(/^https?:\/\/[^/]+/i, '')
-    .replace(/^\/uploads\//, '')
-  return path.join(UPLOAD_ROOT, relative)
+  return (Array.isArray(parsed) ? parsed[0] : parsed) || null
 }
 
 function mapPolicy(row, baseUrl) {
@@ -213,12 +206,14 @@ export class TransporterInsuranceService {
     })
     if (!row) throw notFound('Insurance policy not found')
 
-    const diskPath = firstDocumentPath(row.documentUrl)
-    if (diskPath && fs.existsSync(diskPath) && diskPath.toLowerCase().endsWith('.pdf')) {
-      const buffer = fs.readFileSync(diskPath)
+    const documentUrl = firstDocumentUrl(row.documentUrl)
+    const storedPdf = documentUrl?.toLowerCase().endsWith('.pdf')
+      ? await readStoredFile(documentUrl)
+      : null
+    if (storedPdf) {
       return {
         file: {
-          buffer,
+          buffer: storedPdf,
           filename: `${kind}-insurance.pdf`,
           contentType: 'application/pdf',
         },
