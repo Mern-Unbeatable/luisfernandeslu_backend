@@ -189,7 +189,8 @@ class FactoryOfferService {
     return factoryOrderService.list(auth, query)
   }
 
-  async pay(auth, offerId, baseUrl, shippingFee = 0, paymentMethod = 'multibanco', mbwayPhone) {
+  /** Factory goods only; the transport is paid separately when the order is ready. */
+  async pay(auth, offerId, body = {}) {
     this.assertSupplier(auth)
 
     const offer = await prisma.quoteOffer.findFirst({
@@ -215,11 +216,13 @@ class FactoryOfferService {
       offer,
       productId: offer.productId,
       offerId,
-      baseUrl,
       context: factoryPayContext,
-      shippingFee,
-      paymentMethod,
-      mbwayPhone,
+      delivery: {
+        shippingAddressId: body.shippingAddressId,
+        shippingAddress: body.shippingAddress,
+      },
+      paymentMethod: body.paymentMethod || 'multibanco',
+      mbwayPhone: body.mbwayPhone,
     })
   }
 }

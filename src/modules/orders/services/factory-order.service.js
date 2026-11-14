@@ -13,7 +13,7 @@ import {
 import { CURRENCY, productInclude, weightSizeText } from '../mappers.js'
 import { buildFactoryListWhere, paginateOrders } from '../query.js'
 import { pickCurrentInstallment } from '../installments.js'
-import { mapFactoryOrderDetail } from '../factory-order.mapper.js'
+import { mapFactoryOrderDetail, mapFactoryTransport } from '../factory-order.mapper.js'
 
 const partySelect = {
   id: true,
@@ -24,6 +24,20 @@ const partySelect = {
   profile: { select: { companyName: true, nifNumber: true } },
 }
 
+const transportInclude = {
+  shippingAddress: true,
+  transportPayment: {
+    select: { status: true, amount: true, requiredVehicleType: true, distanceKm: true },
+  },
+  shipment: {
+    select: {
+      pickupAddressText: true,
+      deliveryAddressText: true,
+      auction: { select: { auctionCode: true, auctionStatus: true, expiresAt: true } },
+    },
+  },
+}
+
 const listSelect = {
   id: true,
   orderNumber: true,
@@ -31,7 +45,11 @@ const listSelect = {
   orderSource: true,
   grandTotal: true,
   shippingFee: true,
+  deliveryMode: true,
+  deliveredAt: true,
   createdAt: true,
+  checkoutSession: { select: { paymentStatus: true } },
+  ...transportInclude,
   customerId: true,
   sellerId: true,
   customer: { select: partySelect },
@@ -111,6 +129,8 @@ function mapListRow(o, viewer) {
     installmentNumber: current ? String(current.installmentNumber) : null,
     currency: CURRENCY,
     date: o.createdAt,
+    paymentStatus: o.checkoutSession?.paymentStatus || null,
+    transport: mapFactoryTransport(o),
     actions: buildFactoryOrderActions(o, viewer),
   }
 }
@@ -121,11 +141,17 @@ class FactoryOrderService {
     return {
       orderSource: { in: [FACTORY_ORDER_SOURCE, 'QUOTE_CONVERSION'] },
       customerId: buyerId,
+      NOT: { checkoutSession: { is: { paymentStatus: { in: ['FAILED', 'CANCELLED'] } } } },
     }
   }
 
+  /** Factories only see orders the supplier actually paid. */
   factoryWhere(sellerId) {
-    return { ...factoryOrderBase(), sellerId }
+    return {
+      ...factoryOrderBase(),
+      sellerId,
+      checkoutSession: { is: { paymentStatus: 'PAID' } },
+    }
   }
 
   async listForSupplier(auth, query) {
@@ -235,9 +261,9 @@ class FactoryOrderService {
       where: { id: orderId, ...where },
       include: {
         customer: { select: partySelect },
-        shippingAddress: true,
+        ...transportInclude,
         checkoutSession: {
-          select: { email: true, phone: true },
+          select: { email: true, phone: true, paymentStatus: true },
         },
         orderLineItems: { include: { product: productInclude } },
         paymentPlan: {
