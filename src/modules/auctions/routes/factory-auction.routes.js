@@ -3,8 +3,9 @@ import auctionController from '../controllers/auction.controller.js'
 import {
   auctionIdParamSchema,
   auctionOrderIdParamSchema,
-  createAuctionBodySchema,
+  factoryAuctionInfoQuerySchema,
   listAuctionsQuerySchema,
+  reopenFactoryAuctionBodySchema,
 } from '../validations/auction.validation.js'
 import { validate } from '../../../middlewares/validate.middleware.js'
 import {
@@ -24,10 +25,11 @@ class FactoryAuctionRoutes {
     this.router.get(
       '/order/:orderId',
       validate(auctionOrderIdParamSchema, 'params'),
+      validate(factoryAuctionInfoQuerySchema, 'query'),
       (req, res, next) => auctionController.getFactoryCreateInfo(req, res, next),
     )
 
-    this.router.post('/', validate(createAuctionBodySchema, 'body'), (req, res, next) =>
+    this.router.post('/', validate(reopenFactoryAuctionBodySchema, 'body'), (req, res, next) =>
       auctionController.createFactoryAuction(req, res, next),
     )
 

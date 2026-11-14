@@ -149,10 +149,7 @@ export class QuoteController {
         req.auth,
         req.params.id,
         req.params.offerId,
-        resolveRequestBaseUrl(req),
-        Number(req.body?.shippingFee) || 0,
-        req.body?.paymentMethod || 'multibanco',
-        req.body?.mbwayPhone,
+        req.body || {},
       )
       return sendResult(res, result)
     } catch (err) {

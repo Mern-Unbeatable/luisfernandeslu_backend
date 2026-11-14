@@ -3,7 +3,27 @@ import { companyDisplayName } from '../../shared/party.js'
 import { formatAddressLine } from '../../shared/address.js'
 import { ordinalLabel } from '../../shared/ordinal.js'
 import { CURRENCY } from './mappers.js'
-import { factoryStatusLabel } from './factory-status-rules.js'
+import { buildFactoryOrderActions, factoryStatusLabel } from './factory-status-rules.js'
+
+/** How a factory order reaches the supplier: factory self-delivery or paid platform transport. */
+export function mapFactoryTransport(order) {
+  const payment = order.transportPayment || null
+  const auction = order.shipment?.auction || null
+  const mode = order.deliveryMode === 'SELF' ? 'SELF' : order.deliveryMode === 'CARRIER' ? 'PLATFORM' : null
+  return {
+    mode,
+    paymentStatus: payment?.status || null,
+    amount: payment ? money(payment.amount) : null,
+    requiredVehicleType: payment?.requiredVehicleType || null,
+    distanceKm: payment?.distanceKm ?? null,
+    auctionCode: auction?.auctionCode || null,
+    auctionStatus: auction?.auctionStatus || null,
+    auctionExpiresAt: auction?.expiresAt || null,
+    pickupLocation: order.shipment?.pickupAddressText || null,
+    deliveryLocation: order.shipment?.deliveryAddressText || formatAddressLine(order.shippingAddress) || null,
+    deliveredAt: order.deliveredAt || null,
+  }
+}
 
 function splitQuantities(totalQty, amounts) {
   const totalAmount = amounts.reduce((s, n) => s + Number(n || 0), 0)
@@ -144,5 +164,7 @@ export function mapFactoryOrderDetail(order, viewer) {
     products,
     installmentBreakdown,
     installments: timeline,
+    transport: mapFactoryTransport(order),
+    actions: buildFactoryOrderActions(order, viewer),
   }
 }

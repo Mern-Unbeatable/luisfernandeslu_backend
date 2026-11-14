@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import prisma from '../../../../lib/prisma.js'
 import { absolutizeUrl } from '../../../lib/requestUrl.js'
 import { httpError } from '../../../shared/errors.js'
@@ -7,7 +5,7 @@ import {
   parsePagination,
   paginationMeta,
 } from '../../../shared/pagination.js'
-import { UPLOAD_ROOT } from '../../../shared/storage.js'
+import { readStoredFile } from '../../../shared/storage.js'
 import { resolveTransporter } from '../transporter.js'
 import {
   CANCELABLE,
@@ -78,14 +76,6 @@ function statusFilter(raw) {
   if (s === 'cancelled' || s === 'cancel') return 'CANCELLED'
   const upper = String(raw).trim().toUpperCase()
   return upper || null
-}
-
-function resolvePdfDiskPath(pdfUrl) {
-  const cleaned = String(pdfUrl || '')
-    .replace(/^https?:\/\/[^/]+/i, '')
-    .replace(/^\/uploads\/?/i, '')
-  if (!cleaned || cleaned.includes('..')) return null
-  return path.join(UPLOAD_ROOT, cleaned)
 }
 
 class BuyerOrderService {
@@ -318,8 +308,8 @@ class BuyerOrderService {
       )
     }
 
-    const diskPath = resolvePdfDiskPath(invoice.pdfUrl)
-    if (!diskPath || !fs.existsSync(diskPath)) {
+    const buffer = await readStoredFile(invoice.pdfUrl)
+    if (!buffer) {
       throw httpError(
         'Invoice file not found',
         404,
@@ -327,7 +317,6 @@ class BuyerOrderService {
       )
     }
 
-    const buffer = fs.readFileSync(diskPath)
     const filename = `${invoice.invoiceNumber || order.orderNumber}.pdf`.replace(
       /[^\w.-]/g,
       '_',

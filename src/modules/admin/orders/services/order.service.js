@@ -1,6 +1,4 @@
 import prisma from '../../../../../lib/prisma.js'
-import fs from 'node:fs'
-import path from 'node:path'
 import { httpError } from '../../../../shared/errors.js'
 import { money } from '../../../../shared/money.js'
 import { formatAddressLine } from '../../../../shared/address.js'
@@ -8,7 +6,7 @@ import { parsePagination, paginationMeta } from '../../../../shared/pagination.j
 import { companyDisplayName, partyName } from '../../../../shared/party.js'
 import { absolutizeUrl } from '../../../../lib/requestUrl.js'
 import { env } from '../../../../config/env.js'
-import { UPLOAD_ROOT } from '../../../../shared/storage.js'
+import { storedFileExists } from '../../../../shared/storage.js'
 import { normalizeStatusFilter } from '../../../orders/status-rules.js'
 import {
   factoryStatusLabel,
@@ -28,17 +26,6 @@ import {
   issueTaxInvoiceForOrder,
   mapTaxInvoice,
 } from '../../../invoicing/tax-invoice.service.js'
-
-function invoicePdfExists(pdfUrl) {
-  if (!pdfUrl) return false
-  const relative = String(pdfUrl).replace(/^https?:\/\/[^/]+/i, '')
-  const marker = '/uploads/'
-  const idx = relative.indexOf(marker)
-  if (idx === -1) return false
-  const disk = path.resolve(UPLOAD_ROOT, relative.slice(idx + marker.length))
-  if (!disk.startsWith(path.resolve(UPLOAD_ROOT))) return false
-  return fs.existsSync(disk)
-}
 
 const ADMIN_CANCEL_PREFIX = 'Cancelled by admin'
 
@@ -459,7 +446,7 @@ class AdminOrderService {
     let invoiceRow = order.invoices?.[0] || null
     if (
       order.orderStatus !== 'NEW' &&
-      (!invoiceRow?.pdfUrl || !invoicePdfExists(invoiceRow.pdfUrl))
+      (!invoiceRow?.pdfUrl || !(await storedFileExists(invoiceRow.pdfUrl)))
     ) {
       try {
         const full = await prisma.order.findFirst({
@@ -471,7 +458,7 @@ class AdminOrderService {
         })
         if (full?.sellerId) {
           const ensured = await ensureInvoice(full, 'CUSTOMER')
-          if (ensured.pdfUrl && invoicePdfExists(ensured.pdfUrl)) {
+          if (ensured.pdfUrl && (await storedFileExists(ensured.pdfUrl))) {
             invoiceRow = ensured
           } else {
             const file = await renderInvoicePdf(

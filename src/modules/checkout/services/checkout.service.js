@@ -24,6 +24,8 @@ import { env } from '../../../config/env.js'
 import { notifyPaymentFailure } from '../../payments/payment-failure-notify.js'
 import { issueTaxInvoicesForCheckout } from '../../invoicing/tax-invoice.service.js'
 import supplierDeliveryService from '../../deliveries/supplier-delivery.service.js'
+import factoryTransportService from '../../factory-transport/factory-transport.service.js'
+import { applyOfferPaid } from '../../offers/offer-paid.js'
 
 function methodEnum(method) {
   const m = String(method || 'multibanco').toLowerCase()
@@ -534,6 +536,25 @@ class CheckoutService {
       
       const subtotal = Number(offer.totalPrice) || 0
       const vat = money(subtotal * (vatRate / 100))
+
+      if (!offer.quoteRequestId) {
+        return {
+          status: 200,
+          body: {
+            message: 'Factory transport is paid separately when the order is ready',
+            unloadingType: vehicleId,
+            pricePerKm: 0,
+            distanceKm: null,
+            shipping: 0,
+            subtotal,
+            vat,
+            total: money(subtotal + vat),
+            currency: 'EUR',
+            legs: [],
+            fees: { shipping: 0, shippingQuoted: true, vat, vatRate, currency: 'EUR' },
+          },
+        }
+      }
       
       priced = {
         items: [{
@@ -953,14 +974,16 @@ class CheckoutService {
     }
 
     let paidOrderIds = []
-    await prisma.$transaction(async (tx) => {
-      await tx.checkoutSession.update({
-        where: { id: session.id },
+    let emitOfferPaid = null
+    const claimed = await prisma.$transaction(async (tx) => {
+      const updated = await tx.checkoutSession.updateMany({
+        where: { id: session.id, paymentStatus: 'PENDING_PAYMENT' },
         data: {
           paymentStatus: 'PAID',
           paidAt: new Date(),
         },
       })
+      if (!updated.count) return false
 
       // Keep orderStatus NEW after payment — supplier must Accept (→ PENDING).
       const orders =
@@ -981,9 +1004,19 @@ class CheckoutService {
       }
 
       await recordAffiliateCommissionsForCheckout(session.id, tx)
+      emitOfferPaid = await applyOfferPaid(tx, session)
       paidOrderIds = orders.map((order) => order.id)
+      return true
     })
+    if (!claimed) return { alreadyPaid: true }
 
+    if (emitOfferPaid) {
+      try {
+        emitOfferPaid()
+      } catch (err) {
+        console.error('[checkout] offer paid emit failed', err.message)
+      }
+    }
     void issueTaxInvoicesForCheckout(session.id)
     void supplierDeliveryService.scheduleDecisions(paidOrderIds)
 
@@ -1084,6 +1117,12 @@ class CheckoutService {
       query.identifier ||
       null
 
+    const rawAmount = payload.valor ?? payload.amount ?? query.valor ?? query.amount
+    const paidAmount =
+      rawAmount != null && rawAmount !== '' && Number.isFinite(Number(rawAmount))
+        ? Number(rawAmount)
+        : null
+
     const or = []
     if (reference) or.push({ eupagoReference: String(reference) })
     if (identifier) or.push({ checkoutNumber: String(identifier) })
@@ -1101,13 +1140,16 @@ class CheckoutService {
     })
 
     if (!session) {
+      const transport = await factoryTransportService.handleWebhook({
+        reference,
+        identifier,
+        amount: paidAmount,
+      })
+      if (transport) return transport
       throw httpError('Checkout not found for payment', 404, 'NotFound')
     }
 
     if (session.paymentStatus === 'PAID') {
-      // Offer checkouts are stored as PAID up front; the webhook is the real payment signal.
-      void issueTaxInvoicesForCheckout(session.id)
-      void supplierDeliveryService.scheduleDecisions(session.orders.map((order) => order.id))
       return {
         status: 200,
         body: {
@@ -1116,6 +1158,16 @@ class CheckoutService {
           message: 'Already paid',
         },
       }
+    }
+    if (session.paymentStatus !== 'PENDING_PAYMENT') {
+      throw httpError(
+        `Checkout is ${session.paymentStatus.toLowerCase()} and cannot be paid`,
+        409,
+        'CheckoutNotPayable',
+      )
+    }
+    if (paidAmount != null && Math.abs(paidAmount - Number(session.grandTotal)) > 0.01) {
+      throw httpError('Paid amount does not match the checkout total', 400, 'AmountMismatch')
     }
 
     await this.markCheckoutPaid(session, 'Payment confirmed via EuPago')

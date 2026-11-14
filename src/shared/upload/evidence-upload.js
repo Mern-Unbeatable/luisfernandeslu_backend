@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import multer from 'multer'
-import { UPLOAD_ROOT } from '../storage.js'
+import { UPLOAD_ROOT, uploadStorage } from '../storage.js'
 import { absolutizeUrl } from '../../lib/requestUrl.js'
 
 const IMAGE_MIME = new Set([
@@ -30,7 +30,7 @@ function extOf(file) {
 
 function makeUpload({ folder, mime, ext, errorMessage }) {
   return multer({
-    storage: multer.diskStorage({
+    storage: uploadStorage({
       destination(req, _file, cb) {
         const userId = req.auth?.id || 'pending'
         const dir = path.join(UPLOAD_ROOT, folder, userId)

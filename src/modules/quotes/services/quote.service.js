@@ -679,9 +679,10 @@ ${quantityNote}.`,
   }
 
   /**
-   * Company → Pay offer (demo/mock). Creates QUOTE_CONVERSION chat order.
+   * Buyer pays an offer through EuPago. Creates a QUOTE_CONVERSION chat order;
+   * shipping is quoted on the server from the delivery address.
    */
-  async payOffer(auth, quoteId, offerId, baseUrl, shippingFee = 0, paymentMethod = 'multibanco', mbwayPhone) {
+  async payOffer(auth, quoteId, offerId, body = {}) {
     this.assertParticipantRole(auth)
     const quote = await this.getAccessibleQuote(auth, quoteId)
     if (quote.buyerId !== auth.id) {
@@ -702,12 +703,15 @@ ${quantityNote}.`,
       offer,
       productId,
       offerId,
-      baseUrl,
       context: quotePayContext,
       extra: { quote, quoteId },
-      shippingFee,
-      paymentMethod,
-      mbwayPhone,
+      delivery: {
+        shippingAddressId: body.shippingAddressId,
+        shippingAddress: body.shippingAddress,
+        unloadingType: body.unloadingType,
+      },
+      paymentMethod: body.paymentMethod || 'multibanco',
+      mbwayPhone: body.mbwayPhone,
     })
   }
 

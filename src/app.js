@@ -67,6 +67,11 @@ import {
   supplierDeliveryRoutes,
 } from './modules/deliveries/supplier-delivery.routes.js'
 import adminPayoutRoutes from './modules/admin/payouts/payout.routes.js'
+import adminTransportPaymentRoutes from './modules/admin/transport-payments/transport-payment.routes.js'
+import {
+  factoryTransportRoutes,
+  supplierTransportPaymentRoutes,
+} from './modules/factory-transport/factory-transport.routes.js'
 import factoryOrderRoutes from './modules/orders/routes/factory-order.routes.js'
 import factoryOfferRoutes from './modules/offers/routes/factory-offer.routes.js'
 import erpApiKeysRoutes from './modules/supplier-erp/routes/api-keys.routes.js'
@@ -80,7 +85,7 @@ import transporterInsuranceRoutes from './modules/transporter-insurance/routes/i
 import buyerOrderRoutes from './modules/orders/routes/buyer-order.routes.js'
 import companyBuyerOrderRoutes from './modules/orders/routes/company-buyer-order.routes.js'
 import companyProjectRoutes from './modules/projects/routes/company-project.routes.js'
-import { UPLOAD_ROOT } from './shared/storage.js'
+import { filesRoutes, uploadsRoutes } from './modules/files/files.routes.js'
 import { notFoundHandler } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/globalError.middleware.js'
 import { sendSuccess } from './utils/apiResponse.js'
@@ -136,7 +141,8 @@ app.use((req, res, next) => {
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-app.use('/uploads', express.static(UPLOAD_ROOT))
+app.use('/uploads', uploadsRoutes)
+app.use('/api/files', filesRoutes)
 
 app.use('/api/auth', authRoutes)
 app.use('/api/social', socialAuthRoutes)
@@ -208,6 +214,9 @@ app.use('/api/admin/disputes', adminDisputesRoutes)
 app.use('/api/admin/logistics', adminLogisticsRoutes)
 app.use('/api/admin/self-deliveries', adminSelfDeliveryRoutes)
 app.use('/api/admin/payouts', adminPayoutRoutes)
+app.use('/api/admin/transport-payments', adminTransportPaymentRoutes)
+app.use('/api/factory/transport', factoryTransportRoutes)
+app.use('/api/supplier/transport-payments', supplierTransportPaymentRoutes)
 app.use('/api/admin/affiliates', adminAffiliateRoutes)
 app.use('/api/admin/affiliate-tiers', adminAffiliateTierRoutes)
 app.use('/api/admin/roles-permissions', adminRolesPermissionsRoutes)

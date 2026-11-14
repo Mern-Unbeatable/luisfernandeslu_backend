@@ -26,10 +26,7 @@ export class FactoryOfferController {
       const result = await factoryOfferService.pay(
         req.auth,
         req.params.offerId,
-        resolveRequestBaseUrl(req),
-        Number(req.body?.shippingFee) || 0,
-        req.body?.paymentMethod || 'multibanco',
-        req.body?.mbwayPhone,
+        req.body || {},
       )
       return sendResult(res, result)
     } catch (err) {

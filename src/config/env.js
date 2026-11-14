@@ -79,6 +79,19 @@ export const env = {
     },
   },
 
+  /** Cloudflare R2 (S3-compatible). Empty credentials = local disk under /uploads. */
+  storage: {
+    r2: {
+      accountId: str('R2_ACCOUNT_ID'),
+      accessKeyId: str('R2_ACCESS_KEY_ID'),
+      secretAccessKey: str('R2_SECRET_ACCESS_KEY'),
+      publicBucket: str('R2_PUBLIC_BUCKET', 'construpreco-media'),
+      privateBucket: str('R2_PRIVATE_BUCKET', 'construpreco-documents'),
+      publicUrl: trimTrailingSlash(str('R2_PUBLIC_URL')),
+    },
+    signedUrlSeconds: Math.max(60, num('STORAGE_SIGNED_URL_SECONDS', 600)),
+  },
+
   smtp: {
     host: str('SMTP_HOST'),
     user: str('SMTP_USER'),
